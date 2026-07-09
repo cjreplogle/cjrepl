@@ -90,7 +90,9 @@
         }
       }
       el.innerHTML = buildHTML();
-      setTimeout(type, 30);
+      const ch = seg.text[charIndex - 1];
+      const delay = ch === '.' ? 300 : 12;
+      setTimeout(type, delay);
     }
 
     type();
