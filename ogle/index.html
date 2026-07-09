@@ -159,6 +159,8 @@
         charIndex = 0;
         if (segIndex >= segments.length) {
           el.innerHTML = buildHTML();
+          el.contentEditable = 'true';
+          el.focus();
           return;
         }
       }
@@ -167,6 +169,21 @@
       const delay = ch === '.' ? 300 : 12;
       setTimeout(type, delay);
     }
+
+    function reset() {
+      el.contentEditable = 'false';
+      el.innerHTML = '';
+      segIndex = 0;
+      charIndex = 0;
+      type();
+    }
+
+    el.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        reset();
+      }
+    });
 
     type();
   </script>
