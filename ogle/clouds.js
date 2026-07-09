@@ -4,7 +4,7 @@ let cloudW = 0, cloudH = 0;
 let cloudRunning = false;
 let cloudT = 0;
 
-const NZ = 512;
+const NZ = 256;
 const noiseTab = Array.from({ length: NZ * NZ }, () => Math.random());
 
 function vnoise(x, y) {
@@ -147,7 +147,7 @@ function cloudInit(cols) {
 
 window.startClouds = () => {
   if (cloudRunning) return;
-  cloudInit((function(){var el=document.getElementById("fire");var w=el?el.getBoundingClientRect().width||window.innerWidth:window.innerWidth;var p=document.createElement("span");p.style.cssText="font-family:monospace;font-size:0.75rem;visibility:hidden;position:fixed";p.textContent="X";document.body.appendChild(p);var cw=p.getBoundingClientRect().width||7.2;document.body.removeChild(p);return Math.ceil(w/cw);})());
+  cloudInit(Math.ceil(window.innerWidth / 6));
   cloudRunning = true;
   requestAnimationFrame(cloudFrame);
 };

@@ -612,7 +612,7 @@
     type();
   </script>
   <div style="position:fixed;bottom:0;left:0;right:0;height:100vh;pointer-events:none;display:flex;flex-direction:column;justify-content:flex-end;-webkit-mask-image:linear-gradient(to top,rgba(0,0,0,0.9) 0%,rgba(0,0,0,0.75) 30%,rgba(0,0,0,0.5) 60%,rgba(0,0,0,0.15) 85%,transparent 100%);mask-image:linear-gradient(to top,rgba(0,0,0,0.9) 0%,rgba(0,0,0,0.75) 30%,rgba(0,0,0,0.5) 60%,rgba(0,0,0,0.15) 85%,transparent 100%);z-index:0;opacity:0.65">
-    <div id="fire" style="font-family:monospace;font-size:0.75rem;line-height:1.15;white-space:pre;overflow:hidden;width:100%"></div>
+    <div id="fire" style="font-family:monospace;font-size:0.75rem;line-height:1.15;white-space:pre;overflow:hidden;width:100%;-webkit-text-size-adjust:none;text-size-adjust:none"></div>
   </div>
   <p id="esc-hint" style="position:fixed;bottom:6px;left:10px;font-size:0.75rem;opacity:0;margin:0;transition:opacity 0.3s ease;pointer-events:none">press esc to reset</p>
   <div id="fps-counter" style="display:none;position:fixed;bottom:6px;left:10px;font-size:0.7rem;opacity:0.5;margin:0;font-family:monospace;z-index:20;pointer-events:none"></div>
@@ -691,26 +691,36 @@
         document.getElementById('bd-speed').value = localStorage.getItem('backdropSpeed') || '1';
       }
     }
+    const _bdScripts = {
+      water:'water.js',fire:'fire.js',voronoi:'voronoi.js',rays:'rays.js',
+      clouds:'clouds.js',fireworks:'fireworks.js',snow:'snow.js',borealis:'borealis.js'
+    };
+    const _bdLoaded = new Set();
     function setBackdrop(mode) {
       localStorage.setItem('backdrop', mode);
-      if (window.stopWater)   window.stopWater();
-      if (window.stopFire)    window.stopFire();
-      if (window.stopVoronoi) window.stopVoronoi();
-      if (window.stopRays)   window.stopRays();
-      if (window.stopClouds)     window.stopClouds();
-      if (window.stopFireworks)  window.stopFireworks();
-      if (window.stopSnow)       window.stopSnow();
-      if (window.stopBorealis)   window.stopBorealis();
-      if (mode === 'water'   && window.startWater)   window.startWater();
-      if (mode === 'fire'    && window.startFire)    window.startFire();
-      if (mode === 'voronoi' && window.startVoronoi) window.startVoronoi();
-      if (mode === 'rays'    && window.startRays)    window.startRays();
-      if (mode === 'clouds'     && window.startClouds)     window.startClouds();
-      if (mode === 'snow'       && window.startSnow)       window.startSnow();
-      if (mode === 'borealis'   && window.startBorealis)   window.startBorealis();
-      if (mode === 'fireworks'  && window.startFireworks) {
-        window._fwFestive = (new Date().getMonth() === 6 && new Date().getDate() === 4);
-        window.startFireworks();
+      if (window.stopWater)     window.stopWater();
+      if (window.stopFire)      window.stopFire();
+      if (window.stopVoronoi)   window.stopVoronoi();
+      if (window.stopRays)      window.stopRays();
+      if (window.stopClouds)    window.stopClouds();
+      if (window.stopFireworks) window.stopFireworks();
+      if (window.stopSnow)      window.stopSnow();
+      if (window.stopBorealis)  window.stopBorealis();
+      const startKey = 'start' + mode.charAt(0).toUpperCase() + mode.slice(1);
+      function doStart() {
+        if (mode === 'fireworks') {
+          window._fwFestive = (new Date().getMonth() === 6 && new Date().getDate() === 4);
+        }
+        if (window[startKey]) window[startKey]();
+      }
+      if (_bdScripts[mode] && !_bdLoaded.has(mode)) {
+        _bdLoaded.add(mode);
+        const s = document.createElement('script');
+        s.src = _bdScripts[mode];
+        s.onload = doStart;
+        document.head.appendChild(s);
+      } else {
+        doStart();
       }
       document.querySelectorAll('#backdrop-panel button').forEach(b => b.style.fontWeight = '');
       const active = document.getElementById('bd-' + mode);
@@ -786,14 +796,19 @@
     }
     loadRuminations();
   </script>
-  <script src="water.js" defer></script>
-  <script src="fire.js" defer></script>
-  <script src="voronoi.js" defer></script>
-  <script src="rays.js" defer></script>
-  <script src="clouds.js" defer></script>
-  <script src="fireworks.js" defer></script>
-  <script src="snow.js" defer></script>
-  <script src="borealis.js" defer></script>
+  <script>
+    (function() {
+      const bd = localStorage.getItem('backdrop') || 'borealis';
+      const map = {
+        water: 'water.js', fire: 'fire.js', voronoi: 'voronoi.js',
+        rays: 'rays.js', clouds: 'clouds.js', fireworks: 'fireworks.js',
+        snow: 'snow.js', borealis: 'borealis.js'
+      };
+      if (map[bd]) {
+        const s = document.createElement('script'); s.src = map[bd]; document.head.appendChild(s);
+      }
+    })();
+  </script>
   <script src="mandelbrot.js" defer></script>
   <script src="threebody.js" defer></script>
 </body>

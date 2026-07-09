@@ -71,7 +71,7 @@ function fireFrame() {
 
 window.startFire = () => {
   if (fireRunning) return;
-  fireInit((function(){var el=document.getElementById("fire");var w=el?el.getBoundingClientRect().width||window.innerWidth:window.innerWidth;var p=document.createElement("span");p.style.cssText="font-family:monospace;font-size:0.75rem;visibility:hidden;position:fixed";p.textContent="X";document.body.appendChild(p);var cw=p.getBoundingClientRect().width||7.2;document.body.removeChild(p);return Math.ceil(w/cw);})());
+  fireInit(Math.ceil(window.innerWidth / 6));
   fireRunning = true;
   window.addEventListener('mousemove', fireMoveHandler);
   window.addEventListener('mouseleave', fireLeaveHandler);
