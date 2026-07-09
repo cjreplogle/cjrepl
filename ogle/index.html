@@ -9,6 +9,9 @@
       background: #111;
       color-scheme: dark;
     }
+    @media (max-width: 768px) {
+      html, body { overflow: hidden; height: 100%; touch-action: none; }
+    }
     body {
       font-family: Georgia, serif;
       max-width: 600px;
@@ -184,6 +187,7 @@
     a {
       color: #ccc;
     }
+    .mob-br { display: none; }
     @media (max-width: 768px) {
       body {
         font-size: 1.5rem;
@@ -194,6 +198,19 @@
       }
       .tab-hint {
         font-size: 1.1rem;
+      }
+      .mob-br { display: block; margin-bottom: 0.5em; }
+      .intro {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+      }
+      .intro img {
+        position: relative;
+        top: auto;
+        left: auto;
+        width: 90px;
+        height: 90px;
       }
     }
     @media (prefers-color-scheme: dark) {
@@ -514,9 +531,13 @@
       { backspace: "student @ Ohio State.".length, pauseBefore: 500 },
       { text: "graduate of Ohio State." },
       { backspace: ". I'm a biomedical engineering graduate of Ohio State.".length, pauseBefore: 900 },
-      { text: ". I'm currently an incoming medical student @ " },
+      { text: ". " },
+      { mobBr: true },
+      { text: "I'm currently an incoming medical student @ " },
       { text: "University of Cincinnati", link: "https://med.uc.edu" },
-      { text: ". I like making stuff in my research / spare time, this page should have most of my public work compiled. :)" },
+      { text: ". " },
+      { mobBr: true },
+      { text: "I like making stuff in my research / spare time, this page should have most of my public work compiled. :)" },
     ];
 
     const el = document.getElementById('typed');
@@ -533,6 +554,7 @@
           if (i === segIndex) break;
           continue;
         }
+        if (seg.mobBr) { chars.push({ mobBr: true }); if (i === segIndex) break; continue; }
         const text = i < segIndex ? seg.text : seg.text.slice(0, charIndex);
         for (const ch of text) chars.push({ ch, bold: seg.bold || false, link: seg.link || null });
         if (i === segIndex) break;
@@ -541,7 +563,8 @@
       let html = '', j = 0;
       while (j < chars.length) {
         const c = chars[j];
-        if (c.bold) {
+        if (c.mobBr) { html += '<br class="mob-br">'; j++; }
+        else if (c.bold) {
           let s = ''; while (j < chars.length && chars[j].bold) s += chars[j++].ch;
           html += `<strong>${s}</strong>`;
         } else if (c.link) {
@@ -586,6 +609,8 @@
         setTimeout(type, 0);
         return;
       }
+
+      if (seg.mobBr) { segIndex++; charIndex = 0; setTimeout(type, 0); return; }
 
       if (charIndex < seg.text.length) {
         charIndex++;
