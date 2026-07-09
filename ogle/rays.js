@@ -1,4 +1,5 @@
 const RAYS_EL = document.getElementById('fire');
+const _mob = /Mobi|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
 let raysW = 0, raysH = 0;
 let raysRunning = false;
 let raysGrid = [], raysActive = [];
@@ -100,12 +101,12 @@ function raysFrame() {
   if (!raysRunning) return;
   raysStep();
   raysRender();
-  setTimeout(() => requestAnimationFrame(raysFrame), 40 / (window._backdropSpeed || 1));
+  setTimeout(() => requestAnimationFrame(raysFrame), (_mob?80:40) / (window._backdropSpeed || 1));
 }
 
 window.startRays = () => {
   if (raysRunning) return;
-  raysInit(Math.max(60, Math.floor(window.innerWidth / 7.2)));
+  raysInit(Math.max(_mob?30:60, Math.floor(window.innerWidth / (_mob?14.4:7.2))));
   raysRunning = true;
   requestAnimationFrame(raysFrame);
 };

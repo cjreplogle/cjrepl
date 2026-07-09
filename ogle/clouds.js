@@ -1,4 +1,5 @@
 const CLOUD_EL = document.getElementById('fire');
+const _mob = /Mobi|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
 let cloudW = 0, cloudH = 0;
 let cloudRunning = false;
 let cloudT = 0;
@@ -134,7 +135,7 @@ function cloudFrame() {
   if (!cloudRunning) return;
   cloudT += 0.5;
   cloudRender();
-  setTimeout(() => requestAnimationFrame(cloudFrame), 80 / (window._backdropSpeed || 1));
+  setTimeout(() => requestAnimationFrame(cloudFrame), (_mob?160:80) / (window._backdropSpeed || 1));
 }
 
 function cloudInit(cols) {
@@ -146,7 +147,7 @@ function cloudInit(cols) {
 
 window.startClouds = () => {
   if (cloudRunning) return;
-  cloudInit(Math.max(60, Math.floor(window.innerWidth / 7.2)));
+  cloudInit(Math.max(_mob?30:60, Math.floor(window.innerWidth / (_mob?14.4:7.2))));
   cloudRunning = true;
   requestAnimationFrame(cloudFrame);
 };

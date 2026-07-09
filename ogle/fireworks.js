@@ -1,4 +1,5 @@
 const FW_EL = document.getElementById('fire');
+const _mob = /Mobi|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
 let fwW = 0, fwH = 0;
 let fwRunning = false;
 let fwBright = [], fwColor = [];
@@ -150,7 +151,7 @@ function fwFrame() {
   if (!fwRunning) return;
   fwStep();
   fwRender();
-  setTimeout(() => requestAnimationFrame(fwFrame), 40 / (window._backdropSpeed || 1));
+  setTimeout(() => requestAnimationFrame(fwFrame), (_mob?80:40) / (window._backdropSpeed || 1));
 }
 
 const fwClickHandler = e => {
@@ -167,7 +168,7 @@ const fwClickHandler = e => {
 
 window.startFireworks = () => {
   if (fwRunning) return;
-  fwInit(Math.max(60, Math.floor(window.innerWidth / 7.2)));
+  fwInit(Math.max(_mob?30:60, Math.floor(window.innerWidth / (_mob?14.4:7.2))));
   fwRunning = true;
   window.addEventListener('click', fwClickHandler);
   requestAnimationFrame(fwFrame);

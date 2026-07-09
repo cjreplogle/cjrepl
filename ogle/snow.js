@@ -1,4 +1,5 @@
 const SNOW_EL = document.getElementById('fire');
+const _mob = /Mobi|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
 let snowW = 0, snowH = 0;
 let snowRunning = false;
 let flakes = [];
@@ -102,12 +103,12 @@ function snowFrame() {
   if (!snowRunning) return;
   snowStep();
   snowRender();
-  setTimeout(() => requestAnimationFrame(snowFrame), 60 / (window._backdropSpeed || 1));
+  setTimeout(() => requestAnimationFrame(snowFrame), (_mob?120:60) / (window._backdropSpeed || 1));
 }
 
 window.startSnow = () => {
   if (snowRunning) return;
-  snowInit(Math.max(60, Math.floor(window.innerWidth / 7.2)));
+  snowInit(Math.max(_mob?30:60, Math.floor(window.innerWidth / (_mob?14.4:7.2))));
   snowRunning = true;
   requestAnimationFrame(snowFrame);
 };

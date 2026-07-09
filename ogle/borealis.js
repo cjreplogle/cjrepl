@@ -84,23 +84,27 @@ function borealisRender() {
   BOREALIS_EL.innerHTML = html;
 }
 
+const _isMobile = /Mobi|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
+
 function borealisFrame() {
   if (!borRunning) return;
   borT += 1.2;
   borealisRender();
-  setTimeout(() => requestAnimationFrame(borealisFrame), 80 / (window._backdropSpeed || 1));
+  const interval = (_isMobile ? 160 : 80) / (window._backdropSpeed || 1);
+  setTimeout(() => requestAnimationFrame(borealisFrame), interval);
 }
 
 function borealisInit(cols) {
   const lineH = parseFloat(getComputedStyle(BOREALIS_EL).fontSize || '12') * 1.15;
-  borH = Math.max(40, Math.ceil(window.innerHeight / lineH));
+  borH = Math.max(20, Math.ceil(window.innerHeight / lineH / (_isMobile ? 2 : 1)));
   borW = cols;
   borT = Math.random() * 500;
 }
 
 window.startBorealis = () => {
   if (borRunning) return;
-  borealisInit(Math.max(60, Math.floor(window.innerWidth / 7.2)));
+  const colDivisor = _isMobile ? 14.4 : 7.2;
+  borealisInit(Math.max(30, Math.floor(window.innerWidth / colDivisor)));
   borRunning = true;
   requestAnimationFrame(borealisFrame);
 };

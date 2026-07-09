@@ -1,4 +1,5 @@
 const VORONOI_EL = document.getElementById('fire');
+const _mob = /Mobi|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
 const NUM_SEEDS = 12;
 
 let vorW = 0, vorH = 0;
@@ -103,12 +104,12 @@ function vorFrame() {
   if (!vorRunning) return;
   vorStep();
   vorRender();
-  setTimeout(() => requestAnimationFrame(vorFrame), 60 / (window._backdropSpeed || 1));
+  setTimeout(() => requestAnimationFrame(vorFrame), (_mob?120:60) / (window._backdropSpeed || 1));
 }
 
 window.startVoronoi = () => {
   if (vorRunning) return;
-  vorInit(Math.max(60, Math.floor(window.innerWidth / 7.2)));
+  vorInit(Math.max(_mob?30:60, Math.floor(window.innerWidth / (_mob?14.4:7.2))));
   vorRunning = true;
   requestAnimationFrame(vorFrame);
 };

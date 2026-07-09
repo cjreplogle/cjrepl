@@ -1,4 +1,5 @@
 const WATER_EL = document.getElementById('fire');
+const _mob = /Mobi|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
 const DAMP = 0.720;
 
 let waterW = 0, waterH = 0;
@@ -92,7 +93,7 @@ function waterFrame() {
   if (!waterRunning) return;
   waterStep();
   waterRender();
-  setTimeout(() => requestAnimationFrame(waterFrame), 180 / (window._backdropSpeed || 1));
+  setTimeout(() => requestAnimationFrame(waterFrame), (_mob?360:180) / (window._backdropSpeed || 1));
 }
 
 const waterMoveHandler = e => {
@@ -116,7 +117,7 @@ const waterMoveHandler = e => {
 
 window.startWater = () => {
   if (waterRunning) return;
-  waterInit(Math.max(60, Math.floor(window.innerWidth / 7.2)));
+  waterInit(Math.max(_mob?30:60, Math.floor(window.innerWidth / (_mob?14.4:7.2))));
 
   // pre-warm: seed disturbances across the grid then simulate into motion
   for (let i = 0; i < 24; i++)

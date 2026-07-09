@@ -1,4 +1,5 @@
 const FIRE_EL = document.getElementById('fire');
+const _mob = /Mobi|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
 const FIRE_ROWS = 55;
 const MAX_HEAT = 48;
 
@@ -65,12 +66,12 @@ function fireFrame() {
   if (!fireRunning) return;
   fireStep();
   fireRender();
-  setTimeout(() => requestAnimationFrame(fireFrame), 60 / (window._backdropSpeed || 1));
+  setTimeout(() => requestAnimationFrame(fireFrame), (_mob?120:60) / (window._backdropSpeed || 1));
 }
 
 window.startFire = () => {
   if (fireRunning) return;
-  fireInit(Math.max(60, Math.floor(window.innerWidth / 7.2)));
+  fireInit(Math.max(_mob?30:60, Math.floor(window.innerWidth / (_mob?14.4:7.2))));
   fireRunning = true;
   window.addEventListener('mousemove', fireMoveHandler);
   window.addEventListener('mouseleave', fireLeaveHandler);
