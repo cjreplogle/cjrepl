@@ -117,7 +117,7 @@ const waterMoveHandler = e => {
 
 window.startWater = () => {
   if (waterRunning) return;
-  waterInit(Math.max(_mob?30:60, Math.floor(window.innerWidth / (_mob?14.4:7.2))));
+  waterInit(Math.max(60, Math.floor(window.innerWidth / 7.2)));
 
   // pre-warm: seed disturbances across the grid then simulate into motion
   for (let i = 0; i < 24; i++)

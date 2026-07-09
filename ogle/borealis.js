@@ -103,8 +103,8 @@ function borealisInit(cols) {
 
 window.startBorealis = () => {
   if (borRunning) return;
-  const colDivisor = _isMobile ? 14.4 : 7.2;
-  borealisInit(Math.max(30, Math.floor(window.innerWidth / colDivisor)));
+  
+  borealisInit(Math.max(60, Math.floor(window.innerWidth / 7.2)));
   borRunning = true;
   requestAnimationFrame(borealisFrame);
 };

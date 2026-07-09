@@ -106,7 +106,7 @@ function raysFrame() {
 
 window.startRays = () => {
   if (raysRunning) return;
-  raysInit(Math.max(_mob?30:60, Math.floor(window.innerWidth / (_mob?14.4:7.2))));
+  raysInit(Math.max(60, Math.floor(window.innerWidth / 7.2)));
   raysRunning = true;
   requestAnimationFrame(raysFrame);
 };
