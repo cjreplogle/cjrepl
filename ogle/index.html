@@ -24,6 +24,13 @@
       object-fit: cover;
       flex-shrink: 0;
     }
+    #typed::after {
+      content: '|';
+      animation: blink 0.7s step-end infinite;
+    }
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
     @media (prefers-color-scheme: dark) {
       body {
         color: #fff;
@@ -38,7 +45,55 @@
 <body>
   <div class="intro">
     <img src="me.jpg" alt="CJ Replogle">
-    <p>Hi, I'm <strong>CJ Replogle</strong>. I'm currently a medical student @ <a href="https://med.uc.edu">University of Cincinnati</a>. I like making stuff in my research / spare time, this should have most of my public work compiled. :)</p>
+    <p id="typed"></p>
   </div>
+  <script>
+    const segments = [
+      { text: "Hi, I'm ", html: false },
+      { text: "CJ Replogle", html: false, bold: true },
+      { text: ". I'm currently a medical student @ ", html: false },
+      { text: "University of Cincinnati", html: false, link: "https://med.uc.edu" },
+      { text: ". I like making stuff in my research / spare time, this should have most of my public work compiled. :)", html: false },
+    ];
+
+    const el = document.getElementById('typed');
+    let segIndex = 0, charIndex = 0;
+
+    function buildHTML() {
+      let result = '';
+      for (let i = 0; i < segIndex; i++) {
+        result += wrap(segments[i], segments[i].text);
+      }
+      if (segIndex < segments.length) {
+        result += wrap(segments[segIndex], segments[segIndex].text.slice(0, charIndex));
+      }
+      return result;
+    }
+
+    function wrap(seg, text) {
+      if (seg.bold) return `<strong>${text}</strong>`;
+      if (seg.link) return `<a href="${seg.link}">${text}</a>`;
+      return text;
+    }
+
+    function type() {
+      if (segIndex >= segments.length) return;
+      const seg = segments[segIndex];
+      if (charIndex < seg.text.length) {
+        charIndex++;
+      } else {
+        segIndex++;
+        charIndex = 0;
+        if (segIndex >= segments.length) {
+          el.innerHTML = buildHTML();
+          return;
+        }
+      }
+      el.innerHTML = buildHTML();
+      setTimeout(type, 30);
+    }
+
+    type();
+  </script>
 </body>
 </html>
