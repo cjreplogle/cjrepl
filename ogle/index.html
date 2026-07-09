@@ -31,13 +31,16 @@
     @keyframes blink {
       50% { opacity: 0; }
     }
+    a {
+      color: #333;
+    }
     @media (prefers-color-scheme: dark) {
       body {
         color: #fff;
         background: #111;
       }
       a {
-        color: #7eb8f7;
+        color: #ccc;
       }
     }
   </style>
@@ -91,7 +94,7 @@
       }
       el.innerHTML = buildHTML();
       const ch = seg.text[charIndex - 1];
-      const delay = ch === '.' ? 200 : 5;
+      const delay = ch === '.' ? 300 : 12;
       setTimeout(type, delay);
     }
 
