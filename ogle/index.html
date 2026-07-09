@@ -450,6 +450,20 @@
       }
     }, { passive: false });
 
+    let touchStartY = 0;
+    window.addEventListener('touchstart', function(e) {
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    window.addEventListener('touchend', function(e) {
+      if (scrollCooldown) return;
+      const dy = touchStartY - e.changedTouches[0].clientY;
+      if (Math.abs(dy) < 40) return;
+      const dir = dy > 0 ? 1 : -1;
+      scrollCooldown = true;
+      scrollNavStep(dir);
+      setTimeout(() => { scrollCooldown = false; }, 550);
+    }, { passive: true });
+
     document.addEventListener('keydown', function(e) {
       const inEdit = document.getElementById('typed').getAttribute('contenteditable') === 'true' &&
                      document.activeElement === document.getElementById('typed');
