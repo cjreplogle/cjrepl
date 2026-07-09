@@ -13,9 +13,23 @@
       color: #222;
       line-height: 1.6;
     }
+    .intro {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .intro img {
+      width: 64px;
+      height: 64px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
   </style>
 </head>
 <body>
-  <p>Hi, I'm CJ Replogle. I'm currently a med student @ <a href="https://med.uc.edu">University of Cincinnati</a>. I like making stuff in my research / spare time, this should have most of my public work compiled. :)</p>
+  <div class="intro">
+    <img src="me.jpg" alt="CJ Replogle">
+    <p>Hi, I'm <strong>CJ Replogle</strong>. I'm currently a medical student @ <a href="https://med.uc.edu">University of Cincinnati</a>. I like making stuff in my research / spare time, this should have most of my public work compiled. :)</p>
+  </div>
 </body>
 </html>
