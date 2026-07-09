@@ -137,6 +137,7 @@ window.stopWater = () => {
   waterRunning = false;
   window.removeEventListener('mousemove', waterMoveHandler);
   WATER_EL.innerHTML = '';
+  cur = []; prv = [];
 };
 
 if (localStorage.getItem('backdrop') === 'water')

@@ -178,6 +178,7 @@ window.stopFireworks = () => {
   fwRunning = false;
   window.removeEventListener('click', fwClickHandler);
   FW_EL.innerHTML = '';
+  fwBright = []; fwColor = []; rockets = []; sparks = [];
 };
 
 if (localStorage.getItem('backdrop') === 'fireworks')

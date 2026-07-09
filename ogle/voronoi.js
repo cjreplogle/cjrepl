@@ -117,6 +117,7 @@ window.startVoronoi = () => {
 window.stopVoronoi = () => {
   vorRunning = false;
   VORONOI_EL.innerHTML = '';
+  seeds = [];
 };
 
 if (localStorage.getItem('backdrop') === 'voronoi')

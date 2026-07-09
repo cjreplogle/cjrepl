@@ -83,6 +83,7 @@ window.stopFire = () => {
   window.removeEventListener('mousemove', fireMoveHandler);
   window.removeEventListener('mouseleave', fireLeaveHandler);
   FIRE_EL.innerHTML = '';
+  heat = [];
 };
 
 if (localStorage.getItem('backdrop') === 'fire')

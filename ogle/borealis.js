@@ -110,7 +110,11 @@ window.startBorealis = () => {
 
 window.stopBorealis = () => {
   borRunning = false;
-  if (borCanvas) { borCtx.clearRect(0, 0, borCanvas.width, borCanvas.height); }
+  if (borCanvas) {
+    borCtx.clearRect(0, 0, borCanvas.width, borCanvas.height);
+    borCanvas.remove();
+    borCanvas = null; borCtx = null;
+  }
 };
 
 if (!localStorage.getItem('backdrop') || localStorage.getItem('backdrop') === 'borealis')

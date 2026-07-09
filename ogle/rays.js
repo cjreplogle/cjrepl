@@ -114,6 +114,7 @@ window.startRays = () => {
 window.stopRays = () => {
   raysRunning = false;
   RAYS_EL.innerHTML = '';
+  raysGrid = []; raysActive = [];
 };
 
 if (localStorage.getItem('backdrop') === 'rays')

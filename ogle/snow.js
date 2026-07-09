@@ -116,6 +116,7 @@ window.startSnow = () => {
 window.stopSnow = () => {
   snowRunning = false;
   SNOW_EL.innerHTML = '';
+  flakes = []; snowGrid = []; snowColorGrid = [];
 };
 
 if (localStorage.getItem('backdrop') === 'snow')
