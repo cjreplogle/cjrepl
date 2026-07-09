@@ -70,13 +70,11 @@
       opacity: 1;
     }
     .tab-btn:hover {
-      animation: nudge 0.3s ease;
+      transform: translateX(6px);
+      transition: transform 0.2s ease;
     }
-    @keyframes nudge {
-      0%   { transform: translateX(0); }
-      40%  { transform: translateX(6px); }
-      70%  { transform: translateX(3px); }
-      100% { transform: translateX(0); }
+    .tab-btn {
+      transition: transform 0.2s ease, opacity 0.2s ease;
     }
     .tab-content {
       margin-top: 24px;
@@ -141,13 +139,15 @@
     const el = document.getElementById('typed');
     let segIndex = 0, charIndex = 0;
 
-    function buildHTML() {
+    function buildHTML(scrambleChar) {
       let result = '';
       for (let i = 0; i < segIndex; i++) {
         result += wrap(segments[i], segments[i].text);
       }
       if (segIndex < segments.length) {
-        result += wrap(segments[segIndex], segments[segIndex].text.slice(0, charIndex));
+        let text = segments[segIndex].text.slice(0, charIndex);
+        if (scrambleChar !== undefined) text = text.slice(0, -1) + scrambleChar;
+        result += wrap(segments[segIndex], text);
       }
       return result;
     }
@@ -156,6 +156,24 @@
       if (seg.bold) return `<strong>${text}</strong>`;
       if (seg.link) return `<a href="${seg.link}">${text}</a>`;
       return text;
+    }
+
+    const scrambleChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let scrambling = false;
+
+    function randChar() {
+      return scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
+    }
+
+    function scrambleThen(realChar, done) {
+      scrambling = true;
+      let ticks = 4;
+      function tick() {
+        if (ticks-- <= 0) { scrambling = false; done(); return; }
+        el.innerHTML = buildHTML(realChar === ' ' ? ' ' : randChar());
+        setTimeout(tick, 30);
+      }
+      tick();
     }
 
     function type() {
@@ -173,18 +191,23 @@
           return;
         }
       }
-      el.innerHTML = buildHTML();
       const ch = seg.text[charIndex - 1];
       const delay = ch === '.' ? 300 : 12;
-      setTimeout(type, delay);
+      if (ch.match(/\S/)) {
+        scrambleThen(ch, () => setTimeout(type, delay));
+      } else {
+        el.innerHTML = buildHTML();
+        setTimeout(type, delay);
+      }
     }
 
     function reset() {
       el.contentEditable = 'false';
-      el.innerHTML = '';
-      segIndex = 0;
+      segIndex = segments.length;
       charIndex = 0;
-      type();
+      el.innerHTML = buildHTML();
+      el.contentEditable = 'true';
+      el.focus();
     }
 
     el.addEventListener('keydown', function(e) {
