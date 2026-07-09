@@ -303,6 +303,59 @@ TB.addEventListener('click', () => {
   }, 220);
 });
 
+// touch drag — mirrors mouse logic with wider hit radius for fingers
+let touchDragging = false;
+Object.defineProperty(window, '_tbTouchDragging', { get: () => touchDragging });
+
+TB.addEventListener('touchstart', e => {
+  const t = e.touches[0];
+  const { c: gc, r: gr } = clientToGrid(t.clientX, t.clientY);
+  let best = -1, bestD = 14; // wider hit radius for touch
+  bodies.forEach((b, i) => {
+    const { c: bc, r: br } = physToGrid(b.x, b.y);
+    const d = Math.abs(gc - bc) + Math.abs(gr - br);
+    if (d < bestD) { bestD = d; best = i; }
+  });
+  if (best >= 0) {
+    touchDragging = true;
+    e.preventDefault(); // block scroll only when grabbing a body
+    dragIdx = best;
+    trails[best] = [];
+    setLabel('chaos');
+    const { x, y } = gridToPhys(gc, gr);
+    dragPhysX = x; dragPhysY = y;
+    lastDragPhysX = x; lastDragPhysY = y;
+    lastDragTime = performance.now();
+    dragVelX = 0; dragVelY = 0;
+  }
+}, { passive: false });
+
+TB.addEventListener('touchmove', e => {
+  if (!touchDragging || dragIdx === -1) return;
+  e.preventDefault();
+  const t = e.touches[0];
+  const { c: gc, r: gr } = clientToGrid(t.clientX, t.clientY);
+  const { x, y } = gridToPhys(gc, gr);
+  const now = performance.now();
+  const dt = now - lastDragTime;
+  if (dt > 0) {
+    dragVelX = (x - lastDragPhysX) / dt * 16;
+    dragVelY = (y - lastDragPhysY) / dt * 16;
+  }
+  lastDragPhysX = x; lastDragPhysY = y; lastDragTime = now;
+  dragPhysX = x; dragPhysY = y;
+}, { passive: false });
+
+TB.addEventListener('touchend', e => {
+  if (!touchDragging) return;
+  touchDragging = false;
+  if (dragIdx >= 0) {
+    bodies[dragIdx].vx = dragVelX;
+    bodies[dragIdx].vy = dragVelY;
+  }
+  dragIdx = -1;
+});
+
 const tbObserver = new MutationObserver(() => {
   if (document.getElementById('tb-content').classList.contains('active') && !tbRunning) {
     tbRunning = true;
