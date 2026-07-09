@@ -69,9 +69,11 @@
     .tab-btn:hover, .tab-btn.active {
       opacity: 1;
     }
-    .tab-btn:hover {
-      transform: translateX(6px);
-      transition: transform 0.2s ease;
+    @media (hover: hover) {
+      .tab-btn:hover {
+        transform: translateX(6px);
+        transition: transform 0.2s ease;
+      }
     }
     .tab-btn {
       transition: transform 0.2s ease, opacity 0.2s ease;
@@ -186,8 +188,10 @@
         charIndex = 0;
         if (segIndex >= segments.length) {
           el.innerHTML = buildHTML();
-          el.contentEditable = 'true';
-          el.focus();
+          if (!('ontouchstart' in window)) {
+            el.contentEditable = 'true';
+            el.focus();
+          }
           return;
         }
       }
@@ -206,8 +210,10 @@
       segIndex = segments.length;
       charIndex = 0;
       el.innerHTML = buildHTML();
-      el.contentEditable = 'true';
-      el.focus();
+      if (!('ontouchstart' in window)) {
+        el.contentEditable = 'true';
+        el.focus();
+      }
     }
 
     el.addEventListener('keydown', function(e) {
