@@ -34,7 +34,7 @@
     #typed:focus {
       outline: none;
     }
-    #typed::after {
+    #typed:not([contenteditable="true"])::after {
       content: '|';
       animation: blink 0.7s step-end infinite;
     }
@@ -156,15 +156,31 @@
     const el = document.getElementById('typed');
     let segIndex = 0, charIndex = 0;
 
-    function buildHTML(scrambleChar) {
-      let result = '';
-      for (let i = 0; i < segIndex; i++) {
-        result += wrap(segments[i], segments[i].text);
-      }
-      if (segIndex < segments.length) {
-        let text = segments[segIndex].text.slice(0, charIndex);
-        if (scrambleChar !== undefined) text = text.slice(0, -1) + scrambleChar;
-        result += wrap(segments[segIndex], text);
+    const SCRAMBLE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const scrambleMap = new Map(); // globalIndex -> ticksLeft
+    let scrambleRunning = false;
+
+    function globalIdx(si, ci) {
+      let idx = 0;
+      for (let i = 0; i < si; i++) idx += segments[i].text.length;
+      return idx + ci;
+    }
+
+    function randChar() {
+      return SCRAMBLE[Math.floor(Math.random() * SCRAMBLE.length)];
+    }
+
+    function buildHTML() {
+      let result = '', g = 0;
+      for (let i = 0; i <= segIndex && i < segments.length; i++) {
+        const seg = segments[i];
+        const max = i < segIndex ? seg.text.length : charIndex;
+        let text = '';
+        for (let j = 0; j < max; j++) {
+          text += scrambleMap.has(g) ? randChar() : seg.text[j];
+          g++;
+        }
+        result += wrap(seg, text);
       }
       return result;
     }
@@ -175,22 +191,26 @@
       return text;
     }
 
-    const scrambleChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let scrambling = false;
-
-    function randChar() {
-      return scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
+    function tickScrambles() {
+      let any = false;
+      for (const [k, v] of scrambleMap) {
+        if (v <= 1) scrambleMap.delete(k);
+        else { scrambleMap.set(k, v - 1); any = true; }
+      }
+      el.innerHTML = buildHTML();
+      if (any) setTimeout(tickScrambles, 5);
+      else scrambleRunning = false;
     }
 
-    function scrambleThen(realChar, done) {
-      scrambling = true;
-      let ticks = 4;
-      function tick() {
-        if (ticks-- <= 0) { scrambling = false; done(); return; }
-        el.innerHTML = buildHTML(realChar === ' ' ? ' ' : randChar());
-        setTimeout(tick, 30);
+    function addScramble(si, ci) {
+      for (let back = 0; back < 3; back++) {
+        let s = si, c = ci - back;
+        while (c < 0 && s > 0) { s--; c += segments[s].text.length; }
+        if (c >= 0 && segments[s].text[c].match(/\S/)) {
+          scrambleMap.set(globalIdx(s, c), 6 - back * 2);
+        }
       }
-      tick();
+      if (!scrambleRunning) { scrambleRunning = true; setTimeout(tickScrambles, 5); }
     }
 
     function type() {
@@ -198,6 +218,8 @@
       const seg = segments[segIndex];
       if (charIndex < seg.text.length) {
         charIndex++;
+        const ch = seg.text[charIndex - 1];
+        if (ch.match(/\S/)) addScramble(segIndex, charIndex - 1);
       } else {
         segIndex++;
         charIndex = 0;
@@ -209,15 +231,13 @@
           }
           return;
         }
+        setTimeout(type, 0);
+        return;
       }
+      el.innerHTML = buildHTML();
       const ch = seg.text[charIndex - 1];
-      const delay = ch === '.' ? 300 : 12;
-      if (ch.match(/\S/)) {
-        scrambleThen(ch, () => setTimeout(type, delay));
-      } else {
-        el.innerHTML = buildHTML();
-        setTimeout(type, delay);
-      }
+      const delay = ch === '.' ? 250 : 15;
+      setTimeout(type, delay);
     }
 
     function reset() {
