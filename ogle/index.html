@@ -34,6 +34,13 @@
     a {
       color: #333;
     }
+    .url-tag {
+      position: fixed;
+      top: 20px;
+      right: 24px;
+      font-size: 0.85rem;
+      opacity: 0.4;
+    }
     .tabs {
       display: flex;
       flex-direction: column;
@@ -46,7 +53,6 @@
       background: none;
       font-family: Georgia, serif;
       font-size: 1rem;
-      font-weight: bold;
       color: #222;
       cursor: pointer;
       text-align: left;
@@ -72,11 +78,14 @@
       }
       .tab-btn {
         color: #fff;
+        background: none;
+        border: none;
       }
     }
   </style>
 </head>
 <body>
+  <div class="url-tag">cjre.pl/ogle</div>
   <div class="intro">
     <img src="me.jpg" alt="CJ Replogle">
     <p id="typed"></p>
