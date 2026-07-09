@@ -34,6 +34,33 @@
     a {
       color: #333;
     }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-top: 32px;
+    }
+    .tab-btn {
+      padding: 8px 18px;
+      border: 1px solid #bbb;
+      background: none;
+      font-family: Georgia, serif;
+      font-size: 1rem;
+      color: #222;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .tab-btn:hover, .tab-btn.active {
+      background: #222;
+      color: #fff;
+      border-color: #222;
+    }
+    .tab-content {
+      margin-top: 24px;
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
     @media (prefers-color-scheme: dark) {
       body {
         color: #fff;
@@ -41,6 +68,15 @@
       }
       a {
         color: #ccc;
+      }
+      .tab-btn {
+        color: #fff;
+        border-color: #555;
+      }
+      .tab-btn:hover, .tab-btn.active {
+        background: #fff;
+        color: #111;
+        border-color: #fff;
       }
     }
   </style>
@@ -50,6 +86,30 @@
     <img src="me.jpg" alt="CJ Replogle">
     <p id="typed"></p>
   </div>
+  <div class="tabs">
+    <button class="tab-btn" onclick="switchTab('papers')">Papers</button>
+    <button class="tab-btn" onclick="switchTab('projects')">Projects</button>
+    <button class="tab-btn" onclick="switchTab('forfun')">For Fun</button>
+  </div>
+  <div id="papers" class="tab-content">
+    <p>Coming soon.</p>
+  </div>
+  <div id="projects" class="tab-content">
+    <p>Coming soon.</p>
+  </div>
+  <div id="forfun" class="tab-content">
+    <p>Coming soon.</p>
+  </div>
+
+  <script>
+    function switchTab(id) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
+
   <script>
     const segments = [
       { text: "Hi, I'm ", html: false },
