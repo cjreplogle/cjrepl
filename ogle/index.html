@@ -12,6 +12,9 @@
       padding: 0 24px;
       color: #222;
       line-height: 1.6;
+      position: relative;
+      z-index: 1;
+      background: transparent;
     }
     .intro {
       display: flex;
@@ -63,6 +66,7 @@
       overflow: hidden;
       height: 20.6rem;
       margin-top: 8px;
+      background: transparent;
     }
     .tabs {
       display: flex;
@@ -80,20 +84,43 @@
       color: #222;
       cursor: pointer;
       text-align: left;
-      opacity: 0.4;
+      opacity: 0.72;
     }
     .tabs > .tab-btn {
       opacity: 0;
       transform: translateX(-8px);
-      transition: opacity 0.9s ease, transform 0.9s ease;
+      transition: opacity 0.4s ease, transform 0.4s ease;
     }
     .tabs > .tab-btn.visible {
-      opacity: 0.4;
+      opacity: 0.72;
       transform: translateX(0);
+      transition: opacity 0.9s ease, transform 0.9s ease;
+    }
+    .tabs > .tab-btn.visible.repositioning {
+      transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .tab-btn.active, .tabs > .tab-btn.active {
       opacity: 1;
     }
+    .tabs > .tab-btn.receded {
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    .paper-entry { cursor: pointer; margin-bottom: 6px; margin-top: 10px; }
+    .paper-title { padding-left: 1.6em; position: relative; }
+    .paper-title::before { content: ''; position: absolute; left: 0; display: inline-block; }
+    .paper-entry.focused-paper .paper-title::before { content: '> '; animation: bounce-x 0.8s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite; }
+    .paper-title { font-size: 0.85rem; opacity: 0.5; transition: opacity 0.2s ease; }
+    .paper-entry.open .paper-title { opacity: 1; }
+    .paper-citation {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.22s ease;
+      overflow: hidden;
+    }
+    .paper-citation > div { overflow: hidden; }
+    .paper-entry.open .paper-citation { grid-template-rows: 1fr; }
+    .paper-citation p { font-size: 0.8rem; opacity: 0.5; line-height: 1.6; margin: 4px 0 8px; padding-left: 1.6em; }
     .tab-hint {
       font-size: 0.75em;
       opacity: 0;
@@ -131,13 +158,13 @@
     .tab-content {
       display: grid;
       grid-template-rows: 0fr;
-      transition: grid-template-rows 0.3s ease;
+      transition: grid-template-rows 0.5s cubic-bezier(0.4, 0, 0.2, 1);
       overflow: hidden;
     }
     .tab-content > * {
       overflow: hidden;
       opacity: 0;
-      transition: opacity 0.3s ease 0.1s;
+      transition: opacity 0.45s ease 0.15s;
       margin-top: 0;
       margin-bottom: 0;
     }
@@ -147,13 +174,16 @@
     .tab-content.active > * {
       opacity: 1;
     }
+    #backdrop-panel, #backdrop-panel button, #backdrop-panel span, #backdrop-panel input {
+      color: inherit;
+    }
     @media (prefers-color-scheme: dark) {
       body {
         color: #fff;
         background: transparent;
       }
       .intro img {
-        opacity: 0.7;
+        filter: opacity(0.88);
       }
       a {
         color: #ccc;
@@ -175,13 +205,11 @@
   <p style="opacity:0.3;margin:16px 0 12px;line-height:1">—</p>
   <div class="tabs">
     <button class="tab-btn" onclick="switchTab('papers', this)"><span class="selector"> </span>Papers</button>
-    <div id="papers" class="tab-content"><div>
-      <p style="font-size:0.85rem;line-height:1.6">[1] Kurcz, Brian P., Dennis A. DeBernardis, Aaron Roberts, Peter Regala, <strong>Carl J. Replogle</strong>, Cassie M. Fleckenstein, Joseph Nolan, and Samer S. Hasan. "Anatomic total shoulder arthroplasty using a short humeral stem and a non-augmented, minimally cemented all-polyethylene glenoid: minimum 2-year outcome and predictors of clinical failure." In <em>Seminars in Arthroplasty: JSES</em>. WB Saunders, 2025.</p>
-    </div></div>
+    <div id="papers" class="tab-content"><div id="papers-list"></div></div>
     <button class="tab-btn" onclick="switchTab('projects', this)"><span class="selector"> </span>Projects</button>
-    <div id="projects" class="tab-content"><div><p>Coming soon.</p></div></div>
+    <div id="projects" class="tab-content"><div><p style="margin:10px 0 6px;padding-left:1.6em;font-size:0.85rem;opacity:0.5">Coming soon.</p></div></div>
     <button class="tab-btn" onclick="switchTab('ruminations', this)"><span class="selector"> </span>Ruminations</button>
-    <div id="ruminations" class="tab-content"><div id="ruminations-inner"><p style="opacity:0.4;font-size:0.9rem">Loading...</p></div></div>
+    <div id="ruminations" class="tab-content"><div id="ruminations-inner"><p style="opacity:0.4;font-size:0.85rem;padding-left:1.6em;margin:10px 0 6px">Loading...</p></div></div>
     <button class="tab-btn" onclick="switchTab('forfun', this)"><span class="selector"> </span>For Fun</button>
     <div id="forfun" class="tab-content">
       <div>
@@ -220,9 +248,67 @@
     }
 
     function switchTab(id, btn) {
-      const content = document.getElementById(id);
-      content.classList.toggle('active');
-      btn.classList.toggle('active');
+      const topBtnsList = Array.from(document.querySelectorAll('.tabs > .tab-btn'));
+      const isOpening = !btn.classList.contains('active');
+
+      // close all tabs first
+      topBtnsList.forEach(b => {
+        b.classList.remove('active', 'receded');
+        const tabId = tabIds[topBtnsList.indexOf(b)];
+        const tabEl = document.getElementById(tabId);
+        if (tabEl) tabEl.classList.remove('active');
+
+        // animate transforms back to origin, then clear
+        [b, tabEl].forEach(el => {
+          if (!el || !el.style.transform) return;
+          el.style.transition = 'transform 0.55s cubic-bezier(0.4, 0, 0.2, 1)';
+          el.style.transform = 'translateY(0)';
+          el.addEventListener('transitionend', () => {
+            el.style.transform = '';
+            el.style.transition = '';
+          }, { once: true });
+        });
+      });
+
+      if (isOpening) {
+        btn.classList.add('active');
+        document.getElementById(id).classList.add('active');
+        topBtnsList.forEach(b => {
+          if (b !== btn) {
+            b.style.transition = '';
+            b.style.transform = '';
+            b.classList.add('receded');
+          }
+        });
+        // mbOpen is called when the mb-content subtab opens, not when forfun opens
+
+        // force-clear all transforms before measuring to avoid mid-animation skew
+        topBtnsList.forEach(b => {
+          b.style.transition = 'none';
+          b.style.transform = '';
+          const c = document.getElementById(tabIds[topBtnsList.indexOf(b)]);
+          if (c) { c.style.transition = 'none'; c.style.transform = ''; }
+        });
+        // trigger reflow so positions are settled
+        void btn.getBoundingClientRect();
+
+        // slide active button to Papers position
+        const papersBtn = topBtnsList[0];
+        const dy = papersBtn.getBoundingClientRect().top - btn.getBoundingClientRect().top;
+        if (dy !== 0) {
+          const contentEl = document.getElementById(id);
+          [btn, contentEl].forEach(el => {
+            el.style.transition = 'none';
+            el.style.transform = 'translateY(0)';
+          });
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            [btn, contentEl].forEach(el => {
+              el.style.transition = 'opacity 0.5s ease, transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+              el.style.transform = `translateY(${dy}px)`;
+            });
+          }));
+        }
+      }
     }
 
     function switchSubTab(id, btn) {
@@ -234,67 +320,228 @@
       }
     }
 
+    let paperFocus = -1, paperEnterTimer = null;
+
+    function setPaperFocus(idx) {
+      const entries = document.querySelectorAll('.paper-entry');
+      entries.forEach((e, i) => e.classList.toggle('focused-paper', i === idx));
+      paperFocus = idx;
+      // hide/show the Papers tab button selector
+      const papersBtn = document.querySelectorAll('.tabs > .tab-btn')[0];
+      if (idx >= 0) papersBtn.classList.remove('focused');
+      else papersBtn.classList.add('focused');
+    }
+
+    // scroll-driven navigation
+    let scrollAccum = 0;
+    const SCROLL_STEP = 900;
+    let scrollCooldown = false;
+
+    function scrollNavStep(dir) {
+      const mainTabCount = 4; // papers, projects, ruminations, forfun
+      const forfunIdx = 3;
+      const subTabOrder = ['mb-content', 'tb-content']; // subtab ids in order
+      const papersOpen = document.getElementById('papers').classList.contains('active');
+      const forfunOpen = document.getElementById('forfun').classList.contains('active');
+      const anyOpen = tabIds.slice(0, mainTabCount).some(id =>
+        document.getElementById(id).classList.contains('active'));
+
+      // which subtab is currently focused (4 = mb, 5 = tb in btns array)
+      const subFocus = forfunOpen ? (focusedTab === 4 ? 0 : focusedTab === 5 ? 1 : -1) : -1;
+
+      if (dir > 0) {
+        // iterate paper entries
+        if (papersOpen) {
+          const entries = document.querySelectorAll('.paper-entry');
+          if (paperFocus < entries.length - 1) { setPaperFocus(paperFocus + 1); return; }
+          if (paperFocus >= 0) setPaperFocus(-1);
+        }
+        // iterate forfun subtabs
+        if (forfunOpen) {
+          const nextSub = subFocus + 1;
+          if (nextSub < subTabOrder.length) {
+            const subId = subTabOrder[nextSub];
+            const subBtn = btns[4 + nextSub];
+            // close previous subtab if open
+            if (subFocus >= 0) {
+              const prevId = subTabOrder[subFocus];
+              document.getElementById(prevId).classList.remove('active');
+              btns[4 + subFocus].classList.remove('active');
+            }
+            setFocus(4 + nextSub);
+            switchSubTab(subId, subBtn);
+            return;
+          }
+          // past last subtab — close forfun subtabs and fall through to next main tab
+          subTabOrder.forEach((id, i) => {
+            document.getElementById(id).classList.remove('active');
+            btns[4 + i].classList.remove('active');
+          });
+          // stay on forfun, no more main tabs after it
+          return;
+        }
+
+        document.getElementById('typed').classList.add('nav-hidden');
+        if (!anyOpen && focusedTab === -1) {
+          setFocus(0);
+          switchTab(tabIds[0], btns[0]);
+        } else if (focusedTab >= 0 && focusedTab < mainTabCount - 1) {
+          const nextTab = focusedTab + 1;
+          setFocus(nextTab);
+          switchTab(tabIds[nextTab], btns[nextTab]);
+        } else if (focusedTab === forfunIdx && forfunOpen && subFocus === -1) {
+          // just opened forfun — focus first subtab
+          setFocus(4);
+          switchSubTab(subTabOrder[0], btns[4]);
+        }
+      } else {
+        if (papersOpen && paperFocus > 0) { setPaperFocus(paperFocus - 1); return; }
+        if (papersOpen && paperFocus === 0) { setPaperFocus(-1); return; }
+
+        // navigate back through subtabs
+        if (forfunOpen && subFocus >= 0) {
+          document.getElementById(subTabOrder[subFocus]).classList.remove('active');
+          btns[4 + subFocus].classList.remove('active');
+          if (subFocus > 0) {
+            const prevSub = subFocus - 1;
+            setFocus(4 + prevSub);
+            switchSubTab(subTabOrder[prevSub], btns[4 + prevSub]);
+          } else {
+            setFocus(forfunIdx); // back to forfun btn
+          }
+          return;
+        }
+
+        if (focusedTab <= 0) {
+          setFocus(-1);
+          tabIds.slice(0, mainTabCount).forEach(id => {
+            document.getElementById(id).classList.remove('active');
+          });
+          document.querySelectorAll('.tabs > .tab-btn').forEach(b => {
+            b.classList.remove('active', 'receded');
+            b.style.transform = ''; b.style.transition = '';
+          });
+          document.getElementById('typed').classList.remove('nav-hidden');
+        } else {
+          const prevTab = focusedTab - 1;
+          setFocus(prevTab);
+          switchTab(tabIds[prevTab], btns[prevTab]);
+        }
+      }
+    }
+
+    window.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      scrollAccum += e.deltaY;
+      if (Math.abs(scrollAccum) >= SCROLL_STEP && !scrollCooldown) {
+        const dir = scrollAccum > 0 ? 1 : -1;
+        scrollAccum = 0;
+        scrollCooldown = true;
+        scrollNavStep(dir);
+        setTimeout(() => { scrollCooldown = false; }, 550);
+      }
+    }, { passive: false });
+
     document.addEventListener('keydown', function(e) {
       const inEdit = document.getElementById('typed').getAttribute('contenteditable') === 'true' &&
                      document.activeElement === document.getElementById('typed');
       if (inEdit && e.key !== 'ArrowDown' && e.key !== 'ArrowUp' &&
           !(e.key === 'Enter' && focusedTab >= 0)) return;
 
+      const papersOpen = document.getElementById('papers').classList.contains('active');
+
       if (e.key === 'ArrowDown') {
         e.preventDefault();
+        if (papersOpen) {
+          const entries = document.querySelectorAll('.paper-entry');
+          if (paperFocus < entries.length - 1) { setPaperFocus(paperFocus + 1); return; }
+        }
         document.getElementById('typed').classList.add('nav-hidden');
         document.getElementById('typed').blur();
         if (focusedTab === -1) setFocus(0);
         else setFocus(Math.min(focusedTab + 1, btns.length - 1));
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
+        if (papersOpen && paperFocus > 0) { setPaperFocus(paperFocus - 1); return; }
+        if (papersOpen && paperFocus === 0) { setPaperFocus(-1); return; }
         if (focusedTab <= 0) {
           setFocus(-1);
-          const t = document.getElementById('typed');
-          t.classList.remove('nav-hidden');
-          if (t.getAttribute('contenteditable') === 'true') {
-            t.focus();
-            const range = document.createRange();
-            range.selectNodeContents(t);
-            range.collapse(false);
-            const sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(range);
-          }
+          document.getElementById('typed').classList.remove('nav-hidden');
         }
         else setFocus(focusedTab - 1);
-      } else if (e.key === 'Enter' && focusedTab >= 0) {
+      } else if (e.key === 'Enter') {
         e.preventDefault();
-        const id = tabIds[focusedTab];
-        if (subTabIds.has(id)) switchSubTab(id, btns[focusedTab]);
-        else switchTab(id, btns[focusedTab]);
+        if (papersOpen && paperFocus >= 0) {
+          if (paperEnterTimer) {
+            clearTimeout(paperEnterTimer);
+            paperEnterTimer = null;
+            window.open(PAPERS[paperFocus].doi, '_blank');
+          } else {
+            paperEnterTimer = setTimeout(() => {
+              paperEnterTimer = null;
+              const entries = document.querySelectorAll('.paper-entry');
+              if (entries[paperFocus]) entries[paperFocus].classList.toggle('open');
+            }, 220);
+          }
+          return;
+        }
+        if (focusedTab >= 0) {
+          const id = tabIds[focusedTab];
+          if (subTabIds.has(id)) switchSubTab(id, btns[focusedTab]);
+          else switchTab(id, btns[focusedTab]);
+        }
       }
     });
   </script>
 
   <script>
     const segments = [
-      { text: "Hi, I'm ", html: false },
-      { text: "CJ Replogle", html: false, bold: true },
-      { text: ". I'm currently an incoming medical student @ ", html: false },
-      { text: "University of Cincinnati", html: false, link: "https://med.uc.edu" },
-      { text: ". I like making stuff in my research / spare time, this page should have most of my public work compiled. :)", html: false },
+      { text: "Hi, I'm " },
+      { text: "CJ Replogle", bold: true },
+      { text: ". I'm a biomedical engineering student @ Ohio State." },
+      { backspace: "student @ Ohio State.".length, pauseBefore: 500 },
+      { text: "graduate of Ohio State." },
+      { backspace: ". I'm a biomedical engineering graduate of Ohio State.".length, pauseBefore: 900 },
+      { text: ". I'm currently an incoming medical student @ " },
+      { text: "University of Cincinnati", link: "https://med.uc.edu" },
+      { text: ". I like making stuff in my research / spare time, this page should have most of my public work compiled. :)" },
     ];
 
     const el = document.getElementById('typed');
-    let segIndex = 0, charIndex = 0;
+    let segIndex = 0, charIndex = 0, deleteCount = 0;
 
-    function buildHTML() {
-      let result = '';
+    function buildHTML(activeDel) {
+      // replay all segments as character operations
+      let chars = []; // {ch, bold, link}
       for (let i = 0; i <= segIndex && i < segments.length; i++) {
         const seg = segments[i];
+        if (seg.backspace !== undefined) {
+          const count = i === segIndex ? (activeDel || 0) : seg.backspace;
+          chars = chars.slice(0, Math.max(0, chars.length - count));
+          if (i === segIndex) break;
+          continue;
+        }
         const text = i < segIndex ? seg.text : seg.text.slice(0, charIndex);
-        result += wrap(seg, text);
+        for (const ch of text) chars.push({ ch, bold: seg.bold || false, link: seg.link || null });
+        if (i === segIndex) break;
       }
-      return result;
+      // render chars back to HTML, grouping consecutive same-format runs
+      let html = '', j = 0;
+      while (j < chars.length) {
+        const c = chars[j];
+        if (c.bold) {
+          let s = ''; while (j < chars.length && chars[j].bold) s += chars[j++].ch;
+          html += `<strong>${s}</strong>`;
+        } else if (c.link) {
+          let s = '', l = c.link; while (j < chars.length && chars[j].link === l) s += chars[j++].ch;
+          html += `<a href="${l}">${s}</a>`;
+        } else { html += c.ch; j++; }
+      }
+      return html;
     }
 
     function wrap(seg, text) {
+      if (!text) return '';
       if (seg.bold) return `<strong>${text}</strong>`;
       if (seg.link) return `<a href="${seg.link}">${text}</a>`;
       return text;
@@ -308,18 +555,34 @@
     function type() {
       if (segIndex >= segments.length) return;
       const seg = segments[segIndex];
+
+      // backspace segment
+      if (seg.backspace !== undefined) {
+        if (deleteCount === 0 && seg.pauseBefore) {
+          deleteCount = -1; // sentinel to skip pause next time
+          setTimeout(type, seg.pauseBefore);
+          return;
+        }
+        if (deleteCount < 0) deleteCount = 0;
+        if (deleteCount < seg.backspace) {
+          deleteCount++;
+          el.innerHTML = buildHTML(deleteCount);
+          setTimeout(type, 10);
+          return;
+        }
+        segIndex++; charIndex = 0; deleteCount = 0;
+        setTimeout(type, 0);
+        return;
+      }
+
       if (charIndex < seg.text.length) {
         charIndex++;
       } else {
-        segIndex++;
-        charIndex = 0;
+        segIndex++; charIndex = 0;
         if (segIndex === 2) { revealTab(0); setTimeout(() => revealTab(1), 250); setTimeout(() => revealTab(2), 500); setTimeout(() => revealTab(3), 750); }
         if (segIndex >= segments.length) {
           el.innerHTML = buildHTML();
-          if (!('ontouchstart' in window)) {
-            el.contentEditable = 'true';
-            el.focus();
-          }
+          if (!('ontouchstart' in window)) { el.contentEditable = 'true'; el.focus(); }
           return;
         }
         setTimeout(type, 0);
@@ -327,40 +590,189 @@
       }
       el.innerHTML = buildHTML();
       const ch = seg.text[charIndex - 1];
-      const delay = ch === '.' ? 250 : 12;
+      const delay = ch === '.' ? 200 : 5;
       setTimeout(type, delay);
     }
 
     function reset() {
       el.contentEditable = 'false';
-      segIndex = segments.length;
-      charIndex = 0;
+      deleteCount = 0;
+      segIndex = segments.length - 1; charIndex = segments[segments.length - 1].text.length;
       el.innerHTML = buildHTML();
       topBtns.forEach(b => b.classList.add('visible'));
+      if (typeof resetHint === 'function') resetHint();
       if (!('ontouchstart' in window)) {
         el.contentEditable = 'true';
         el.focus();
       }
     }
 
-    el.addEventListener('keydown', function(e) {
-      if (e.key === 'Backspace') {
-        e.preventDefault();
-        reset();
-      }
+    const escHint = document.getElementById('esc-hint');
+
+    el.addEventListener('input', function() {
+      if (el.textContent.trim() === '') { reset(); return; }
+      escHint.style.opacity = '0.3';
     });
+
+    el.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') { e.preventDefault(); reset(); }
+    });
+
+    function resetHint() { escHint.style.opacity = '0'; }
 
     type();
   </script>
-  <p style="position:fixed;bottom:6px;right:10px;font-size:0.75rem;opacity:0.3;margin:0;display:flex;gap:8px;align-items:baseline">
+  <div style="position:fixed;bottom:0;left:0;right:0;height:100vh;pointer-events:none;display:flex;flex-direction:column;justify-content:flex-end;-webkit-mask-image:linear-gradient(to top,rgba(0,0,0,0.9) 0%,rgba(0,0,0,0.75) 30%,rgba(0,0,0,0.5) 60%,rgba(0,0,0,0.15) 85%,transparent 100%);mask-image:linear-gradient(to top,rgba(0,0,0,0.9) 0%,rgba(0,0,0,0.75) 30%,rgba(0,0,0,0.5) 60%,rgba(0,0,0,0.15) 85%,transparent 100%);z-index:0;opacity:0.65">
+    <div id="fire" style="font-family:monospace;font-size:0.75rem;line-height:1.15;white-space:pre;overflow:hidden"></div>
+  </div>
+  <p id="esc-hint" style="position:fixed;bottom:6px;left:10px;font-size:0.75rem;opacity:0;margin:0;transition:opacity 0.3s ease;pointer-events:none">press esc to reset</p>
+  <div id="fps-counter" style="display:none;position:fixed;bottom:6px;left:10px;font-size:0.7rem;opacity:0.5;margin:0;font-family:monospace;z-index:20;pointer-events:none"></div>
+  <script>
+    (function() {
+      const el = document.getElementById('fps-counter');
+      // toggle with backtick
+      document.addEventListener('keydown', e => {
+        if (e.key === '`') el.style.display = el.style.display === 'none' ? '' : 'none';
+      });
+      let frames = 0, last = performance.now();
+      function tick() {
+        frames++;
+        const now = performance.now();
+        if (now - last >= 500) {
+          el.textContent = Math.round(frames / ((now - last) / 1000)) + ' fps';
+          frames = 0; last = now;
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    })();
+  </script>
+  <div id="backdrop-panel" style="display:none;position:fixed;bottom:28px;right:10px;font-size:0.75rem;color:inherit;background:rgba(128,128,128,0.18);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(128,128,128,0.25);border-radius:6px;padding:8px 10px;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,0.18);min-width:180px">
+    <div style="margin-bottom:6px">
+      <span style="opacity:0.5;margin-right:6px">backdrop</span>
+      <button onclick="setBackdrop('water')" id="bd-water" style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">water</button>
+      <button onclick="setBackdrop('fire')"  id="bd-fire"  style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">fire</button>
+      <button onclick="setBackdrop('voronoi')" id="bd-voronoi" style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">voronoi</button>
+      <button onclick="setBackdrop('rays')"   id="bd-rays"   style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">rays</button>
+      <button onclick="setBackdrop('clouds')"    id="bd-clouds"    style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">clouds</button>
+      <button onclick="setBackdrop('fireworks')" id="bd-fireworks" style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">fireworks</button>
+      <button onclick="setBackdrop('snow')"      id="bd-snow"      style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">snow</button>
+      <button onclick="setBackdrop('borealis')" id="bd-borealis" style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">borealis</button>
+      <button onclick="setBackdrop('off')"   id="bd-off"   style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">off</button>
+    </div>
+    <div style="display:grid;grid-template-columns:max-content 1fr;gap:4px 8px;align-items:center;margin-top:4px">
+      <span style="opacity:0.5;font-size:0.7rem">opacity</span>
+      <input id="bd-opacity" type="range" min="0" max="1" step="0.05" style="accent-color:currentColor" oninput="setBackdropOpacity(this.value)">
+      <span style="opacity:0.5;font-size:0.7rem">speed</span>
+      <input id="bd-speed" type="range" min="0.25" max="4" step="0.05" style="accent-color:currentColor" oninput="setBackdropSpeed(this.value)">
+    </div>
+  </div>
+  <p style="position:fixed;bottom:6px;right:10px;font-size:0.75rem;opacity:0.6;margin:0;display:flex;gap:8px;align-items:baseline">
     <span id="last-updated"></span>
+    <button onclick="toggleBackdropPanel()" style="font:inherit;font-size:0.75rem;background:none;border:none;cursor:pointer;padding:0;opacity:0.7;color:inherit" title="backdrop">◈</button>
     <a href="admin.html" style="text-decoration:none;color:inherit;opacity:0.7">✎</a>
   </p>
+  <script>
+    const _now = new Date();
+    if (_now.getMonth() === 6 && _now.getDate() === 4) {
+      localStorage.setItem('backdrop', 'fireworks');
+      window._fwFestive = true;
+    }
+    const BACKDROP_WRAP = document.querySelector('[id="fire"]').parentElement;
+    function getBackdropOpacity() { return parseFloat(localStorage.getItem('backdropOpacity') || '0.82'); }
+    BACKDROP_WRAP.style.opacity = getBackdropOpacity();
+
+    function setBackdropOpacity(val) {
+      localStorage.setItem('backdropOpacity', val);
+      BACKDROP_WRAP.style.opacity = val;
+    }
+    window._backdropSpeed = parseFloat(localStorage.getItem('backdropSpeed') || '1');
+    function setBackdropSpeed(val) {
+      localStorage.setItem('backdropSpeed', val);
+      window._backdropSpeed = parseFloat(val);
+    }
+
+    function toggleBackdropPanel() {
+      const p = document.getElementById('backdrop-panel');
+      const opening = p.style.display === 'none';
+      p.style.display = opening ? '' : 'none';
+      if (opening) {
+        document.getElementById('bd-opacity').value = getBackdropOpacity();
+        document.getElementById('bd-speed').value = localStorage.getItem('backdropSpeed') || '1';
+      }
+    }
+    function setBackdrop(mode) {
+      localStorage.setItem('backdrop', mode);
+      if (window.stopWater)   window.stopWater();
+      if (window.stopFire)    window.stopFire();
+      if (window.stopVoronoi) window.stopVoronoi();
+      if (window.stopRays)   window.stopRays();
+      if (window.stopClouds)     window.stopClouds();
+      if (window.stopFireworks)  window.stopFireworks();
+      if (window.stopSnow)       window.stopSnow();
+      if (window.stopBorealis)   window.stopBorealis();
+      if (mode === 'water'   && window.startWater)   window.startWater();
+      if (mode === 'fire'    && window.startFire)    window.startFire();
+      if (mode === 'voronoi' && window.startVoronoi) window.startVoronoi();
+      if (mode === 'rays'    && window.startRays)    window.startRays();
+      if (mode === 'clouds'     && window.startClouds)     window.startClouds();
+      if (mode === 'snow'       && window.startSnow)       window.startSnow();
+      if (mode === 'borealis'   && window.startBorealis)   window.startBorealis();
+      if (mode === 'fireworks'  && window.startFireworks) {
+        window._fwFestive = (new Date().getMonth() === 6 && new Date().getDate() === 4);
+        window.startFireworks();
+      }
+      document.querySelectorAll('#backdrop-panel button').forEach(b => b.style.fontWeight = '');
+      const active = document.getElementById('bd-' + mode);
+      if (active) active.style.fontWeight = 'bold';
+      document.getElementById('backdrop-panel').style.display = 'none';
+    }
+    // highlight active on open
+    document.querySelector('[onclick="toggleBackdropPanel()"]').addEventListener('click', () => {
+      const mode = localStorage.getItem('backdrop') || 'water';
+      document.querySelectorAll('#backdrop-panel button').forEach(b => b.style.fontWeight = '');
+      const active = document.getElementById('bd-' + mode);
+      if (active) active.style.fontWeight = 'bold';
+    });
+    // close on outside click
+    document.addEventListener('click', e => {
+      const panel = document.getElementById('backdrop-panel');
+      if (panel.style.display === 'none') return;
+      if (!panel.contains(e.target) && !e.target.closest('[onclick="toggleBackdropPanel()"]'))
+        panel.style.display = 'none';
+    });
+  </script>
   <script>
     const d = new Date(document.lastModified);
     document.getElementById('last-updated').textContent =
       'last updated ' + d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   </script>
+  <script>
+    const PAPERS = [
+      {
+        title: 'Anatomic total shoulder arthroplasty using a short humeral stem and a non-augmented, minimally cemented all-polyethylene glenoid',
+        citation: 'Kurcz, Brian P., Dennis A. DeBernardis, Aaron Roberts, Peter Regala, <strong>Carl J. Replogle</strong>, Cassie M. Fleckenstein, Joseph Nolan, and Samer S. Hasan. In <em>Seminars in Arthroplasty: JSES</em>. WB Saunders, 2025.',
+        doi: 'https://doi.org/10.1053/j.sart.2025.04.007',
+      },
+      {
+        title: 'Mesh-Based Surface Segmentation of the Knee Joint for Quantitative MicroCT Analysis',
+        citation: '<strong>Replogle, Carl J.</strong> Undergraduate thesis, <em>The Ohio State University College of Engineering</em>, 2026.',
+        doi: 'https://kb.osu.edu/items/b68dd76c-ea0e-41d7-a6d5-6281b7965311',
+      },
+    ];
+
+    (function renderPapers() {
+      const list = document.getElementById('papers-list');
+      list.innerHTML = PAPERS.map((p, i) => `
+        <div class="paper-entry" onclick="if(!window.getSelection().toString())this.classList.toggle('open')">
+          <div class="paper-title">${p.title}</div>
+          <div class="paper-citation"><div>
+            <p>${p.citation} <a href="${p.doi}" target="_blank" onclick="event.stopPropagation()">${p.doi}</a></p>
+          </div></div>
+        </div>`).join('');
+    })();
+  </script>
+
   <script>
     function loadRuminations() {
       fetch('ruminations.json?t=' + Date.now())
@@ -368,22 +780,30 @@
         .then(posts => {
           const el = document.getElementById('ruminations-inner');
           if (!posts.length) {
-            el.innerHTML = '<p style="opacity:0.4;font-size:0.9rem">Nothing yet.</p>';
+            el.innerHTML = '<p style="opacity:0.4;font-size:0.85rem;padding-left:1.6em;margin:10px 0 6px">Nothing yet.</p>';
             return;
           }
           el.innerHTML = posts.map(p => `
-            <div style="margin-bottom:1.4em">
+            <div style="margin:10px 0 1.4em;padding-left:1.6em">
               <p style="font-size:0.75rem;opacity:0.35;margin:0 0 4px">${p.date}</p>
-              <p style="font-size:0.9rem;margin:0;white-space:pre-wrap">${p.body}</p>
+              <p style="font-size:0.85rem;margin:0;white-space:pre-wrap">${p.body}</p>
             </div>`).join('');
         })
         .catch(() => {
           document.getElementById('ruminations-inner').innerHTML =
-            '<p style="opacity:0.4;font-size:0.9rem">Could not load posts.</p>';
+            '<p style="opacity:0.4;font-size:0.85rem;padding-left:1.6em;margin:10px 0 6px">Could not load posts.</p>';
         });
     }
     loadRuminations();
   </script>
+  <script src="water.js" defer></script>
+  <script src="fire.js" defer></script>
+  <script src="voronoi.js" defer></script>
+  <script src="rays.js" defer></script>
+  <script src="clouds.js" defer></script>
+  <script src="fireworks.js" defer></script>
+  <script src="snow.js" defer></script>
+  <script src="borealis.js" defer></script>
   <script src="mandelbrot.js" defer></script>
   <script src="threebody.js" defer></script>
 </body>
