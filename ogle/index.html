@@ -6,14 +6,15 @@
   <title>CJ Replogle</title>
   <style>
     html {
-      background: #f5f4f0;
+      background: #111;
+      color-scheme: dark;
     }
     body {
       font-family: Georgia, serif;
       max-width: 600px;
       margin: 80px auto;
       padding: 0 24px;
-      color: #222;
+      color: #fff;
       line-height: 1.6;
       position: relative;
       z-index: 1;
@@ -84,7 +85,7 @@
       background: none;
       font-family: Georgia, serif;
       font-size: 1rem;
-      color: #222;
+      color: #fff;
       cursor: pointer;
       text-align: left;
       opacity: 0.72;
@@ -180,19 +181,12 @@
     #backdrop-panel, #backdrop-panel button, #backdrop-panel span, #backdrop-panel input {
       color: inherit;
     }
+    a {
+      color: #ccc;
+    }
     @media (prefers-color-scheme: dark) {
-      html {
-        background: #1a1a1a;
-      }
-      body {
-        color: #fff;
-        background: transparent;
-      }
       .intro img {
         filter: opacity(0.88);
-      }
-      a {
-        color: #ccc;
       }
       .tab-btn {
         color: #fff;
