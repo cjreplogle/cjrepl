@@ -458,23 +458,12 @@
 
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        if (papersOpen) {
-          const entries = document.querySelectorAll('.paper-entry');
-          if (paperFocus < entries.length - 1) { setPaperFocus(paperFocus + 1); return; }
-        }
         document.getElementById('typed').classList.add('nav-hidden');
         document.getElementById('typed').blur();
-        if (focusedTab === -1) setFocus(0);
-        else setFocus(Math.min(focusedTab + 1, btns.length - 1));
+        scrollNavStep(1);
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        if (papersOpen && paperFocus > 0) { setPaperFocus(paperFocus - 1); return; }
-        if (papersOpen && paperFocus === 0) { setPaperFocus(-1); return; }
-        if (focusedTab <= 0) {
-          setFocus(-1);
-          document.getElementById('typed').classList.remove('nav-hidden');
-        }
-        else setFocus(focusedTab - 1);
+        scrollNavStep(-1);
       } else if (e.key === 'Enter') {
         e.preventDefault();
         if (papersOpen && paperFocus >= 0) {
