@@ -36,23 +36,24 @@
     }
     .tabs {
       display: flex;
-      gap: 8px;
+      flex-direction: column;
+      gap: 4px;
       margin-top: 32px;
     }
     .tab-btn {
-      padding: 8px 18px;
-      border: 1px solid #bbb;
+      padding: 0;
+      border: none;
       background: none;
       font-family: Georgia, serif;
       font-size: 1rem;
+      font-weight: bold;
       color: #222;
       cursor: pointer;
-      border-radius: 4px;
+      text-align: left;
+      opacity: 0.4;
     }
     .tab-btn:hover, .tab-btn.active {
-      background: #222;
-      color: #fff;
-      border-color: #222;
+      opacity: 1;
     }
     .tab-content {
       margin-top: 24px;
@@ -71,12 +72,6 @@
       }
       .tab-btn {
         color: #fff;
-        border-color: #555;
-      }
-      .tab-btn:hover, .tab-btn.active {
-        background: #fff;
-        color: #111;
-        border-color: #fff;
       }
     }
   </style>
