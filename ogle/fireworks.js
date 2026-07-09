@@ -168,7 +168,7 @@ const fwClickHandler = e => {
 
 window.startFireworks = () => {
   if (fwRunning) return;
-  fwInit(Math.ceil(window.innerWidth / 7.2));
+  fwInit((function(){var el=document.getElementById("fire");var w=el?el.getBoundingClientRect().width||window.innerWidth:window.innerWidth;var p=document.createElement("span");p.style.cssText="font-family:monospace;font-size:0.75rem;visibility:hidden;position:fixed";p.textContent="X";document.body.appendChild(p);var cw=p.getBoundingClientRect().width||7.2;document.body.removeChild(p);return Math.ceil(w/cw);})());
   fwRunning = true;
   window.addEventListener('click', fwClickHandler);
   requestAnimationFrame(fwFrame);

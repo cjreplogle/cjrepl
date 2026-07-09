@@ -109,7 +109,7 @@ function vorFrame() {
 
 window.startVoronoi = () => {
   if (vorRunning) return;
-  vorInit(Math.ceil(window.innerWidth / 7.2));
+  vorInit((function(){var el=document.getElementById("fire");var w=el?el.getBoundingClientRect().width||window.innerWidth:window.innerWidth;var p=document.createElement("span");p.style.cssText="font-family:monospace;font-size:0.75rem;visibility:hidden;position:fixed";p.textContent="X";document.body.appendChild(p);var cw=p.getBoundingClientRect().width||7.2;document.body.removeChild(p);return Math.ceil(w/cw);})());
   vorRunning = true;
   requestAnimationFrame(vorFrame);
 };
