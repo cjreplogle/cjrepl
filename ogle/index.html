@@ -25,6 +25,7 @@
       width: 51px;
       height: 51px;
       object-fit: cover;
+      transform: rotate(-90deg);
       opacity: 0;
       animation: fadein 0.3s ease forwards;
     }
@@ -34,7 +35,7 @@
     #typed:focus {
       outline: none;
     }
-    #typed:not([contenteditable="true"])::after {
+    #typed:not([contenteditable="true"]):not(.nav-hidden)::after {
       content: '|';
       animation: blink 0.7s step-end infinite;
     }
@@ -50,6 +51,18 @@
       right: 24px;
       font-size: 0.85rem;
       opacity: 0.4;
+    }
+    #mandelbrot {
+      font-family: monospace;
+      font-size: 0.6rem;
+      line-height: 1.1;
+      white-space: pre;
+      opacity: 0.7;
+      pointer-events: auto;
+      cursor: grab;
+      overflow: hidden;
+      height: 20.6rem;
+      margin-top: 8px;
     }
     .tabs {
       display: flex;
@@ -69,8 +82,42 @@
       text-align: left;
       opacity: 0.4;
     }
-    .tab-btn:hover, .tab-btn.active {
+    .tabs > .tab-btn {
+      opacity: 0;
+      transform: translateX(-8px);
+      transition: opacity 0.9s ease, transform 0.9s ease;
+    }
+    .tabs > .tab-btn.visible {
+      opacity: 0.4;
+      transform: translateX(0);
+    }
+    .tab-btn.active, .tabs > .tab-btn.active {
       opacity: 1;
+    }
+    .tab-hint {
+      font-size: 0.75em;
+      opacity: 0;
+      display: inline-block;
+      transform: translateX(-6px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .tab-btn.active .tab-hint {
+      opacity: 0.45;
+      transform: translateX(0);
+    }
+    .selector {
+      display: inline-block;
+      width: 1.6em;
+    }
+    @keyframes bounce-x {
+      0%, 100% { transform: translateX(0); }
+      40% { transform: translateX(7px); }
+      60% { transform: translateX(5px); }
+    }
+    .tab-btn.focused .selector::before {
+      content: '> ';
+      animation: bounce-x 0.8s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite;
+      display: inline-block;
     }
     @media (hover: hover) {
       .tab-btn:hover {
@@ -103,7 +150,10 @@
     @media (prefers-color-scheme: dark) {
       body {
         color: #fff;
-        background: #111;
+        background: transparent;
+      }
+      .intro img {
+        opacity: 0.7;
       }
       a {
         color: #ccc;
@@ -122,26 +172,104 @@
     <img src="me.jpg" alt="CJ Replogle">
     <p id="typed"></p>
   </div>
+  <p style="opacity:0.3;margin:16px 0 12px;line-height:1">—</p>
   <div class="tabs">
-    <button class="tab-btn" onclick="switchTab('papers', this)">Papers</button>
-    <div id="papers" class="tab-content"><p>Coming soon.</p></div>
-    <button class="tab-btn" onclick="switchTab('projects', this)">Projects</button>
-    <div id="projects" class="tab-content"><p>Coming soon.</p></div>
-    <button class="tab-btn" onclick="switchTab('forfun', this)">For Fun</button>
-    <div id="forfun" class="tab-content"><p>Coming soon.</p></div>
+    <button class="tab-btn" onclick="switchTab('papers', this)"><span class="selector"> </span>Papers</button>
+    <div id="papers" class="tab-content"><div>
+      <p style="font-size:0.85rem;line-height:1.6">[1] Kurcz, Brian P., Dennis A. DeBernardis, Aaron Roberts, Peter Regala, <strong>Carl J. Replogle</strong>, Cassie M. Fleckenstein, Joseph Nolan, and Samer S. Hasan. "Anatomic total shoulder arthroplasty using a short humeral stem and a non-augmented, minimally cemented all-polyethylene glenoid: minimum 2-year outcome and predictors of clinical failure." In <em>Seminars in Arthroplasty: JSES</em>. WB Saunders, 2025.</p>
+    </div></div>
+    <button class="tab-btn" onclick="switchTab('projects', this)"><span class="selector"> </span>Projects</button>
+    <div id="projects" class="tab-content"><div><p>Coming soon.</p></div></div>
+    <button class="tab-btn" onclick="switchTab('ruminations', this)"><span class="selector"> </span>Ruminations</button>
+    <div id="ruminations" class="tab-content"><div id="ruminations-inner"><p style="opacity:0.4;font-size:0.9rem">Loading...</p></div></div>
+    <button class="tab-btn" onclick="switchTab('forfun', this)"><span class="selector"> </span>For Fun</button>
+    <div id="forfun" class="tab-content">
+      <div>
+        <button class="tab-btn" onclick="switchSubTab('mb-content', this)" style="font-size:0.85rem;margin-top:8px"><span class="selector"> </span>mandelbrot<span class="tab-hint"> — drag · scroll · dblclick to tour</span></button>
+        <div id="mb-content" class="tab-content"><div>
+          <div style="position:relative">
+            <div id="mandelbrot"></div>
+            <div id="mb-label" style="position:absolute;top:0;right:0;font-family:monospace;font-size:0.6rem;opacity:0.4;pointer-events:none"></div>
+          </div>
+        </div></div>
+        <button class="tab-btn" onclick="switchSubTab('tb-content', this)" style="margin-top:4px;font-size:0.85rem"><span class="selector"> </span>three-body<span class="tab-hint"> — click to cycle · dblclick to randomize</span></button>
+        <div id="tb-content" class="tab-content"><div>
+          <div style="position:relative">
+            <div id="threebody" style="font-family:monospace;font-size:0.75rem;line-height:1.1;white-space:pre;overflow:hidden;height:24rem;"></div>
+            <div id="tb-label" style="position:absolute;top:0;right:0;font-family:monospace;font-size:0.6rem;opacity:0.4;pointer-events:none"></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
   </div>
 
   <script>
-    function switchTab(id, btn) {
-      const content = document.getElementById(id);
-      const isOpen = content.classList.contains('active');
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      if (!isOpen) {
-        content.classList.add('active');
-        btn.classList.add('active');
+    const tabIds = ['papers', 'projects', 'ruminations', 'forfun', 'mb-content', 'tb-content'];
+    const subTabIds = new Set(['mb-content', 'tb-content']);
+    const btns = document.querySelectorAll('.tab-btn');
+    let focusedTab = -1; // -1 = none focused
+
+    function setFocus(idx) {
+      btns.forEach(b => b.classList.remove('focused'));
+      if (idx >= 0 && idx < btns.length) {
+        btns[idx].classList.add('focused');
+        focusedTab = idx;
+      } else {
+        focusedTab = -1;
       }
     }
+
+    function switchTab(id, btn) {
+      const content = document.getElementById(id);
+      content.classList.toggle('active');
+      btn.classList.toggle('active');
+    }
+
+    function switchSubTab(id, btn) {
+      const content = document.getElementById(id);
+      content.classList.toggle('active');
+      btn.classList.toggle('active');
+      if (id === 'mb-content' && content.classList.contains('active')) {
+        if (window.mbOpen) window.mbOpen();
+      }
+    }
+
+    document.addEventListener('keydown', function(e) {
+      const inEdit = document.getElementById('typed').getAttribute('contenteditable') === 'true' &&
+                     document.activeElement === document.getElementById('typed');
+      if (inEdit && e.key !== 'ArrowDown' && e.key !== 'ArrowUp' &&
+          !(e.key === 'Enter' && focusedTab >= 0)) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        document.getElementById('typed').classList.add('nav-hidden');
+        document.getElementById('typed').blur();
+        if (focusedTab === -1) setFocus(0);
+        else setFocus(Math.min(focusedTab + 1, btns.length - 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (focusedTab <= 0) {
+          setFocus(-1);
+          const t = document.getElementById('typed');
+          t.classList.remove('nav-hidden');
+          if (t.getAttribute('contenteditable') === 'true') {
+            t.focus();
+            const range = document.createRange();
+            range.selectNodeContents(t);
+            range.collapse(false);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+          }
+        }
+        else setFocus(focusedTab - 1);
+      } else if (e.key === 'Enter' && focusedTab >= 0) {
+        e.preventDefault();
+        const id = tabIds[focusedTab];
+        if (subTabIds.has(id)) switchSubTab(id, btns[focusedTab]);
+        else switchTab(id, btns[focusedTab]);
+      }
+    });
   </script>
 
   <script>
@@ -150,7 +278,7 @@
       { text: "CJ Replogle", html: false, bold: true },
       { text: ". I'm currently an incoming medical student @ ", html: false },
       { text: "University of Cincinnati", html: false, link: "https://med.uc.edu" },
-      { text: ". I like making stuff in my research / spare time, this should have most of my public work compiled. :)", html: false },
+      { text: ". I like making stuff in my research / spare time, this page should have most of my public work compiled. :)", html: false },
     ];
 
     const el = document.getElementById('typed');
@@ -172,6 +300,11 @@
       return text;
     }
 
+    const topBtns = Array.from(document.querySelectorAll('.tabs > .tab-btn'));
+    function revealTab(i) {
+      if (topBtns[i]) topBtns[i].classList.add('visible');
+    }
+
     function type() {
       if (segIndex >= segments.length) return;
       const seg = segments[segIndex];
@@ -180,6 +313,7 @@
       } else {
         segIndex++;
         charIndex = 0;
+        if (segIndex === 2) { revealTab(0); setTimeout(() => revealTab(1), 250); setTimeout(() => revealTab(2), 500); setTimeout(() => revealTab(3), 750); }
         if (segIndex >= segments.length) {
           el.innerHTML = buildHTML();
           if (!('ontouchstart' in window)) {
@@ -193,7 +327,7 @@
       }
       el.innerHTML = buildHTML();
       const ch = seg.text[charIndex - 1];
-      const delay = ch === '.' ? 250 : 15;
+      const delay = ch === '.' ? 250 : 12;
       setTimeout(type, delay);
     }
 
@@ -202,6 +336,7 @@
       segIndex = segments.length;
       charIndex = 0;
       el.innerHTML = buildHTML();
+      topBtns.forEach(b => b.classList.add('visible'));
       if (!('ontouchstart' in window)) {
         el.contentEditable = 'true';
         el.focus();
@@ -217,5 +352,39 @@
 
     type();
   </script>
+  <p style="position:fixed;bottom:6px;right:10px;font-size:0.75rem;opacity:0.3;margin:0;display:flex;gap:8px;align-items:baseline">
+    <span id="last-updated"></span>
+    <a href="admin.html" style="text-decoration:none;color:inherit;opacity:0.7">✎</a>
+  </p>
+  <script>
+    const d = new Date(document.lastModified);
+    document.getElementById('last-updated').textContent =
+      'last updated ' + d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  </script>
+  <script>
+    function loadRuminations() {
+      fetch('ruminations.json?t=' + Date.now())
+        .then(r => r.json())
+        .then(posts => {
+          const el = document.getElementById('ruminations-inner');
+          if (!posts.length) {
+            el.innerHTML = '<p style="opacity:0.4;font-size:0.9rem">Nothing yet.</p>';
+            return;
+          }
+          el.innerHTML = posts.map(p => `
+            <div style="margin-bottom:1.4em">
+              <p style="font-size:0.75rem;opacity:0.35;margin:0 0 4px">${p.date}</p>
+              <p style="font-size:0.9rem;margin:0;white-space:pre-wrap">${p.body}</p>
+            </div>`).join('');
+        })
+        .catch(() => {
+          document.getElementById('ruminations-inner').innerHTML =
+            '<p style="opacity:0.4;font-size:0.9rem">Could not load posts.</p>';
+        });
+    }
+    loadRuminations();
+  </script>
+  <script src="mandelbrot.js" defer></script>
+  <script src="threebody.js" defer></script>
 </body>
 </html>

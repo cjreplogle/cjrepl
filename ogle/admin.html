@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ruminations — Admin</title>
+  <style>
+    body { font-family: Georgia, serif; max-width: 540px; margin: 60px auto; padding: 0 24px; color: #222; line-height: 1.6; }
+    h2 { font-size: 1rem; font-weight: normal; opacity: 0.5; margin-bottom: 24px; }
+    label { display: block; font-size: 0.85rem; opacity: 0.6; margin-bottom: 4px; margin-top: 16px; }
+    input, textarea { width: 100%; box-sizing: border-box; font-family: Georgia, serif; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 3px; padding: 8px; }
+    textarea { height: 180px; resize: vertical; }
+    button { margin-top: 20px; font-family: Georgia, serif; font-size: 0.95rem; background: none; border: 1px solid #aaa; padding: 6px 18px; cursor: pointer; border-radius: 3px; }
+    button:hover { background: #f5f5f5; }
+    #status { margin-top: 14px; font-size: 0.85rem; opacity: 0.6; }
+    .meta { font-size: 0.8rem; opacity: 0.4; margin-bottom: 24px; }
+    @media (prefers-color-scheme: dark) {
+      body { color: #fff; background: #111; }
+      input, textarea { background: #222; border-color: #444; color: #fff; }
+      button { color: #fff; border-color: #555; }
+      button:hover { background: #2a2a2a; }
+    }
+  </style>
+</head>
+<body>
+  <h2>cjre.pl/ogle — ruminations</h2>
+
+  <div id="login-view">
+    <label>GitHub token (needs <code>repo</code> scope)</label>
+    <input type="password" id="token" placeholder="ghp_...">
+    <button onclick="login()">Sign in</button>
+    <p class="meta" style="margin-top:12px">Token is stored locally and never sent anywhere except GitHub's API.</p>
+  </div>
+
+  <div id="post-view" style="display:none">
+    <p class="meta">Signed in as <strong id="username"></strong> — <a href="#" onclick="logout();return false">sign out</a></p>
+    <textarea id="body" placeholder="Write something..."></textarea>
+    <button onclick="publish()">Publish</button>
+  </div>
+
+  <p id="status"></p>
+
+  <script>
+    const OWNER = 'cjreplogle';
+    const REPO  = 'cjrepl';
+    const PATH  = 'ogle/ruminations.json';
+    const KEY   = 'gh_ruminations_token';
+
+    function status(msg) { document.getElementById('status').textContent = msg; }
+
+    async function login() {
+      const token = document.getElementById('token').value.trim();
+      if (!token) { status('Enter a token.'); return; }
+      status('Verifying...');
+      const res = await fetch('https://api.github.com/user', {
+        headers: { Authorization: 'token ' + token }
+      });
+      if (!res.ok) { status('Invalid token.'); return; }
+      const user = await res.json();
+      localStorage.setItem(KEY, token);
+      showPostView(user.login);
+      status('');
+    }
+
+    function logout() {
+      localStorage.removeItem(KEY);
+      document.getElementById('login-view').style.display = '';
+      document.getElementById('post-view').style.display = 'none';
+      document.getElementById('token').value = '';
+      status('');
+    }
+
+    function showPostView(name) {
+      document.getElementById('username').textContent = name;
+      document.getElementById('login-view').style.display = 'none';
+      document.getElementById('post-view').style.display = '';
+    }
+
+    async function publish() {
+      const token = localStorage.getItem(KEY);
+      const body  = document.getElementById('body').value.trim();
+      if (!body) { status('Write something first.'); return; }
+      status('Publishing...');
+      const headers = { Authorization: 'token ' + token, 'Content-Type': 'application/json' };
+      const apiBase = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`;
+      try {
+        const res = await fetch(apiBase, { headers });
+        const file = await res.json();
+        if (!file.content) { status('Error: ' + JSON.stringify(file)); return; }
+        const current = JSON.parse(decodeURIComponent(escape(atob(file.content.replace(/\n/g, '')))));
+        const date = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        current.unshift({ date, body });
+        const json = JSON.stringify(current, null, 2);
+        const updated = btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, p) => String.fromCharCode('0x' + p)));
+        const put = await fetch(apiBase, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({ message: 'add rumination', content: updated, sha: file.sha }),
+        });
+        if (put.ok) {
+          status('Published.');
+          document.getElementById('body').value = '';
+        } else {
+          const err = await put.json();
+          status('Error: ' + (err.message || put.status));
+        }
+      } catch (e) {
+        status('Error: ' + e.message);
+      }
+    }
+
+    // auto-login if token saved
+    (async () => {
+      const token = localStorage.getItem(KEY);
+      if (!token) return;
+      const res = await fetch('https://api.github.com/user', {
+        headers: { Authorization: 'token ' + token }
+      });
+      if (res.ok) { const u = await res.json(); showPostView(u.login); }
+      else localStorage.removeItem(KEY);
+    })();
+  </script>
+</body>
+</html>
