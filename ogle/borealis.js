@@ -96,7 +96,7 @@ function borealisFrame() {
 
 function borealisInit(cols) {
   const lineH = parseFloat(getComputedStyle(BOREALIS_EL).fontSize || '12') * 1.15;
-  borH = Math.max(20, Math.ceil(window.innerHeight / lineH / (_isMobile ? 2 : 1)));
+  borH = Math.max(40, Math.ceil(window.innerHeight / lineH));
   borW = cols;
   borT = Math.random() * 500;
 }
