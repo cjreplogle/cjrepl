@@ -104,7 +104,7 @@ function borealisInit(cols) {
 window.startBorealis = () => {
   if (borRunning) return;
   
-  borealisInit(Math.max(60, Math.floor(window.innerWidth / 7.2)));
+  borealisInit(Math.ceil(window.innerWidth / 7.2));
   borRunning = true;
   requestAnimationFrame(borealisFrame);
 };

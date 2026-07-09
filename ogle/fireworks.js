@@ -168,7 +168,7 @@ const fwClickHandler = e => {
 
 window.startFireworks = () => {
   if (fwRunning) return;
-  fwInit(Math.max(60, Math.floor(window.innerWidth / 7.2)));
+  fwInit(Math.ceil(window.innerWidth / 7.2));
   fwRunning = true;
   window.addEventListener('click', fwClickHandler);
   requestAnimationFrame(fwFrame);

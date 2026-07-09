@@ -71,7 +71,7 @@ function fireFrame() {
 
 window.startFire = () => {
   if (fireRunning) return;
-  fireInit(Math.max(60, Math.floor(window.innerWidth / 7.2)));
+  fireInit(Math.ceil(window.innerWidth / 7.2));
   fireRunning = true;
   window.addEventListener('mousemove', fireMoveHandler);
   window.addEventListener('mouseleave', fireLeaveHandler);

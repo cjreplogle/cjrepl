@@ -109,7 +109,7 @@ function vorFrame() {
 
 window.startVoronoi = () => {
   if (vorRunning) return;
-  vorInit(Math.max(60, Math.floor(window.innerWidth / 7.2)));
+  vorInit(Math.ceil(window.innerWidth / 7.2));
   vorRunning = true;
   requestAnimationFrame(vorFrame);
 };

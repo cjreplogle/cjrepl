@@ -147,7 +147,7 @@ function cloudInit(cols) {
 
 window.startClouds = () => {
   if (cloudRunning) return;
-  cloudInit(Math.max(60, Math.floor(window.innerWidth / 7.2)));
+  cloudInit(Math.ceil(window.innerWidth / 7.2));
   cloudRunning = true;
   requestAnimationFrame(cloudFrame);
 };

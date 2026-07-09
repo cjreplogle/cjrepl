@@ -108,7 +108,7 @@ function snowFrame() {
 
 window.startSnow = () => {
   if (snowRunning) return;
-  snowInit(Math.max(60, Math.floor(window.innerWidth / 7.2)));
+  snowInit(Math.ceil(window.innerWidth / 7.2));
   snowRunning = true;
   requestAnimationFrame(snowFrame);
 };
