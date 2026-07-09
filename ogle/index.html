@@ -26,7 +26,7 @@
       height: 51px;
       object-fit: cover;
       opacity: 0;
-      animation: fadein 1s ease forwards;
+      animation: fadein 0.3s ease forwards;
     }
     @keyframes fadein {
       to { opacity: 1; }
@@ -46,7 +46,7 @@
     }
     .url-tag {
       position: fixed;
-      top: 20px;
+      top: 32px;
       right: 24px;
       font-size: 0.85rem;
       opacity: 0.4;
@@ -82,11 +82,23 @@
       transition: transform 0.2s ease, opacity 0.2s ease;
     }
     .tab-content {
-      margin-top: 24px;
-      display: none;
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.3s ease;
+      overflow: hidden;
+    }
+    .tab-content > * {
+      overflow: hidden;
+      opacity: 0;
+      transition: opacity 0.3s ease 0.1s;
+      margin-top: 0;
+      margin-bottom: 0;
     }
     .tab-content.active {
-      display: block;
+      grid-template-rows: 1fr;
+    }
+    .tab-content.active > * {
+      opacity: 1;
     }
     @media (prefers-color-scheme: dark) {
       body {
