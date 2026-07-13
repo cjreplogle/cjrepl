@@ -120,5 +120,12 @@ window.stopVoronoi = () => {
   seeds = [];
 };
 
+let _vorResizeTimer;
+window.addEventListener('resize', () => {
+  if (!vorRunning) return;
+  clearTimeout(_vorResizeTimer);
+  _vorResizeTimer = setTimeout(() => vorInit(Math.ceil(window.innerWidth / 6)), 200);
+});
+
 if (localStorage.getItem('backdrop') === 'voronoi')
   window.startVoronoi();

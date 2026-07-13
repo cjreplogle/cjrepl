@@ -117,5 +117,12 @@ window.stopRays = () => {
   raysGrid = []; raysActive = [];
 };
 
+let _raysResizeTimer;
+window.addEventListener('resize', () => {
+  if (!raysRunning) return;
+  clearTimeout(_raysResizeTimer);
+  _raysResizeTimer = setTimeout(() => raysInit(Math.ceil(window.innerWidth / 6)), 200);
+});
+
 if (localStorage.getItem('backdrop') === 'rays')
   window.startRays();

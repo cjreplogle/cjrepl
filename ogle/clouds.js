@@ -157,5 +157,12 @@ window.stopClouds = () => {
   CLOUD_EL.innerHTML = '';
 };
 
+let _cloudResizeTimer;
+window.addEventListener('resize', () => {
+  if (!cloudRunning) return;
+  clearTimeout(_cloudResizeTimer);
+  _cloudResizeTimer = setTimeout(() => cloudInit(Math.ceil(window.innerWidth / 6)), 200);
+});
+
 if (localStorage.getItem('backdrop') === 'clouds')
   window.startClouds();

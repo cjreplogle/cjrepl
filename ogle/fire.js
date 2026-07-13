@@ -86,5 +86,12 @@ window.stopFire = () => {
   heat = [];
 };
 
+let _fireResizeTimer;
+window.addEventListener('resize', () => {
+  if (!fireRunning) return;
+  clearTimeout(_fireResizeTimer);
+  _fireResizeTimer = setTimeout(() => fireInit(Math.ceil(window.innerWidth / 6)), 200);
+});
+
 if (localStorage.getItem('backdrop') === 'fire')
   window.startFire();

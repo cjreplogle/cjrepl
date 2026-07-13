@@ -181,5 +181,12 @@ window.stopFireworks = () => {
   fwBright = []; fwColor = []; rockets = []; sparks = [];
 };
 
+let _fwResizeTimer;
+window.addEventListener('resize', () => {
+  if (!fwRunning) return;
+  clearTimeout(_fwResizeTimer);
+  _fwResizeTimer = setTimeout(() => fwInit(Math.ceil(window.innerWidth / 6)), 200);
+});
+
 if (localStorage.getItem('backdrop') === 'fireworks')
   window.startFireworks();

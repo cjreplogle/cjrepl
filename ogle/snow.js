@@ -119,5 +119,12 @@ window.stopSnow = () => {
   flakes = []; snowGrid = []; snowColorGrid = [];
 };
 
+let _snowResizeTimer;
+window.addEventListener('resize', () => {
+  if (!snowRunning) return;
+  clearTimeout(_snowResizeTimer);
+  _snowResizeTimer = setTimeout(() => snowInit(Math.ceil(window.innerWidth / 6)), 200);
+});
+
 if (localStorage.getItem('backdrop') === 'snow')
   window.startSnow();

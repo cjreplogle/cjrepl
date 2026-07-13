@@ -140,5 +140,12 @@ window.stopWater = () => {
   cur = []; prv = [];
 };
 
+let _waterResizeTimer;
+window.addEventListener('resize', () => {
+  if (!waterRunning) return;
+  clearTimeout(_waterResizeTimer);
+  _waterResizeTimer = setTimeout(() => waterInit(Math.ceil(window.innerWidth / 6)), 200);
+});
+
 if (localStorage.getItem('backdrop') === 'water')
   window.startWater();
