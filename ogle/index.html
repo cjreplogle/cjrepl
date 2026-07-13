@@ -650,7 +650,7 @@
         charIndex++;
       } else {
         segIndex++; charIndex = 0;
-        if (segIndex === 2) { revealTab(0); setTimeout(() => revealTab(1), 250); setTimeout(() => revealTab(2), 500); setTimeout(() => revealTab(3), 750); }
+        if (segIndex === 12) { revealTab(0); setTimeout(() => revealTab(1), 250); setTimeout(() => revealTab(2), 500); setTimeout(() => revealTab(3), 750); }
         if (segIndex >= segments.length) {
           el.innerHTML = buildHTML();
           if (!('ontouchstart' in window)) { el.contentEditable = 'true'; el.focus(); }
