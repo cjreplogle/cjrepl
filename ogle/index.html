@@ -66,6 +66,10 @@
     #typed {
       min-height: 7em;
     }
+    @media (min-width: 1100px) {
+      #typed .sub { font-size: 1.5rem; }
+      #typed .sub a { font-size: inherit; }
+    }
     #typed:focus {
       outline: none;
     }
@@ -597,7 +601,7 @@
         }
         if (seg.mobBr) { chars.push({ mobBr: true }); if (i === segIndex) break; continue; }
         const text = i < segIndex ? seg.text : seg.text.slice(0, charIndex);
-        for (const ch of text) chars.push({ ch, bold: seg.bold || false, link: seg.link || null });
+        for (const ch of text) chars.push({ ch, bold: seg.bold || false, link: seg.link || null, sub: i >= 2 });
         if (i === segIndex) break;
       }
       // render chars back to HTML, grouping consecutive same-format runs
@@ -609,8 +613,11 @@
           let s = ''; while (j < chars.length && chars[j].bold) s += chars[j++].ch;
           html += `<strong>${s}</strong>`;
         } else if (c.link) {
-          let s = '', l = c.link; while (j < chars.length && chars[j].link === l) s += chars[j++].ch;
-          html += `<a href="${l}">${s}</a>`;
+          let s = '', l = c.link, sub = c.sub; while (j < chars.length && chars[j].link === l) s += chars[j++].ch;
+          html += sub ? `<span class="sub"><a href="${l}">${s}</a></span>` : `<a href="${l}">${s}</a>`;
+        } else if (c.sub) {
+          let s = ''; while (j < chars.length && chars[j].sub && !chars[j].bold && !chars[j].link && !chars[j].mobBr) s += chars[j++].ch;
+          html += `<span class="sub">${s}</span>`;
         } else { html += c.ch; j++; }
       }
       return html;
