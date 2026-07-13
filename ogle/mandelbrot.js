@@ -135,14 +135,20 @@ function continueZoom(target) {
 }
 
 let mbClickTimer = null;
+let mbFocused = false;
 MB.addEventListener('click', () => {
   if (!document.getElementById('mb-content').classList.contains('active')) return;
+  mbFocused = true;
+  MB.style.outline = '1px solid rgba(255,255,255,0.2)';
   if (mbClickTimer) { clearTimeout(mbClickTimer); mbClickTimer = null; return; }
   mbClickTimer = setTimeout(() => {
     mbClickTimer = null;
     if (tourTimer) mbPaused = !mbPaused;
   }, 220);
 });
+window.addEventListener('click', e => {
+  if (!MB.contains(e.target)) { mbFocused = false; MB.style.outline = ''; }
+}, true);
 
 MB.addEventListener('dblclick', () => {
   if (!document.getElementById('mb-content').classList.contains('active')) return;
@@ -167,6 +173,7 @@ window.addEventListener('mousemove', e => {
 
 MB.addEventListener('wheel', e => {
   if (!document.getElementById('mb-content').classList.contains('active')) return;
+  if (!mbFocused) return;
   e.preventDefault();
   zoom *= e.deltaY > 0 ? 1.1 : 0.9;
   mbRender();
