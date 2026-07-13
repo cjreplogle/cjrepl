@@ -140,11 +140,11 @@ window.stopWater = () => {
   cur = []; prv = [];
 };
 
-let _waterResizeTimer;
+let _waterResizePending = false;
 window.addEventListener('resize', () => {
-  if (!waterRunning) return;
-  clearTimeout(_waterResizeTimer);
-  _waterResizeTimer = setTimeout(() => waterInit(Math.ceil(window.innerWidth / 6)), 200);
+  if (!waterRunning || _waterResizePending) return;
+  _waterResizePending = true;
+  requestAnimationFrame(() => { _waterResizePending = false; if (waterRunning) waterInit(Math.ceil(window.innerWidth / 6)); });
 });
 
 if (localStorage.getItem('backdrop') === 'water')

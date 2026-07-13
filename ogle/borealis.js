@@ -117,11 +117,12 @@ window.stopBorealis = () => {
   }
 };
 
-let _borResizeTimer;
 window.addEventListener('resize', () => {
   if (!borRunning || !borCanvas) return;
-  clearTimeout(_borResizeTimer);
-  _borResizeTimer = setTimeout(() => borealisInit(), 200);
+  borCanvas.width  = Math.ceil(window.innerWidth);
+  borCanvas.height = Math.ceil(window.innerHeight);
+  borW = Math.ceil(borCanvas.width  / borCW);
+  borH = Math.ceil(borCanvas.height / borCH);
 });
 
 if (!localStorage.getItem('backdrop') || localStorage.getItem('backdrop') === 'borealis')

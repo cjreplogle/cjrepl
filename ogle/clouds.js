@@ -157,11 +157,11 @@ window.stopClouds = () => {
   CLOUD_EL.innerHTML = '';
 };
 
-let _cloudResizeTimer;
+let _cloudResizePending = false;
 window.addEventListener('resize', () => {
-  if (!cloudRunning) return;
-  clearTimeout(_cloudResizeTimer);
-  _cloudResizeTimer = setTimeout(() => cloudInit(Math.ceil(window.innerWidth / 6)), 200);
+  if (!cloudRunning || _cloudResizePending) return;
+  _cloudResizePending = true;
+  requestAnimationFrame(() => { _cloudResizePending = false; if (cloudRunning) cloudInit(Math.ceil(window.innerWidth / 6)); });
 });
 
 if (localStorage.getItem('backdrop') === 'clouds')

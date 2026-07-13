@@ -119,11 +119,11 @@ window.stopSnow = () => {
   flakes = []; snowGrid = []; snowColorGrid = [];
 };
 
-let _snowResizeTimer;
+let _snowResizePending = false;
 window.addEventListener('resize', () => {
-  if (!snowRunning) return;
-  clearTimeout(_snowResizeTimer);
-  _snowResizeTimer = setTimeout(() => snowInit(Math.ceil(window.innerWidth / 6)), 200);
+  if (!snowRunning || _snowResizePending) return;
+  _snowResizePending = true;
+  requestAnimationFrame(() => { _snowResizePending = false; if (snowRunning) snowInit(Math.ceil(window.innerWidth / 6)); });
 });
 
 if (localStorage.getItem('backdrop') === 'snow')
