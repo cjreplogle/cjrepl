@@ -465,7 +465,16 @@
           });
           document.getElementById('typed').classList.remove('nav-hidden');
           const introEl = document.querySelector('.intro');
-          if (introEl) introEl.classList.remove('tab-open');
+          if (introEl) {
+            introEl.style.transition = 'none';
+            introEl.classList.remove('tab-open');
+            const sep = introEl.nextElementSibling;
+            if (sep) sep.style.transition = 'none';
+            requestAnimationFrame(() => {
+              introEl.style.transition = '';
+              if (sep) sep.style.transition = '';
+            });
+          }
         } else {
           const prevTab = focusedTab - 1;
           setFocus(prevTab);
