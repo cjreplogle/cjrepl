@@ -69,7 +69,7 @@
       width: 100%;
     }
     @media (min-width: 1100px) {
-      #typed .sub { font-size: 1.5rem; }
+      #typed .sub { font-size: 1.5rem; line-height: 1.4; }
       #typed .sub a { font-size: inherit; }
       #typed .mob-br { margin-bottom: 0.5rem; }
     }
@@ -279,13 +279,22 @@
             <div id="tb-label" style="position:absolute;top:0;right:0;font-family:monospace;font-size:0.6rem;opacity:0.4;pointer-events:none"></div>
           </div>
         </div></div>
+        <button class="tab-btn" onclick="switchSubTab('lj-content', this)" style="margin-top:4px;font-size:0.85rem"><span class="selector"> </span>lissajous<span class="tab-hint"> — audio visualizer</span></button>
+        <div id="lj-content" class="tab-content"><div>
+          <div id="lj-canvas-wrap" style="width:100%;height:24rem;background:#000;border-radius:4px;overflow:hidden;position:relative;margin-top:6px"></div>
+          <div style="margin-top:6px;display:flex;gap:12px;align-items:center;font-size:0.78rem;opacity:0.7">
+            <button id="lj-mic-btn" onclick="window.ljUseMic && window.ljUseMic()" style="font:inherit;background:none;border:1px solid rgba(255,255,255,0.3);color:inherit;cursor:pointer;padding:2px 8px;border-radius:3px">mic</button>
+            <label style="cursor:pointer;border:1px solid rgba(255,255,255,0.3);padding:2px 8px;border-radius:3px">load file<input id="lj-file" type="file" accept="audio/*" style="display:none" onchange="window.ljLoadFile && window.ljLoadFile(this.files[0])"></label>
+            <span id="lj-status" style="opacity:0.5">—</span>
+          </div>
+        </div></div>
       </div>
     </div>
   </div>
 
   <script>
-    const tabIds = ['papers', 'projects', 'ruminations', 'forfun', 'mb-content', 'tb-content'];
-    const subTabIds = new Set(['mb-content', 'tb-content']);
+    const tabIds = ['papers', 'projects', 'ruminations', 'forfun', 'mb-content', 'tb-content', 'lj-content'];
+    const subTabIds = new Set(['mb-content', 'tb-content', 'lj-content']);
     const btns = document.querySelectorAll('.tab-btn');
     let focusedTab = -1; // -1 = none focused
 
@@ -370,10 +379,18 @@
       const content = document.getElementById(id);
       content.classList.toggle('active');
       btn.classList.toggle('active');
-      const subIdx = ['mb-content', 'tb-content'].indexOf(id);
+      const subIdx = ['mb-content', 'tb-content', 'lj-content'].indexOf(id);
       if (content.classList.contains('active') && subIdx >= 0) setFocus(4 + subIdx);
       if (id === 'mb-content' && content.classList.contains('active')) {
         if (window.mbOpen) window.mbOpen();
+      }
+      if (id === 'lj-content') {
+        if (content.classList.contains('active')) {
+          if (!window.ljUseMic) {
+            const s = document.createElement('script'); s.src = 'lissajous.js'; document.head.appendChild(s);
+            s.onload = () => window.ljOpen && window.ljOpen();
+          } else { window.ljOpen && window.ljOpen(); }
+        } else { window.ljClose && window.ljClose(); }
       }
     }
 
@@ -397,7 +414,7 @@
     function scrollNavStep(dir) {
       const mainTabCount = 4; // papers, projects, ruminations, forfun
       const forfunIdx = 3;
-      const subTabOrder = ['mb-content', 'tb-content']; // subtab ids in order
+      const subTabOrder = ['mb-content', 'tb-content', 'lj-content']; // subtab ids in order
       const papersOpen = document.getElementById('papers').classList.contains('active');
       const forfunOpen = document.getElementById('forfun').classList.contains('active');
       const anyOpen = tabIds.slice(0, mainTabCount).some(id =>
