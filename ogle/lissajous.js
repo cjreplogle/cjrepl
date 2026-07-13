@@ -39,7 +39,8 @@ function _ljUpdateSeek() {
   if (!_ljPaused) requestAnimationFrame(_ljUpdateSeek);
 }
 
-const _TRANSIENT_THRESH = 0.18; // amplitude jump that breaks a segment into a dot
+const _TRANSIENT_THRESH = 0.14;
+const _MIN_AMP = 0.01; // skip near-silent samples to reduce center clutter
 
 function _ljDraw() {
   _ljAnimId = requestAnimationFrame(_ljDraw);
@@ -48,38 +49,41 @@ function _ljDraw() {
   _ljAnalR.getFloatTimeDomainData(_ljDataR);
   const w = _ljCanvas.width, h = _ljCanvas.height;
   if (!w || !h) return;
-  const cx = w / 2, cy = h / 2, scale = Math.min(w, h) / 2 * 0.88;
+  const cx = w / 2, cy = h / 2, scale = Math.min(w, h) / 2 * 0.92;
 
-  // Phosphor fade
-  _ljCtx.fillStyle = 'rgba(0,0,0,0.22)';
+  // Fast fade to kill center buildup
+  _ljCtx.fillStyle = 'rgba(0,0,0,0.35)';
   _ljCtx.fillRect(0, 0, w, h);
 
   _ljCtx.save();
-  _ljCtx.shadowBlur = 8;
+  _ljCtx.shadowBlur = 3;
   _ljCtx.shadowColor = '#00ff88';
-  _ljCtx.lineWidth = 1.5;
+  _ljCtx.lineWidth = 1.2;
   _ljCtx.lineJoin = 'round';
 
-  let segStart = 0;
-  for (let i = 1; i <= _LJ_FFT; i++) {
-    const jump = i < _LJ_FFT
+  let segStart = -1;
+  for (let i = 0; i <= _LJ_FFT; i++) {
+    const amp = i < _LJ_FFT ? Math.abs(_ljDataL[i]) + Math.abs(_ljDataR[i]) : 0;
+    const silent = amp < _MIN_AMP;
+    const jump = i > 0 && i < _LJ_FFT
       ? Math.abs(_ljDataL[i] - _ljDataL[i-1]) + Math.abs(_ljDataR[i] - _ljDataR[i-1])
-      : _TRANSIENT_THRESH + 1;
-    const isBreak = jump > _TRANSIENT_THRESH || i === _LJ_FFT;
+      : 0;
+    const isBreak = silent || jump > _TRANSIENT_THRESH || i === _LJ_FFT;
 
-    if (isBreak) {
+    if (!silent && segStart === -1) { segStart = i; }
+
+    if (isBreak && segStart !== -1) {
       const len = i - segStart;
       if (len === 1) {
-        // single dot for transient
         const x = cx + _ljDataL[segStart] * scale;
         const y = cy - _ljDataR[segStart] * scale;
         const bright = Math.min(1, jump / _TRANSIENT_THRESH);
-        _ljCtx.strokeStyle = `rgba(180,255,200,${0.5 + bright * 0.5})`;
+        _ljCtx.strokeStyle = `rgba(160,255,190,${0.4 + bright * 0.5})`;
         _ljCtx.beginPath();
-        _ljCtx.arc(x, y, 1.2 + bright * 1.5, 0, Math.PI * 2);
+        _ljCtx.arc(x, y, 1 + bright * 1.2, 0, Math.PI * 2);
         _ljCtx.stroke();
       } else {
-        _ljCtx.strokeStyle = 'rgba(0,255,136,0.8)';
+        _ljCtx.strokeStyle = 'rgba(0,255,136,0.75)';
         _ljCtx.beginPath();
         for (let k = segStart; k < i; k++) {
           const x = cx + _ljDataL[k] * scale;
@@ -88,8 +92,9 @@ function _ljDraw() {
         }
         _ljCtx.stroke();
       }
-      segStart = i;
+      segStart = -1;
     }
+    if (silent) segStart = -1;
   }
 
   _ljCtx.restore();
