@@ -39,6 +39,8 @@ function _ljUpdateSeek() {
   if (!_ljPaused) requestAnimationFrame(_ljUpdateSeek);
 }
 
+const _TRANSIENT_THRESH = 0.18; // amplitude jump that breaks a segment into a dot
+
 function _ljDraw() {
   _ljAnimId = requestAnimationFrame(_ljDraw);
   if (!_ljAnalL || !_ljCanvas) return;
@@ -48,22 +50,48 @@ function _ljDraw() {
   if (!w || !h) return;
   const cx = w / 2, cy = h / 2, scale = Math.min(w, h) / 2 * 0.88;
 
-  _ljCtx.fillStyle = 'rgba(0,0,0,0.18)';
+  // Phosphor fade
+  _ljCtx.fillStyle = 'rgba(0,0,0,0.22)';
   _ljCtx.fillRect(0, 0, w, h);
 
   _ljCtx.save();
-  _ljCtx.shadowBlur = 10;
+  _ljCtx.shadowBlur = 8;
   _ljCtx.shadowColor = '#00ff88';
-  _ljCtx.strokeStyle = 'rgba(0,255,136,0.82)';
   _ljCtx.lineWidth = 1.5;
   _ljCtx.lineJoin = 'round';
-  _ljCtx.beginPath();
-  for (let i = 0; i < _LJ_FFT; i++) {
-    const x = cx + _ljDataL[i] * scale;
-    const y = cy - _ljDataR[i] * scale;
-    i === 0 ? _ljCtx.moveTo(x, y) : _ljCtx.lineTo(x, y);
+
+  let segStart = 0;
+  for (let i = 1; i <= _LJ_FFT; i++) {
+    const jump = i < _LJ_FFT
+      ? Math.abs(_ljDataL[i] - _ljDataL[i-1]) + Math.abs(_ljDataR[i] - _ljDataR[i-1])
+      : _TRANSIENT_THRESH + 1;
+    const isBreak = jump > _TRANSIENT_THRESH || i === _LJ_FFT;
+
+    if (isBreak) {
+      const len = i - segStart;
+      if (len === 1) {
+        // single dot for transient
+        const x = cx + _ljDataL[segStart] * scale;
+        const y = cy - _ljDataR[segStart] * scale;
+        const bright = Math.min(1, jump / _TRANSIENT_THRESH);
+        _ljCtx.strokeStyle = `rgba(180,255,200,${0.5 + bright * 0.5})`;
+        _ljCtx.beginPath();
+        _ljCtx.arc(x, y, 1.2 + bright * 1.5, 0, Math.PI * 2);
+        _ljCtx.stroke();
+      } else {
+        _ljCtx.strokeStyle = 'rgba(0,255,136,0.8)';
+        _ljCtx.beginPath();
+        for (let k = segStart; k < i; k++) {
+          const x = cx + _ljDataL[k] * scale;
+          const y = cy - _ljDataR[k] * scale;
+          k === segStart ? _ljCtx.moveTo(x, y) : _ljCtx.lineTo(x, y);
+        }
+        _ljCtx.stroke();
+      }
+      segStart = i;
+    }
   }
-  _ljCtx.stroke();
+
   _ljCtx.restore();
 }
 
