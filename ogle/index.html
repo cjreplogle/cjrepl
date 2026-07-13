@@ -464,6 +464,8 @@
             b.style.transform = ''; b.style.transition = '';
           });
           document.getElementById('typed').classList.remove('nav-hidden');
+          const introEl = document.querySelector('.intro');
+          if (introEl) introEl.classList.remove('tab-open');
         } else {
           const prevTab = focusedTab - 1;
           setFocus(prevTab);
