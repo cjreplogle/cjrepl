@@ -14,8 +14,9 @@
     }
     body {
       font-family: Georgia, serif;
-      max-width: 600px;
-      margin: 80px auto;
+      font-size: clamp(1.5rem, 3vw, 4rem);
+      max-width: clamp(600px, 50vw, 1100px);
+      margin: 8vh auto;
       padding: 0 24px;
       color: #fff;
       line-height: 1.6;
@@ -110,7 +111,7 @@
       border: none;
       background: none;
       font-family: Georgia, serif;
-      font-size: 1rem;
+      font-size: inherit;
       color: #fff;
       cursor: pointer;
       text-align: left;
@@ -186,15 +187,7 @@
       transition: transform 0.2s ease, opacity 0.2s ease;
     }
     @media (min-width: 1100px) {
-      body {
-        font-size: clamp(1rem, calc(1rem + 2.5 * (100vw - 1100px) / 400), 3.5rem);
-        max-width: clamp(600px, 55vw, 1100px);
-        margin: 8vh auto;
-      }
-      .tab-btn { font-size: clamp(1rem, calc(1rem + 2.5 * (100vw - 1100px) / 400), 3.5rem); }
-      .paper-title { font-size: clamp(0.85rem, calc(0.85rem + 2.1 * (100vw - 1100px) / 400), 2.95rem); }
-      .paper-citation p { font-size: clamp(0.8rem, calc(0.8rem + 2 * (100vw - 1100px) / 400), 2.8rem); }
-      .profile-photo { width: clamp(60px, calc(60px + 60 * (100vw - 1100px) / 400), 120px); height: clamp(60px, calc(60px + 60 * (100vw - 1100px) / 400), 120px); }
+      .profile-photo { width: clamp(80px, 7vw, 140px); height: clamp(80px, 7vw, 140px); }
     }
     .tab-content {
       display: grid;
@@ -224,14 +217,10 @@
     .mob-br { display: none; }
     @media (max-width: 768px) {
       body {
-        font-size: 1.5rem;
         margin: 40px auto;
       }
-      .tab-btn {
-        font-size: 1.5rem;
-      }
       .tab-hint {
-        font-size: 1.1rem;
+        font-size: 0.75em;
       }
       .mob-br { display: block; margin-bottom: 0.5em; }
       .intro {
