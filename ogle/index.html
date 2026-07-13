@@ -218,13 +218,14 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 20px;
+        margin-top: clamp(90px, 22vw, 130px);
       }
       .intro img {
-        position: relative;
-        top: auto;
-        left: auto;
-        width: clamp(70px, 20vw, 120px);
-        height: clamp(70px, 20vw, 120px);
+        position: fixed;
+        top: 16px;
+        left: 16px;
+        width: clamp(60px, 16vw, 100px);
+        height: clamp(60px, 16vw, 100px);
       }
     }
     @media (prefers-color-scheme: dark) {
