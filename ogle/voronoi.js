@@ -120,11 +120,11 @@ window.stopVoronoi = () => {
   seeds = [];
 };
 
-let _vorResizePending = false;
+let _vorResizeTimer;
 window.addEventListener('resize', () => {
-  if (!vorRunning || _vorResizePending) return;
-  _vorResizePending = true;
-  requestAnimationFrame(() => { _vorResizePending = false; if (vorRunning) vorInit(Math.ceil(window.innerWidth / 6)); });
+  if (!vorRunning) return;
+  clearTimeout(_vorResizeTimer);
+  _vorResizeTimer = setTimeout(() => { if (vorRunning) vorInit(Math.ceil(window.innerWidth / 6)); }, 100);
 });
 
 if (localStorage.getItem('backdrop') === 'voronoi')

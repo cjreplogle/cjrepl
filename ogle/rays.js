@@ -117,11 +117,11 @@ window.stopRays = () => {
   raysGrid = []; raysActive = [];
 };
 
-let _raysResizePending = false;
+let _raysResizeTimer;
 window.addEventListener('resize', () => {
-  if (!raysRunning || _raysResizePending) return;
-  _raysResizePending = true;
-  requestAnimationFrame(() => { _raysResizePending = false; if (raysRunning) raysInit(Math.ceil(window.innerWidth / 6)); });
+  if (!raysRunning) return;
+  clearTimeout(_raysResizeTimer);
+  _raysResizeTimer = setTimeout(() => { if (raysRunning) raysInit(Math.ceil(window.innerWidth / 6)); }, 100);
 });
 
 if (localStorage.getItem('backdrop') === 'rays')

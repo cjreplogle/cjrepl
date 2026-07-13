@@ -86,11 +86,11 @@ window.stopFire = () => {
   heat = [];
 };
 
-let _fireResizePending = false;
+let _fireResizeTimer;
 window.addEventListener('resize', () => {
-  if (!fireRunning || _fireResizePending) return;
-  _fireResizePending = true;
-  requestAnimationFrame(() => { _fireResizePending = false; if (fireRunning) fireInit(Math.ceil(window.innerWidth / 6)); });
+  if (!fireRunning) return;
+  clearTimeout(_fireResizeTimer);
+  _fireResizeTimer = setTimeout(() => { if (fireRunning) fireInit(Math.ceil(window.innerWidth / 6)); }, 100);
 });
 
 if (localStorage.getItem('backdrop') === 'fire')

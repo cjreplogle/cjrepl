@@ -181,11 +181,11 @@ window.stopFireworks = () => {
   fwBright = []; fwColor = []; rockets = []; sparks = [];
 };
 
-let _fwResizePending = false;
+let _fwResizeTimer;
 window.addEventListener('resize', () => {
-  if (!fwRunning || _fwResizePending) return;
-  _fwResizePending = true;
-  requestAnimationFrame(() => { _fwResizePending = false; if (fwRunning) fwInit(Math.ceil(window.innerWidth / 6)); });
+  if (!fwRunning) return;
+  clearTimeout(_fwResizeTimer);
+  _fwResizeTimer = setTimeout(() => { if (fwRunning) fwInit(Math.ceil(window.innerWidth / 6)); }, 100);
 });
 
 if (localStorage.getItem('backdrop') === 'fireworks')
