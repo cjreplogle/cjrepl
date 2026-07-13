@@ -28,6 +28,21 @@
       align-items: center;
       gap: 16px;
     }
+    @media (max-width: 768px) {
+      .intro, .intro + p {
+        transition: opacity 0.35s ease, transform 0.35s ease, max-height 0.4s ease, margin 0.4s ease;
+        max-height: 300px;
+        overflow: hidden;
+      }
+      .intro.tab-open, .intro.tab-open + p {
+        opacity: 0;
+        transform: translateY(-24px);
+        max-height: 0;
+        margin-top: 0;
+        margin-bottom: 0;
+        pointer-events: none;
+      }
+    }
     .intro img {
       position: fixed;
       top: 16px;
@@ -279,6 +294,8 @@
       const topBtnsList = Array.from(document.querySelectorAll('.tabs > .tab-btn'));
       const isOpening = !btn.classList.contains('active');
 
+      const introEl = document.querySelector('.intro');
+      if (!isOpening && introEl) introEl.classList.remove('tab-open');
       // close all tabs first
       topBtnsList.forEach(b => {
         b.classList.remove('active', 'receded');
@@ -295,6 +312,7 @@
       });
 
       if (isOpening) {
+        if (introEl) introEl.classList.add('tab-open');
         btn.classList.add('active');
         document.getElementById(id).classList.add('active');
         topBtnsList.forEach(b => {
