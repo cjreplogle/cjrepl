@@ -295,10 +295,12 @@
     function switchTab(id, btn) {
       const topBtnsList = Array.from(document.querySelectorAll('.tabs > .tab-btn'));
       const isOpening = !btn.classList.contains('active');
+      const clickedIdx = topBtnsList.indexOf(btn);
 
       const introEl = document.querySelector('.intro');
       const photoEl = document.querySelector('.profile-photo');
       if (!isOpening && introEl) { introEl.classList.remove('tab-open'); if (photoEl) photoEl.classList.remove('tab-open'); }
+      setFocus(isOpening ? clickedIdx : -1);
       // close all tabs first
       topBtnsList.forEach(b => {
         b.classList.remove('active', 'receded');
@@ -361,6 +363,8 @@
       const content = document.getElementById(id);
       content.classList.toggle('active');
       btn.classList.toggle('active');
+      const subIdx = ['mb-content', 'tb-content'].indexOf(id);
+      if (content.classList.contains('active') && subIdx >= 0) setFocus(4 + subIdx);
       if (id === 'mb-content' && content.classList.contains('active')) {
         if (window.mbOpen) window.mbOpen();
       }
