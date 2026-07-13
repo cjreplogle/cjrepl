@@ -52,6 +52,12 @@
       object-fit: cover;
       opacity: 0;
       animation: fadein 0.3s ease forwards;
+      transition: opacity 1.2s ease, transform 1.2s ease;
+    }
+    .profile-photo.tab-open {
+      opacity: 0 !important;
+      transform: translateY(-18px);
+      animation: none;
     }
     @keyframes fadein {
       to { opacity: 1; }
@@ -299,7 +305,8 @@
       const isOpening = !btn.classList.contains('active');
 
       const introEl = document.querySelector('.intro');
-      if (!isOpening && introEl) introEl.classList.remove('tab-open');
+      const photoEl = document.querySelector('.profile-photo');
+      if (!isOpening && introEl) { introEl.classList.remove('tab-open'); if (photoEl) photoEl.classList.remove('tab-open'); }
       // close all tabs first
       topBtnsList.forEach(b => {
         b.classList.remove('active', 'receded');
@@ -317,6 +324,7 @@
 
       if (isOpening) {
         if (introEl) introEl.classList.add('tab-open');
+        if (photoEl) photoEl.classList.add('tab-open');
         btn.classList.add('active');
         document.getElementById(id).classList.add('active');
         topBtnsList.forEach(b => {
@@ -469,14 +477,17 @@
           });
           document.getElementById('typed').classList.remove('nav-hidden');
           const introEl = document.querySelector('.intro');
+          const photoEl = document.querySelector('.profile-photo');
           if (introEl) {
             introEl.style.transition = 'none';
             introEl.classList.remove('tab-open');
             const sep = introEl.nextElementSibling;
             if (sep) sep.style.transition = 'none';
+            if (photoEl) { photoEl.style.transition = 'none'; photoEl.classList.remove('tab-open'); }
             requestAnimationFrame(() => {
               introEl.style.transition = '';
               if (sep) sep.style.transition = '';
+              if (photoEl) photoEl.style.transition = '';
             });
           }
         } else {
