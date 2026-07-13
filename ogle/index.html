@@ -185,6 +185,13 @@
     .tab-btn {
       transition: transform 0.2s ease, opacity 0.2s ease;
     }
+    @media (min-width: 1100px) {
+      body { font-size: clamp(1rem, 2.6vw, 3.5rem); max-width: min(1100px, 80vw); margin: 10vh auto; }
+      .tab-btn { font-size: clamp(1rem, 2.6vw, 3.5rem); }
+      .paper-title { font-size: clamp(0.85rem, 2.2vw, 3rem); }
+      .paper-citation p { font-size: clamp(0.8rem, 2vw, 2.8rem); }
+      .profile-photo { width: clamp(60px, 6vw, 120px); height: clamp(60px, 6vw, 120px); }
+    }
     .tab-content {
       display: grid;
       grid-template-rows: 0fr;
