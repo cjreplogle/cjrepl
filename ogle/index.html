@@ -644,7 +644,11 @@
         return;
       }
 
-      if (seg.mobBr) { segIndex++; charIndex = 0; setTimeout(type, 0); return; }
+      if (seg.mobBr) {
+        segIndex++; charIndex = 0;
+        if (segIndex === 12) { revealTab(0); setTimeout(() => revealTab(1), 250); setTimeout(() => revealTab(2), 500); setTimeout(() => revealTab(3), 750); }
+        setTimeout(type, 0); return;
+      }
 
       if (charIndex < seg.text.length) {
         charIndex++;
