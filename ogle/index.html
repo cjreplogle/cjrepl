@@ -32,8 +32,8 @@
       position: fixed;
       top: 16px;
       left: 16px;
-      width: 51px;
-      height: 51px;
+      width: clamp(40px, 4vw, 72px);
+      height: clamp(40px, 4vw, 72px);
       object-fit: cover;
       opacity: 0;
       animation: fadein 0.3s ease forwards;
@@ -90,7 +90,7 @@
       color: #fff;
       cursor: pointer;
       text-align: left;
-      opacity: 0.72;
+      opacity: 1;
     }
     .tabs > .tab-btn {
       opacity: 0;
@@ -98,7 +98,7 @@
       transition: opacity 0.4s ease, transform 0.4s ease;
     }
     .tabs > .tab-btn.visible {
-      opacity: 0.72;
+      opacity: 1;
       transform: translateX(0);
       transition: opacity 0.9s ease, transform 0.9s ease;
     }
@@ -208,8 +208,8 @@
         position: relative;
         top: auto;
         left: auto;
-        width: 90px;
-        height: 90px;
+        width: clamp(70px, 20vw, 120px);
+        height: clamp(70px, 20vw, 120px);
       }
     }
     @media (prefers-color-scheme: dark) {
