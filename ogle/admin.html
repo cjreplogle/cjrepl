@@ -3,122 +3,179 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ruminations — Admin</title>
+  <title>ruminations — edit</title>
   <style>
-    body { font-family: Georgia, serif; max-width: 540px; margin: 60px auto; padding: 0 24px; color: #222; line-height: 1.6; }
-    h2 { font-size: 1rem; font-weight: normal; opacity: 0.5; margin-bottom: 24px; }
-    label { display: block; font-size: 0.85rem; opacity: 0.6; margin-bottom: 4px; margin-top: 16px; }
-    input, textarea { width: 100%; box-sizing: border-box; font-family: Georgia, serif; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 3px; padding: 8px; }
-    textarea { height: 180px; resize: vertical; }
-    button { margin-top: 20px; font-family: Georgia, serif; font-size: 0.95rem; background: none; border: 1px solid #aaa; padding: 6px 18px; cursor: pointer; border-radius: 3px; }
-    button:hover { background: #f5f5f5; }
-    #status { margin-top: 14px; font-size: 0.85rem; opacity: 0.6; }
-    .meta { font-size: 0.8rem; opacity: 0.4; margin-bottom: 24px; }
-    @media (prefers-color-scheme: dark) {
-      body { color: #fff; background: #111; }
-      input, textarea { background: #222; border-color: #444; color: #fff; }
-      button { color: #fff; border-color: #555; }
-      button:hover { background: #2a2a2a; }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; background: #000; color: #fff; font-family: Georgia, serif; }
+
+    #backdrop-wrap {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 100vh;
+      pointer-events: none; display: flex; flex-direction: column; justify-content: flex-end;
+      -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.75) 30%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.15) 85%, transparent 100%);
+      mask-image:          linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.75) 30%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.15) 85%, transparent 100%);
+      z-index: 0; overflow: hidden;
     }
+    #fire {
+      font-family: monospace; font-size: 0.75rem; line-height: 1.15;
+      white-space: pre; overflow: hidden; width: 115%;
+      -webkit-text-size-adjust: none; text-size-adjust: none;
+    }
+
+    #wrap {
+      position: relative; z-index: 1;
+      max-width: 560px; margin: 0 auto;
+      padding: 60px 28px 60px;
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+
+    h2 { font-size: 0.85rem; font-weight: normal; opacity: 0.35; margin: 0 0 40px; letter-spacing: 0.04em; }
+
+    #login-view label { display: block; font-size: 0.8rem; opacity: 0.45; margin-bottom: 6px; }
+    #login-view input {
+      width: 100%; background: none; border: none; border-bottom: 1px solid rgba(255,255,255,0.2);
+      color: #fff; font-family: Georgia, serif; font-size: 1rem; padding: 4px 0 6px;
+      outline: none; transition: border-color 0.2s;
+    }
+    #login-view input:focus { border-bottom-color: rgba(255,255,255,0.6); }
+
+    #post-view { flex: 1; display: flex; flex-direction: column; }
+    .meta { font-size: 0.78rem; opacity: 0.35; margin: 0 0 32px; }
+    .meta a { color: inherit; opacity: 0.7; }
+
+    #body {
+      flex: 1; min-height: 220px;
+      background: none; border: none;
+      color: #fff; font-family: Georgia, serif; font-size: 1.05rem;
+      line-height: 1.7; resize: none; outline: none;
+      caret-color: rgba(255,255,255,0.8);
+      width: 100%;
+    }
+    #body::placeholder { color: rgba(255,255,255,0.2); }
+
+    .actions { display: flex; align-items: center; gap: 20px; margin-top: 28px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); }
+    button.btn {
+      background: none; border: 1px solid rgba(255,255,255,0.25); color: #fff;
+      font-family: Georgia, serif; font-size: 0.88rem;
+      padding: 5px 18px; border-radius: 3px; cursor: pointer;
+      transition: border-color 0.2s, opacity 0.2s;
+    }
+    button.btn:hover { border-color: rgba(255,255,255,0.6); }
+
+    #status { font-size: 0.8rem; opacity: 0.45; margin: 0; }
   </style>
 </head>
 <body>
-  <h2>cjre.pl/ogle — ruminations</h2>
+
+<div id="backdrop-wrap">
+  <div id="fire"></div>
+</div>
+
+<div id="wrap">
+  <h2>cjre.pl — ruminations</h2>
 
   <div id="login-view">
-    <label>GitHub token (needs <code>repo</code> scope)</label>
-    <input type="password" id="token" placeholder="ghp_...">
-    <button onclick="login()">Sign in</button>
-    <p class="meta" style="margin-top:12px">Token is stored locally and never sent anywhere except GitHub's API.</p>
+    <label>GitHub token (repo scope)</label>
+    <input type="password" id="token" placeholder="ghp_..." autocomplete="off">
+    <div class="actions" style="margin-top:20px">
+      <button class="btn" onclick="login()">sign in</button>
+      <p id="status"></p>
+    </div>
   </div>
 
   <div id="post-view" style="display:none">
-    <p class="meta">Signed in as <strong id="username"></strong> — <a href="#" onclick="logout();return false">sign out</a></p>
-    <textarea id="body" placeholder="Write something..."></textarea>
-    <button onclick="publish()">Publish</button>
+    <p class="meta">signed in as <strong id="username"></strong> · <a href="#" onclick="logout();return false">sign out</a></p>
+    <textarea id="body" placeholder="write something…" spellcheck="false"></textarea>
+    <div class="actions">
+      <button class="btn" onclick="publish()">publish</button>
+      <p id="status"></p>
+    </div>
   </div>
+</div>
 
-  <p id="status"></p>
+<script>
+  // Load the same backdrop that's active on the main site
+  (function() {
+    const name = localStorage.getItem('backdrop') || 'fire';
+    const opacity = parseFloat(localStorage.getItem('backdropOpacity') || '0.82');
+    const wrap = document.getElementById('backdrop-wrap');
+    wrap.style.opacity = opacity;
+    window._backdropSpeed = parseFloat(localStorage.getItem('backdropSpeed') || '1');
+    const s = document.createElement('script');
+    s.src = name + '.js';
+    document.head.appendChild(s);
+  })();
+</script>
 
-  <script>
-    const OWNER = 'cjreplogle';
-    const REPO  = 'cjrepl';
-    const PATH  = 'ogle/ruminations.json';
-    const KEY   = 'gh_ruminations_token';
+<script>
+  const OWNER = 'cjreplogle';
+  const REPO  = 'cjrepl';
+  const PATH  = 'ogle/ruminations.json';
+  const KEY   = 'gh_ruminations_token';
 
-    function status(msg) { document.getElementById('status').textContent = msg; }
+  const statusEl = document.getElementById('status');
+  function setStatus(msg) { statusEl.textContent = msg; }
 
-    async function login() {
-      const token = document.getElementById('token').value.trim();
-      if (!token) { status('Enter a token.'); return; }
-      status('Verifying...');
-      const res = await fetch('https://api.github.com/user', {
-        headers: { Authorization: 'token ' + token }
+  async function login() {
+    const token = document.getElementById('token').value.trim();
+    if (!token) { setStatus('enter a token'); return; }
+    setStatus('verifying…');
+    const res = await fetch('https://api.github.com/user', {
+      headers: { Authorization: 'token ' + token }
+    });
+    if (!res.ok) { setStatus('invalid token'); return; }
+    const user = await res.json();
+    localStorage.setItem(KEY, token);
+    showPostView(user.login);
+    setStatus('');
+  }
+
+  function logout() {
+    localStorage.removeItem(KEY);
+    document.getElementById('login-view').style.display = '';
+    document.getElementById('post-view').style.display = 'none';
+    document.getElementById('token').value = '';
+    setStatus('');
+  }
+
+  function showPostView(name) {
+    document.getElementById('username').textContent = name;
+    document.getElementById('login-view').style.display = 'none';
+    document.getElementById('post-view').style.display = 'flex';
+    setTimeout(() => document.getElementById('body').focus(), 50);
+  }
+
+  async function publish() {
+    const token = localStorage.getItem(KEY);
+    const body  = document.getElementById('body').value.trim();
+    if (!body) { setStatus('write something first'); return; }
+    setStatus('publishing…');
+    const headers = { Authorization: 'token ' + token, 'Content-Type': 'application/json' };
+    const apiBase = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`;
+    try {
+      const res  = await fetch(apiBase, { headers });
+      const file = await res.json();
+      if (!file.content) { setStatus('error: ' + JSON.stringify(file)); return; }
+      const current = JSON.parse(decodeURIComponent(escape(atob(file.content.replace(/\n/g,'')))));
+      const date = new Date().toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
+      current.unshift({ date, body });
+      const json    = JSON.stringify(current, null, 2);
+      const updated = btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, p) => String.fromCharCode('0x'+p)));
+      const put = await fetch(apiBase, {
+        method: 'PUT', headers,
+        body: JSON.stringify({ message: 'add rumination', content: updated, sha: file.sha }),
       });
-      if (!res.ok) { status('Invalid token.'); return; }
-      const user = await res.json();
-      localStorage.setItem(KEY, token);
-      showPostView(user.login);
-      status('');
-    }
+      if (put.ok) { setStatus('published'); document.getElementById('body').value = ''; }
+      else { const err = await put.json(); setStatus('error: ' + (err.message || put.status)); }
+    } catch(e) { setStatus('error: ' + e.message); }
+  }
 
-    function logout() {
-      localStorage.removeItem(KEY);
-      document.getElementById('login-view').style.display = '';
-      document.getElementById('post-view').style.display = 'none';
-      document.getElementById('token').value = '';
-      status('');
-    }
-
-    function showPostView(name) {
-      document.getElementById('username').textContent = name;
-      document.getElementById('login-view').style.display = 'none';
-      document.getElementById('post-view').style.display = '';
-    }
-
-    async function publish() {
-      const token = localStorage.getItem(KEY);
-      const body  = document.getElementById('body').value.trim();
-      if (!body) { status('Write something first.'); return; }
-      status('Publishing...');
-      const headers = { Authorization: 'token ' + token, 'Content-Type': 'application/json' };
-      const apiBase = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`;
-      try {
-        const res = await fetch(apiBase, { headers });
-        const file = await res.json();
-        if (!file.content) { status('Error: ' + JSON.stringify(file)); return; }
-        const current = JSON.parse(decodeURIComponent(escape(atob(file.content.replace(/\n/g, '')))));
-        const date = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-        current.unshift({ date, body });
-        const json = JSON.stringify(current, null, 2);
-        const updated = btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, p) => String.fromCharCode('0x' + p)));
-        const put = await fetch(apiBase, {
-          method: 'PUT',
-          headers,
-          body: JSON.stringify({ message: 'add rumination', content: updated, sha: file.sha }),
-        });
-        if (put.ok) {
-          status('Published.');
-          document.getElementById('body').value = '';
-        } else {
-          const err = await put.json();
-          status('Error: ' + (err.message || put.status));
-        }
-      } catch (e) {
-        status('Error: ' + e.message);
-      }
-    }
-
-    // auto-login if token saved
-    (async () => {
-      const token = localStorage.getItem(KEY);
-      if (!token) return;
-      const res = await fetch('https://api.github.com/user', {
-        headers: { Authorization: 'token ' + token }
-      });
-      if (res.ok) { const u = await res.json(); showPostView(u.login); }
-      else localStorage.removeItem(KEY);
-    })();
-  </script>
+  (async () => {
+    const token = localStorage.getItem(KEY);
+    if (!token) return;
+    const res = await fetch('https://api.github.com/user', { headers: { Authorization: 'token ' + token } });
+    if (res.ok) { const u = await res.json(); showPostView(u.login); }
+    else localStorage.removeItem(KEY);
+  })();
+</script>
 </body>
 </html>
