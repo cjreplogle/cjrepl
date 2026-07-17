@@ -1,5 +1,5 @@
 const _SP_CLIENT_ID = '0d9880996e804bd98c0864673840c608';
-const _SP_REDIRECT   = location.origin + location.pathname.replace(/\/+$/, '');
+const _SP_REDIRECT   = 'https://cjre.pl/ogle';
 const _SP_SCOPES     = 'user-read-playback-state user-read-currently-playing';
 
 // — PKCE helpers —
