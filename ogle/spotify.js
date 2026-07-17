@@ -24,6 +24,7 @@ window.spConnect = async () => {
   const verifier = _spRandStr(64);
   localStorage.setItem('sp_verifier', verifier);
   const challenge = await _spChallenge(verifier);
+  console.log('[spotify] redirect_uri:', _SP_REDIRECT);
   location.href = 'https://accounts.spotify.com/authorize?' + new URLSearchParams({
     client_id: _SP_CLIENT_ID, response_type: 'code',
     redirect_uri: _SP_REDIRECT, scope: _SP_SCOPES,
