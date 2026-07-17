@@ -39,7 +39,8 @@ function _ljUpdateSeek() {
   if (!_ljPaused) requestAnimationFrame(_ljUpdateSeek);
 }
 
-const _TRANSIENT_THRESH = 0.14;
+const _TRANSIENT_THRESH = 0.06;
+const _MAX_SEG = 32; // hard cap on segment length in samples
 const _MIN_AMP = 0.01; // skip near-silent samples to reduce center clutter
 
 function _ljDraw() {
@@ -79,7 +80,7 @@ function _ljDraw() {
     const jump = i > 0 && i < _LJ_FFT
       ? Math.abs(_ljDataL[i] - _ljDataL[i-1]) + Math.abs(_ljDataR[i] - _ljDataR[i-1])
       : 0;
-    const isBreak = silent || jump > _TRANSIENT_THRESH || i === _LJ_FFT;
+    const isBreak = silent || jump > _TRANSIENT_THRESH || (segStart >= 0 && i - segStart >= _MAX_SEG) || i === _LJ_FFT;
 
     if (!silent && segStart === -1) { segStart = i; }
 
