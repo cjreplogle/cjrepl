@@ -271,6 +271,12 @@
         border: none;
       }
     }
+    html.bg-white, html.bg-white body,
+    html.bg-white button, html.bg-white .tab-btn,
+    html.bg-white a, html.bg-white span, html.bg-white p,
+    html.bg-white h1, html.bg-white h2, html.bg-white h3 {
+      color: #111 !important;
+    }
   </style>
 </head>
 <body>
@@ -913,6 +919,7 @@
       document.documentElement.style.background = t.bg;
       document.documentElement.style.colorScheme = t.scheme;
       document.body.style.color = t.color;
+      document.documentElement.classList.toggle('bg-white', name === 'white');
       document.querySelectorAll('#bg-btns button').forEach(b => b.style.fontWeight = '');
       const active = document.getElementById('bg-' + name);
       if (active) active.style.fontWeight = 'bold';
