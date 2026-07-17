@@ -95,6 +95,28 @@ function _ljDraw() {
   _ljCtx.fillStyle = 'rgba(0,0,0,0.3)';
   _ljCtx.fillRect(0, 0, w, h);
   _ljCtx.save();
+
+  // Draw axes in 3D mode
+  if (_lj3d) {
+    _ljCtx.strokeStyle = 'rgba(255,255,255,0.12)';
+    _ljCtx.lineWidth = 0.8;
+    _ljCtx.shadowBlur = 0;
+    const axLen = 1.05;
+    const axes = [
+      [[-axLen,0,0],[axLen,0,0]],  // X (left channel)
+      [[0,-axLen,0],[0,axLen,0]],  // Y (right channel)
+      [[0,0,-axLen],[0,0,axLen]],  // Z (delayed)
+    ];
+    for (const [[x0,y0,z0],[x1,y1,z1]] of axes) {
+      const [px0, py0] = _rot(x0, y0, z0);
+      const [px1, py1] = _rot(x1, y1, z1);
+      _ljCtx.beginPath();
+      _ljCtx.moveTo(ox + px0 * scale, oy + py0 * scale);
+      _ljCtx.lineTo(ox + px1 * scale, oy + py1 * scale);
+      _ljCtx.stroke();
+    }
+  }
+
   _ljCtx.shadowBlur = 3;
   _ljCtx.lineWidth = 1.3;
   _ljCtx.lineJoin = 'round';
