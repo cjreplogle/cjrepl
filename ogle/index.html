@@ -378,12 +378,27 @@
       }
     }
 
+    const subTabOrder0 = ['mb-content', 'tb-content', 'lj-content'];
+
+    function closeSubTab(id) {
+      const content = document.getElementById(id);
+      if (!content.classList.contains('active')) return;
+      content.classList.remove('active');
+      const btn = document.querySelector(`[onclick="switchSubTab('${id}', this)"]`);
+      if (btn) btn.classList.remove('active');
+      if (id === 'lj-content') { window.ljClose && window.ljClose(); }
+    }
+
     function switchSubTab(id, btn) {
+      const isOpening = !document.getElementById(id).classList.contains('active');
+      // close all other sub-tabs first
+      subTabOrder0.forEach(sid => { if (sid !== id) closeSubTab(sid); });
       const content = document.getElementById(id);
       content.classList.toggle('active');
       btn.classList.toggle('active');
-      const subIdx = ['mb-content', 'tb-content', 'lj-content'].indexOf(id);
+      const subIdx = subTabOrder0.indexOf(id);
       if (content.classList.contains('active') && subIdx >= 0) setFocus(4 + subIdx);
+      else setFocus(3); // back to forfun btn
       if (id === 'mb-content' && content.classList.contains('active')) {
         if (window.mbOpen) window.mbOpen();
       }
