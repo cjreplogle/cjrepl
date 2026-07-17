@@ -129,8 +129,9 @@
       transform: translateX(-8px);
       transition: opacity 0.4s ease, transform 0.4s ease;
       max-height: 4em;
-      margin-bottom: 4px;
+      margin-bottom: 10px;
       overflow: hidden;
+      font-size: clamp(1.3rem, 1.5vw, 2rem);
     }
     .tabs {
       gap: 0;
@@ -153,7 +154,7 @@
       margin-bottom: 0;
       margin-top: 0;
       pointer-events: none;
-      transition: opacity 0.35s ease, transform 0.35s ease, max-height 0.45s ease 0.05s, margin-bottom 0.45s ease 0.05s, margin-top 0.45s ease 0.05s;
+      transition: opacity 0.3s ease, transform 0.3s ease, max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), margin-bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1), margin-top 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
     #forfun .tab-btn {
       max-height: 6em;
@@ -289,14 +290,14 @@
       <div>
         <button class="tab-btn" onclick="switchSubTab('mb-content', this)" style="font-size:0.85rem"><span class="selector"> </span>mandelbrot<span class="tab-hint"> — drag · scroll · dblclick to tour</span></button>
         <div id="mb-content" class="tab-content"><div>
-          <div style="position:relative">
+          <div style="position:relative;max-width:min(100%,56vh)">
             <div id="mandelbrot"></div>
             <div id="mb-label" style="position:absolute;top:0;right:0;font-family:monospace;font-size:0.6rem;opacity:0.4;pointer-events:none"></div>
           </div>
         </div></div>
         <button class="tab-btn" onclick="switchSubTab('tb-content', this)" style="font-size:0.85rem"><span class="selector"> </span>three-body<span class="tab-hint"> — click to cycle · dblclick to randomize</span></button>
         <div id="tb-content" class="tab-content"><div>
-          <div style="position:relative">
+          <div style="position:relative;max-width:min(100%,56vh)">
             <div id="threebody" style="font-family:monospace;font-size:0.75rem;line-height:1.1;white-space:pre;overflow:hidden;height:24rem;"></div>
             <div id="tb-label" style="position:absolute;top:0;right:0;font-family:monospace;font-size:0.6rem;opacity:0.4;pointer-events:none"></div>
           </div>
@@ -308,7 +309,7 @@
             <button id="lj-3d-btn" onclick="window.ljToggle3d && window.ljToggle3d()" style="font:inherit;background:none;border:1px solid rgba(255,255,255,0.3);color:inherit;cursor:pointer;padding:2px 8px;border-radius:3px">3D</button>
             <button id="lj-sys-btn" onclick="window.ljUseSystem && window.ljUseSystem()" style="font:inherit;background:none;border:1px solid rgba(255,255,255,0.3);color:inherit;cursor:pointer;padding:2px 8px;border-radius:3px">system</button>
             <button id="lj-mic-btn" onclick="window.ljUseMic && window.ljUseMic()" style="font:inherit;background:none;border:1px solid rgba(255,255,255,0.3);color:inherit;cursor:pointer;padding:2px 8px;border-radius:3px">mic</button>
-            <label style="cursor:pointer;border:1px solid rgba(255,255,255,0.3);padding:2px 8px;border-radius:3px">load file<input id="lj-file" type="file" accept="audio/*" style="display:none" onchange="window.ljLoadFile && window.ljLoadFile(this.files[0])"></label>
+            <label style="cursor:pointer;border:1px solid rgba(255,255,255,0.3);padding:2px 8px;border-radius:3px">load file<input id="lj-file" type="file" accept="audio/*,.mp3,.mp4,.m4a,.aac,.wav,.ogg,.flac,.opus,.aiff,.aif" style="display:none" onchange="window.ljLoadFile && window.ljLoadFile(this.files[0])"></label>
             <button id="lj-play-btn" onclick="window.ljTogglePlay && window.ljTogglePlay()" style="font:inherit;background:none;border:1px solid rgba(255,255,255,0.3);color:inherit;cursor:pointer;padding:2px 8px;border-radius:3px;display:none">▶</button>
             <input id="lj-seek" type="range" min="0" max="100" value="0" step="0.1" style="flex:1;min-width:80px;accent-color:#00ff88;display:none" oninput="window.ljSeek && window.ljSeek(this.value)">
             <span id="lj-time" style="opacity:0.5;font-variant-numeric:tabular-nums;display:none">0:00</span>
@@ -367,41 +368,34 @@
       if (isOpening) {
         if (introEl) introEl.classList.add('tab-open');
         if (photoEl) photoEl.classList.add('tab-open');
+
+        // Measure before any DOM changes (FLIP: record start positions)
+        const startTops = topBtnsList.map(b => b.getBoundingClientRect().top);
+
+        // Apply classes
         btn.classList.add('active');
         document.getElementById(id).classList.add('active');
         topBtnsList.forEach(b => {
-          if (b !== btn) {
-            const dir = topBtnsList.indexOf(b) < clickedIdx ? -1 : 1;
-            b.style.transition = '';
-            b.style.transform = `translateY(${dir * 18}px)`;
-            b.classList.add('receded');
-          }
+          if (b !== btn) b.classList.add('receded');
         });
-        // mbOpen is called when the mb-content subtab opens, not when forfun opens
 
-        // force-clear all transforms before measuring to avoid mid-animation skew
-        topBtnsList.forEach(b => {
-          b.style.transition = 'none';
-          b.style.transform = '';
-          const c = document.getElementById(tabIds[topBtnsList.indexOf(b)]);
-          if (c) { c.style.transition = 'none'; c.style.transform = ''; }
-        });
-        // trigger reflow so positions are settled
+        // Trigger reflow so final positions are known
         void btn.getBoundingClientRect();
 
-        // slide active button to Papers position
-        const papersBtn = topBtnsList[0];
-        const dy = papersBtn.getBoundingClientRect().top - btn.getBoundingClientRect().top;
+        // Slide active button up to where Papers button was
+        const papersStart = startTops[0];
+        const btnEnd = btn.getBoundingClientRect().top;
+        const dy = papersStart - btnEnd;
         if (dy !== 0) {
           const contentEl = document.getElementById(id);
           [btn, contentEl].forEach(el => {
             el.style.transition = 'none';
-            el.style.transform = 'translateY(0)';
+            el.style.transform = `translateY(${-dy}px)`;
           });
           requestAnimationFrame(() => requestAnimationFrame(() => {
             [btn, contentEl].forEach(el => {
-              el.style.transition = 'opacity 0.5s ease, transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-              el.style.transform = `translateY(${dy}px)`;
+              el.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.4s ease';
+              el.style.transform = 'translateY(0)';
             });
           }));
         }
@@ -471,7 +465,7 @@
       if (id === 'lj-content') {
         if (content.classList.contains('active')) {
           if (!window.ljUseMic) {
-            const s = document.createElement('script'); s.src = 'lissajous.js'; document.head.appendChild(s);
+            const s = document.createElement('script'); s.src = 'lissajous.js?v=' + Date.now(); document.head.appendChild(s);
             s.onload = () => window.ljOpen && window.ljOpen();
           } else { window.ljOpen && window.ljOpen(); }
         } else { window.ljClose && window.ljClose(); }
@@ -746,15 +740,19 @@
 
     // Pick one photo at random and load only that one
     (function() {
-      const photos = ['me2.jpg','me3.jpg','me4.jpg','me5.jpg','me6.jpg','me7.jpg','me8.jpg'];
-      const pick = photos[Math.floor(Math.random() * photos.length)];
+      const photos = ['me2.jpg','me4.jpg','me5.jpg','me6.jpg'];
+      const pick = _animDone ? photos[Math.floor(Math.random() * photos.length)] : 'me1.jpg';
       document.querySelector('.profile-photo').src = pick;
     })();
 
     const topBtns = Array.from(document.querySelectorAll('.tabs > .tab-btn'));
-    function revealTab(i) {
-      if (topBtns[i]) topBtns[i].classList.add('visible');
+    function revealTab(i, fast) {
+      if (!topBtns[i]) return;
+      if (fast) topBtns[i].style.transition = 'opacity 0.12s ease, transform 0.12s ease';
+      topBtns[i].classList.add('visible');
+      if (fast) setTimeout(() => topBtns[i].style.transition = '', 150);
     }
+    if (_animDone) { revealTab(0,true); revealTab(1,true); revealTab(2,true); revealTab(3,true); }
 
     function type() {
       if (segIndex >= segments.length) return;

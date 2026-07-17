@@ -7,20 +7,23 @@ const _ljDataL = new Float32Array(_LJ_N);
 const _ljDataR = new Float32Array(_LJ_N);
 const _ljDataZ = new Float32Array(_LJ_N);
 
-const _THRESH   = 0.12;  // transient break threshold
-const _MAX_SEG  = 48;    // max samples per segment before forced break
-const _MIN_AMP  = 0.06;  // skip near-silent samples
-const _MIN_DISP = 0.08;  // skip segments whose peak displacement from origin is too small
+const _THRESH   = 0.14;  // transient break threshold
+const _MAX_SEG  = 80;    // max samples per segment before forced break
+const _MIN_AMP  = 0.04;  // skip near-silent samples
+const _MIN_DISP = 0.05;  // skip segments whose peak displacement from origin is too small
 
 // red → purple → blue → teal
-const _GRAD = [[255,50,50],[170,40,255],[40,90,255],[0,210,190]];
+const _GRAD = [[255,40,40],[255,30,140],[160,20,255],[40,100,255],[80,210,255]];
 
 // Returns [colorString, t] where t=0 is bass/red, t=1 is treble/teal
+// Uses a padded context window so short segments still get reliable color
 function _segInfo(s, e) {
+  const pad = 16;
+  const ws = Math.max(0, s - pad), we = Math.min(_LJ_N, e + pad);
   let zc = 0;
-  for (let k = s + 1; k < e; k++)
+  for (let k = ws + 1; k < we; k++)
     if (_ljDataL[k-1] * _ljDataL[k] < 0) zc++;
-  const t = Math.min(1, (zc / Math.max(1, e - s)) / 0.10);
+  const t = Math.min(1, Math.pow((zc / Math.max(1, we - ws)) / 0.10, 0.6));
   const scaled = t * (_GRAD.length - 1);
   const gi = Math.min(Math.floor(scaled), _GRAD.length - 2);
   const f = scaled - gi;
@@ -119,29 +122,50 @@ function _ljDraw() {
     }
   }
 
-  _ljCtx.shadowBlur = 3;
-  _ljCtx.lineWidth = 1.3;
   _ljCtx.lineJoin = 'round';
 
-  let segStart = -1, segZC = 0;
+  // Compute frame peak to scale thresholds — fewer particles at low volume
+  let framePeak = 0;
+  for (let i = 0; i < _LJ_N; i++) {
+    const a = Math.abs(_ljDataL[i]) + Math.abs(_ljDataR[i]);
+    if (a > framePeak) framePeak = a;
+  }
+  const volFactor = Math.min(1, framePeak / 0.4);
+  const dynMinAmp  = _MIN_AMP  + (0.55 - _MIN_AMP)  * (1 - volFactor);
+  const dynMinDisp = _MIN_DISP + (0.80 - _MIN_DISP) * (1 - volFactor);
+
+  // Precompute sliding-window ZCR per sample so cap decisions aren't based on
+  // the running in-segment count (which is always 0 at segment start → every
+  // segment was being broken as a 1-sample particle immediately).
+  const _ZCR_WIN = 32;
+  const _zcrBuf = new Float32Array(_LJ_N);
+  for (let i = 0; i < _LJ_N; i++) {
+    const ws = Math.max(0, i - (_ZCR_WIN >> 1));
+    const we = Math.min(_LJ_N, i + (_ZCR_WIN >> 1));
+    let zc = 0;
+    for (let k = ws + 1; k < we; k++)
+      if (_ljDataL[k-1] * _ljDataL[k] < 0) zc++;
+    _zcrBuf[i] = zc / Math.max(1, we - ws);
+  }
+
+  let segStart = -1;
   for (let i = 0; i <= _LJ_N; i++) {
     const end = i === _LJ_N;
     const amp = end ? 0 : Math.abs(_ljDataL[i]) + Math.abs(_ljDataR[i]);
-    const silent = amp < _MIN_AMP;
+    const silent = amp < dynMinAmp;
     const jump = (!end && i > 0)
       ? Math.abs(_ljDataL[i] - _ljDataL[i-1]) + Math.abs(_ljDataR[i] - _ljDataR[i-1])
       : 0;
 
-    if (!silent && !end && segStart < 0) { segStart = i; segZC = 0; }
+    if (!silent && !end && segStart < 0) segStart = i;
 
-    // Track zero crossings incrementally for dynamic segment cap
-    if (segStart >= 0 && i > segStart && !end)
-      if (_ljDataL[i-1] * _ljDataL[i] < 0) segZC++;
-
-    // Bass (low ZCR) gets short segments → particle-like dashes; treble gets longer
+    // Use precomputed ZCR at segment start for stable cap decisions
     const curLen = segStart >= 0 ? i - segStart : 0;
-    const zcRate = curLen > 0 ? segZC / curLen : 0;
-    const dynMax = zcRate < 0.04 ? 3 : zcRate < 0.10 ? 8 : _MAX_SEG;
+    const zcRate = segStart >= 0 ? _zcrBuf[segStart] : 0;
+    const disp = i > 0 ? Math.abs(_ljDataL[i-1]) + Math.abs(_ljDataR[i-1]) : 0.5;
+    const baseCap = zcRate < 0.015 ? 1 : zcRate < 0.04 ? 16 : zcRate < 0.08 ? 40 : _MAX_SEG;
+    // near-center segments get longer to show continuous path; far segments stay short/particle
+    const dynMax = Math.min(_MAX_SEG, disp < 0.3 ? Math.round(baseCap * (1 + 2 * (1 - disp / 0.3))) : baseCap);
 
     const doBreak = end || silent || jump > _THRESH || (segStart >= 0 && curLen >= dynMax);
 
@@ -152,24 +176,39 @@ function _ljDraw() {
         const d = Math.abs(_ljDataL[k]) + Math.abs(_ljDataR[k]);
         if (d > peak) peak = d;
       }
-      if (peak >= _MIN_DISP) {
+      if (peak >= dynMinDisp) {
         const [col] = _segInfo(segStart, i);
+        const brightness = Math.min(1, peak / 0.6);
         _ljCtx.strokeStyle = col;
+        _ljCtx.fillStyle = col;
         _ljCtx.shadowColor = col;
-        _ljCtx.beginPath();
-        for (let k = segStart; k < i; k++) {
-          const L = _ljDataL[k], R = _ljDataR[k];
-          const Z = _lj3d && _ljAnalZ ? _ljDataZ[k] : 0;
+        _ljCtx.lineWidth = 0.8 + brightness * 2.2;
+        _ljCtx.shadowBlur = 2 + brightness * 8;
+        if (i - segStart === 1) {
+          // single-sample: stroke draws nothing, use a filled dot scaled by amplitude
+          const L = _ljDataL[segStart], R = _ljDataR[segStart];
+          const Z = _lj3d && _ljAnalZ ? _ljDataZ[segStart] : 0;
           const [px, py] = _lj3d ? _rot(L, -R, Z) : [L, -R];
-          k === segStart
-            ? _ljCtx.moveTo(ox + px * scale, oy + py * scale)
-            : _ljCtx.lineTo(ox + px * scale, oy + py * scale);
+          const radius = 1.5;
+          _ljCtx.beginPath();
+          _ljCtx.arc(ox + px * scale, oy + py * scale, radius, 0, Math.PI * 2);
+          _ljCtx.fill();
+        } else {
+          _ljCtx.beginPath();
+          for (let k = segStart; k < i; k++) {
+            const L = _ljDataL[k], R = _ljDataR[k];
+            const Z = _lj3d && _ljAnalZ ? _ljDataZ[k] : 0;
+            const [px, py] = _lj3d ? _rot(L, -R, Z) : [L, -R];
+            k === segStart
+              ? _ljCtx.moveTo(ox + px * scale, oy + py * scale)
+              : _ljCtx.lineTo(ox + px * scale, oy + py * scale);
+          }
+          _ljCtx.stroke();
         }
-        _ljCtx.stroke();
       }
-      segStart = -1; segZC = 0;
+      segStart = -1;
     }
-    if (silent) { segStart = -1; segZC = 0; }
+    if (silent) segStart = -1;
   }
 
   _ljCtx.restore();
@@ -316,8 +355,7 @@ window.ljUseSystem = async () => {
   try {
     _ljStatus('requesting system audio…');
     _ljSetupCtx();
-    const stream = await navigator.mediaDevices.getDisplayMedia({ audio: true, video: true });
-    stream.getVideoTracks().forEach(t => t.stop());
+    const stream = await navigator.mediaDevices.getDisplayMedia({ audio: true, video: { width: 1, height: 1, frameRate: 1 } });
     if (!stream.getAudioTracks().length) { _ljStatus('no audio track'); return; }
     _ljStream = stream;
     const src = _ljAudio.createMediaStreamSource(stream);
@@ -344,7 +382,6 @@ window.ljOpen = () => {
   }
   _ljResize();
   if (!_ljAnimId) _ljDraw();
-  window.ljUseSystem();
 };
 
 window.ljClose = () => {
