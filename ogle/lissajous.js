@@ -123,63 +123,53 @@ function _ljDraw() {
   _ljCtx.lineWidth = 1.3;
   _ljCtx.lineJoin = 'round';
 
-  let segStart = -1;
+  let segStart = -1, segZC = 0;
   for (let i = 0; i <= _LJ_N; i++) {
     const end = i === _LJ_N;
-    const amp  = end ? 0 : Math.abs(_ljDataL[i]) + Math.abs(_ljDataR[i]);
+    const amp = end ? 0 : Math.abs(_ljDataL[i]) + Math.abs(_ljDataR[i]);
     const silent = amp < _MIN_AMP;
     const jump = (!end && i > 0)
       ? Math.abs(_ljDataL[i] - _ljDataL[i-1]) + Math.abs(_ljDataR[i] - _ljDataR[i-1])
       : 0;
-    const doBreak = end || silent || jump > _THRESH || (segStart >= 0 && i - segStart >= _MAX_SEG);
 
-    if (!silent && !end && segStart < 0) segStart = i;
+    if (!silent && !end && segStart < 0) { segStart = i; segZC = 0; }
+
+    // Track zero crossings incrementally for dynamic segment cap
+    if (segStart >= 0 && i > segStart && !end)
+      if (_ljDataL[i-1] * _ljDataL[i] < 0) segZC++;
+
+    // Bass (low ZCR) gets short segments → particle-like dashes; treble gets longer
+    const curLen = segStart >= 0 ? i - segStart : 0;
+    const zcRate = curLen > 0 ? segZC / curLen : 0;
+    const dynMax = zcRate < 0.04 ? 3 : zcRate < 0.10 ? 8 : _MAX_SEG;
+
+    const doBreak = end || silent || jump > _THRESH || (segStart >= 0 && curLen >= dynMax);
 
     if (doBreak && segStart >= 0) {
-      // skip segments too close to origin (suppresses center clutter)
+      // skip segments too close to origin
       let peak = 0;
       for (let k = segStart; k < i; k++) {
         const d = Math.abs(_ljDataL[k]) + Math.abs(_ljDataR[k]);
         if (d > peak) peak = d;
       }
-      if (peak < _MIN_DISP) { segStart = -1; if (silent) segStart = -1; continue; }
-
-      const [col, zcT] = _segInfo(segStart, i);
-      _ljCtx.strokeStyle = col;
-      _ljCtx.shadowColor = col;
-
-      const len = i - segStart;
-      // Low-frequency (bass/red) content → particles; mid/high → connected segments
-      const asParticles = zcT < 0.35 || len === 1;
-
-      if (asParticles) {
-        // Draw each sample as a tiny oriented line segment
-        for (let k = segStart; k < i; k++) {
-          const L = _ljDataL[k], R = _ljDataR[k];
-          const Z = _lj3d && _ljAnalZ ? _ljDataZ[k] : 0;
-          const [px, py] = _lj3d ? _rot(L, -R, Z) : [L, -R];
-          const nxt = Math.min(k + 1, _LJ_N - 1);
-          const [nx, ny] = _lj3d ? _rot(_ljDataL[nxt], -_ljDataR[nxt], _lj3d && _ljAnalZ ? _ljDataZ[nxt] : 0) : [_ljDataL[nxt], -_ljDataR[nxt]];
-          const dx = nx - px, dy = ny - py, dn = Math.sqrt(dx*dx + dy*dy) || 1;
-          _ljCtx.beginPath();
-          _ljCtx.moveTo(ox + (px - dx/dn) * scale, oy + (py - dy/dn) * scale);
-          _ljCtx.lineTo(ox + (px + dx/dn) * scale, oy + (py + dy/dn) * scale);
-          _ljCtx.stroke();
-        }
-      } else {
+      if (peak >= _MIN_DISP) {
+        const [col] = _segInfo(segStart, i);
+        _ljCtx.strokeStyle = col;
+        _ljCtx.shadowColor = col;
         _ljCtx.beginPath();
         for (let k = segStart; k < i; k++) {
           const L = _ljDataL[k], R = _ljDataR[k];
           const Z = _lj3d && _ljAnalZ ? _ljDataZ[k] : 0;
           const [px, py] = _lj3d ? _rot(L, -R, Z) : [L, -R];
-          const sx = ox + px * scale, sy = oy + py * scale;
-          k === segStart ? _ljCtx.moveTo(sx, sy) : _ljCtx.lineTo(sx, sy);
+          k === segStart
+            ? _ljCtx.moveTo(ox + px * scale, oy + py * scale)
+            : _ljCtx.lineTo(ox + px * scale, oy + py * scale);
         }
         _ljCtx.stroke();
       }
-      segStart = -1;
+      segStart = -1; segZC = 0;
     }
-    if (silent) segStart = -1;
+    if (silent) { segStart = -1; segZC = 0; }
   }
 
   _ljCtx.restore();
