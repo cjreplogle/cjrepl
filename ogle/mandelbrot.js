@@ -186,16 +186,69 @@ MB.addEventListener('wheel', e => {
   mbRender();
 }, { passive: false });
 
-let lastTX, lastTY;
-MB.addEventListener('touchstart', e => { lastTX = e.touches[0].clientX; lastTY = e.touches[0].clientY; });
+let lastTX, lastTY, lastPinchDist = null, lastTapTime = 0;
+
+function _mbPinchDist(e) {
+  const dx = e.touches[0].clientX - e.touches[1].clientX;
+  const dy = e.touches[0].clientY - e.touches[1].clientY;
+  return Math.hypot(dx, dy);
+}
+
+MB.addEventListener('touchstart', e => {
+  if (e.touches.length === 1) {
+    lastTX = e.touches[0].clientX;
+    lastTY = e.touches[0].clientY;
+    lastPinchDist = null;
+
+    // Double-tap to tour
+    const now = Date.now();
+    if (now - lastTapTime < 300) {
+      if (!document.getElementById('mb-content').classList.contains('active')) return;
+      tourTimer ? resetTour() : runTour();
+    }
+    lastTapTime = now;
+  } else if (e.touches.length === 2) {
+    lastPinchDist = _mbPinchDist(e);
+    e.preventDefault();
+  }
+}, { passive: false });
+
 MB.addEventListener('touchmove', e => {
   e.preventDefault();
   const cols = Math.max(20, Math.floor(MB.getBoundingClientRect().width / Math.max(1, charW)));
-  viewX -= (e.touches[0].clientX - lastTX) / cols * mbXSpan(cols) * 0.3;
-  viewY -= (e.touches[0].clientY - lastTY) / 20 * zoom * 0.3;
-  lastTX = e.touches[0].clientX; lastTY = e.touches[0].clientY;
+
+  if (e.touches.length === 2) {
+    // Pinch to zoom
+    const dist = _mbPinchDist(e);
+    if (lastPinchDist) {
+      const ratio = lastPinchDist / dist;
+      // Zoom toward pinch midpoint
+      const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      const rect = MB.getBoundingClientRect();
+      const fx = (mx - rect.left) / rect.width  - 0.5;
+      const fy = (my - rect.top)  / rect.height - 0.5;
+      viewX += fx * mbXSpan(cols) * (1 - ratio);
+      viewY += fy * zoom * (1 - ratio);
+      zoom  *= ratio;
+      zoom   = Math.max(1e-6, Math.min(4, zoom));
+    }
+    lastPinchDist = dist;
+    lastTX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    lastTY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+  } else if (e.touches.length === 1 && lastPinchDist === null) {
+    // Single-finger pan
+    viewX -= (e.touches[0].clientX - lastTX) / cols * mbXSpan(cols) * 0.3;
+    viewY -= (e.touches[0].clientY - lastTY) / 20 * zoom * 0.3;
+    lastTX = e.touches[0].clientX;
+    lastTY = e.touches[0].clientY;
+  }
   mbRender();
 }, { passive: false });
+
+MB.addEventListener('touchend', e => {
+  if (e.touches.length < 2) lastPinchDist = null;
+}, { passive: true });
 
 let mbLoopRunning = false;
 
