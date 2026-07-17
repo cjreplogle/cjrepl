@@ -701,7 +701,8 @@
     ];
 
     const el = document.getElementById('typed');
-    let segIndex = 0, charIndex = 0, deleteCount = 0;
+    const _animDone = localStorage.getItem('animDone');
+    let segIndex = _animDone ? 8 : 0, charIndex = 0, deleteCount = 0;
 
     function buildHTML(activeDel) {
       // replay all segments as character operations
@@ -785,7 +786,7 @@
 
       if (seg.mobBr) {
         segIndex++; charIndex = 0;
-        if (segIndex === 13) { revealTab(0); setTimeout(() => revealTab(1), 250); setTimeout(() => revealTab(2), 500); setTimeout(() => revealTab(3), 750); }
+        if (segIndex === 13) { localStorage.setItem('animDone','1'); revealTab(0); setTimeout(() => revealTab(1), 250); setTimeout(() => revealTab(2), 500); setTimeout(() => revealTab(3), 750); }
         setTimeout(type, 0); return;
       }
 
@@ -793,7 +794,7 @@
         charIndex++;
       } else {
         segIndex++; charIndex = 0;
-        if (segIndex === 13) { revealTab(0); setTimeout(() => revealTab(1), 250); setTimeout(() => revealTab(2), 500); setTimeout(() => revealTab(3), 750); }
+        if (segIndex === 13) { localStorage.setItem('animDone','1'); revealTab(0); setTimeout(() => revealTab(1), 250); setTimeout(() => revealTab(2), 500); setTimeout(() => revealTab(3), 750); }
         if (segIndex >= segments.length) {
           el.innerHTML = buildHTML();
           if (!('ontouchstart' in window)) { el.contentEditable = 'true'; el.focus(); }
