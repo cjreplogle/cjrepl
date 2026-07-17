@@ -922,12 +922,15 @@
     const _bdPending = new Set();
     // Preload all backdrop scripts after page settles — mark loaded only in onload
     setTimeout(() => {
-      const current = localStorage.getItem('backdrop') || 'fire';
+      const current = localStorage.getItem('backdrop') || 'borealis';
+      if (window._bdInitial) _bdLoaded.add(window._bdInitial); // initial script already loaded at page start
+      _bdLoaded.add(current); // also mark current (may differ if user switched before 2s)
       Object.entries(_bdScripts).forEach(([mode, src]) => {
         if (mode === current || _bdLoaded.has(mode) || _bdPending.has(mode)) return;
         _bdPending.add(mode);
         const s = document.createElement('script'); s.src = src;
         s.onload = () => { _bdLoaded.add(mode); _bdPending.delete(mode); };
+        s.onerror = () => { _bdPending.delete(mode); }; // allow retry on demand
         document.head.appendChild(s);
       });
     }, 2000);
@@ -1040,6 +1043,7 @@
   <script>
     (function() {
       const bd = localStorage.getItem('backdrop') || 'borealis';
+      window._bdInitial = bd;
       const map = {
         water: 'water.js', fire: 'fire.js', voronoi: 'voronoi.js',
         rays: 'rays.js', clouds: 'clouds.js', fireworks: 'fireworks.js',

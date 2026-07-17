@@ -160,7 +160,8 @@
 
 <script>
   (function() {
-    const name = localStorage.getItem('backdrop') || 'fire';
+    const name = localStorage.getItem('backdrop') || 'borealis';
+    window._bdInitial = name;
     const wrap = document.getElementById('backdrop-wrap');
     wrap.style.opacity = parseFloat(localStorage.getItem('backdropOpacity') || '0.82');
     window._backdropSpeed = parseFloat(localStorage.getItem('backdropSpeed') || '1');
@@ -198,12 +199,15 @@
   const _bdLoaded = new Set();
   const _bdPending = new Set();
   setTimeout(() => {
-    const current = localStorage.getItem('backdrop') || 'fire';
+    const current = localStorage.getItem('backdrop') || 'borealis';
+    if (window._bdInitial) _bdLoaded.add(window._bdInitial);
+    _bdLoaded.add(current);
     Object.entries(_bdScripts).forEach(([mode, src]) => {
       if (mode === current || _bdLoaded.has(mode) || _bdPending.has(mode)) return;
       _bdPending.add(mode);
       const s = document.createElement('script'); s.src = src;
       s.onload = () => { _bdLoaded.add(mode); _bdPending.delete(mode); };
+      s.onerror = () => { _bdPending.delete(mode); };
       document.head.appendChild(s);
     });
   }, 2000);
