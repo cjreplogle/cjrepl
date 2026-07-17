@@ -1,16 +1,46 @@
 let _ljCanvas, _ljCtx, _ljAudio;
 let _ljAnalL, _ljAnalR, _ljAnalZ, _ljSrc, _ljStream, _ljAnimId;
 let _ljBuffer = null, _ljPaused = false, _ljStartTime = 0, _ljOffset = 0;
-const _LJ_FFT = 2048;
-const _ljDataL = new Float32Array(_LJ_FFT);
-const _ljDataR = new Float32Array(_LJ_FFT);
-const _ljDataZ = new Float32Array(_LJ_FFT);
+
+const _LJ_N = 512; // time-domain window — small = fewer segments, better perf
+const _ljDataL = new Float32Array(_LJ_N);
+const _ljDataR = new Float32Array(_LJ_N);
+const _ljDataZ = new Float32Array(_LJ_N);
+
+const _THRESH  = 0.12;  // transient break threshold
+const _MAX_SEG = 48;    // max samples per segment before forced break
+const _MIN_AMP = 0.025; // skip near-silent samples
+
+// red → purple → blue → teal
+const _GRAD = [[255,50,50],[170,40,255],[40,90,255],[0,210,190]];
+
+function _segColor(s, e) {
+  let zc = 0;
+  for (let k = s + 1; k < e; k++)
+    if (_ljDataL[k-1] * _ljDataL[k] < 0) zc++;
+  const t = Math.min(1, (zc / Math.max(1, e - s)) / 0.10);
+  const scaled = t * (_GRAD.length - 1);
+  const gi = Math.min(Math.floor(scaled), _GRAD.length - 2);
+  const f = scaled - gi;
+  const a = _GRAD[gi], b = _GRAD[gi + 1];
+  return `rgb(${Math.round(a[0]+f*(b[0]-a[0]))},${Math.round(a[1]+f*(b[1]-a[1]))},${Math.round(a[2]+f*(b[2]-a[2]))})`;
+}
 
 // 3D state
 let _lj3d = false;
 let _ljRotX = 0.35, _ljRotY = 0.5;
-let _ljDrag = null; // {x, y, rx, ry}
+let _ljDrag = null;
 let _ljAutoRot = true;
+
+// Orthographic rotation (no perspective divide = no singularities)
+function _rot(x, y, z) {
+  const cy = Math.cos(_ljRotY), sy = Math.sin(_ljRotY);
+  const x1 =  x * cy + z * sy;
+  const z1 = -x * sy + z * cy;
+  const cx = Math.cos(_ljRotX), sx = Math.sin(_ljRotX);
+  const y2 =  y * cx - z1 * sx;
+  return [x1, y2]; // orthographic — no divide
+}
 
 function _ljResize() {
   if (!_ljCanvas) return;
@@ -37,7 +67,7 @@ function _ljUpdateSeek() {
   const dur = _ljBuffer.duration;
   const pos = _ljPaused ? _ljOffset : Math.min((_ljAudio.currentTime - _ljStartTime) + _ljOffset, dur);
   const seek = document.getElementById('lj-seek');
-  const time = document.getElementById('lj-time');
+  const time  = document.getElementById('lj-time');
   if (seek) seek.value = (pos / dur) * 100;
   if (time) {
     const m = Math.floor(pos / 60), s = Math.floor(pos % 60);
@@ -46,48 +76,11 @@ function _ljUpdateSeek() {
   if (!_ljPaused) requestAnimationFrame(_ljUpdateSeek);
 }
 
-const _TRANSIENT_THRESH = 0.18;
-const _MAX_SEG = 40;
-const _MIN_AMP = 0.03;
-const _STRIDE = 4; // sample every Nth point to thin the time window
-const _GRAD = [[255,50,50],[170,40,255],[40,90,255],[0,210,190]];
-
-function _segColor(s, e) {
-  let zc = 0;
-  for (let k = s + 1; k < e; k++)
-    if (_ljDataL[k-1] * _ljDataL[k] < 0) zc++;
-  // ZC rate in typical music: bass ~0.02, mids ~0.08, highs ~0.2+
-  // Map 0.0–0.15 → full gradient
-  const t = Math.min(1, (zc / Math.max(1, e - s)) / 0.12);
-  const scaled = t * (_GRAD.length - 1);
-  const gi = Math.min(Math.floor(scaled), _GRAD.length - 2);
-  const f = scaled - gi;
-  const a = _GRAD[gi], b = _GRAD[gi + 1];
-  return [
-    Math.round(a[0] + f * (b[0] - a[0])),
-    Math.round(a[1] + f * (b[1] - a[1])),
-    Math.round(a[2] + f * (b[2] - a[2])),
-  ];
-}
-
-// Rotate point (x,y,z) by current camera angles and return projected [sx, sy, depth]
-function _project(x, y, z) {
-  const cy = Math.cos(_ljRotY), sy = Math.sin(_ljRotY);
-  const x1 = x * cy + z * sy;
-  const z1 = -x * sy + z * cy;
-  const cx = Math.cos(_ljRotX), sx = Math.sin(_ljRotX);
-  const y2 = y * cx - z1 * sx;
-  const z2 = y * sx + z1 * cx;
-  const d = 2.8;
-  const pz = d + z2 * 0.4;
-  return [x1 / pz * d, y2 / pz * d, z2];
-}
-
 function _ljDraw() {
   _ljAnimId = requestAnimationFrame(_ljDraw);
   if (!_ljAnalL || !_ljCanvas) return;
 
-  if (_lj3d && _ljAutoRot && !_ljDrag) _ljRotY += 0.004;
+  if (_lj3d && _ljAutoRot && !_ljDrag) _ljRotY += 0.005;
 
   _ljAnalL.getFloatTimeDomainData(_ljDataL);
   _ljAnalR.getFloatTimeDomainData(_ljDataR);
@@ -95,60 +88,56 @@ function _ljDraw() {
 
   const w = _ljCanvas.width, h = _ljCanvas.height;
   if (!w || !h) return;
-  const cx = w / 2, cy = h / 2, scale = Math.min(w, h) / 2 * 0.88;
+  const ox = w / 2, oy = h / 2;
+  const scale = Math.min(w, h) / 2 * 0.88;
 
-  _ljCtx.fillStyle = 'rgba(0,0,0,0.35)';
+  _ljCtx.fillStyle = 'rgba(0,0,0,0.3)';
   _ljCtx.fillRect(0, 0, w, h);
-
   _ljCtx.save();
   _ljCtx.shadowBlur = 3;
-  _ljCtx.lineWidth = 1.2;
+  _ljCtx.lineWidth = 1.3;
   _ljCtx.lineJoin = 'round';
 
   let segStart = -1;
-  const _N = Math.floor(_LJ_FFT / _STRIDE);
-  for (let ii = 0; ii <= _N; ii++) {
-    const i = ii < _N ? ii * _STRIDE : _LJ_FFT; // sentinel at end
-    const amp = i < _LJ_FFT ? Math.abs(_ljDataL[i]) + Math.abs(_ljDataR[i]) : 0;
+  for (let i = 0; i <= _LJ_N; i++) {
+    const end = i === _LJ_N;
+    const amp  = end ? 0 : Math.abs(_ljDataL[i]) + Math.abs(_ljDataR[i]);
     const silent = amp < _MIN_AMP;
-    const prev = Math.max(0, i - _STRIDE);
-    const jump = i < _LJ_FFT && i > 0
-      ? Math.abs(_ljDataL[i] - _ljDataL[prev]) + Math.abs(_ljDataR[i] - _ljDataR[prev])
+    const jump = (!end && i > 0)
+      ? Math.abs(_ljDataL[i] - _ljDataL[i-1]) + Math.abs(_ljDataR[i] - _ljDataR[i-1])
       : 0;
-    const isBreak = silent || jump > _TRANSIENT_THRESH || (segStart >= 0 && ii - segStart >= _MAX_SEG) || ii === _N;
+    const doBreak = end || silent || jump > _THRESH || (segStart >= 0 && i - segStart >= _MAX_SEG);
 
-    if (!silent && segStart === -1) { segStart = ii; }
+    if (!silent && !end && segStart < 0) segStart = i;
 
-    if (isBreak && segStart !== -1) {
-      const si = segStart * _STRIDE, ei = Math.min(ii * _STRIDE, _LJ_FFT - 1);
-      const [r, g, b] = _segColor(si, ei + 1);
-      const col = `rgb(${r},${g},${b})`;
+    if (doBreak && segStart >= 0) {
+      const col = _segColor(segStart, i);
       _ljCtx.strokeStyle = col;
       _ljCtx.shadowColor = col;
 
-      const len = ii - segStart;
-      if (len <= 1) {
-        let px, py;
-        if (_lj3d) { [px, py] = _project(_ljDataL[si], _ljDataR[si], _ljAnalZ ? _ljDataZ[si] : 0); }
-        else { px = _ljDataL[si]; py = -_ljDataR[si]; }
-        const ni = Math.min(si + _STRIDE, _LJ_FFT - 1);
-        let npx, npy;
-        if (_lj3d) { [npx, npy] = _project(_ljDataL[ni], _ljDataR[ni], _ljAnalZ ? _ljDataZ[ni] : 0); }
-        else { npx = _ljDataL[ni]; npy = -_ljDataR[ni]; }
-        const dx = npx - px, dy = npy - py, dn = Math.sqrt(dx*dx + dy*dy) || 1;
+      const len = i - segStart;
+      if (len === 1) {
+        // single sample → draw a tiny line in direction of motion
+        const L = _ljDataL[segStart], R = _ljDataR[segStart];
+        const Z = _lj3d && _ljAnalZ ? _ljDataZ[segStart] : 0;
+        const nxt = Math.min(segStart + 1, _LJ_N - 1);
+        const nL = _ljDataL[nxt], nR = _ljDataR[nxt];
+        const nZ = _lj3d && _ljAnalZ ? _ljDataZ[nxt] : 0;
+        let [px, py] = _lj3d ? _rot(L, -R, Z) : [L, -R];
+        let [nx, ny] = _lj3d ? _rot(nL, -nR, nZ) : [nL, -nR];
+        const dx = nx - px, dy = ny - py, dn = Math.sqrt(dx*dx + dy*dy) || 1;
         _ljCtx.beginPath();
-        _ljCtx.moveTo(cx + (px - dx/dn) * scale, cy + (py - dy/dn) * scale);
-        _ljCtx.lineTo(cx + (px + dx/dn) * scale, cy + (py + dy/dn) * scale);
+        _ljCtx.moveTo(ox + (px - dx/dn) * scale, oy + (py - dy/dn) * scale);
+        _ljCtx.lineTo(ox + (px + dx/dn) * scale, oy + (py + dy/dn) * scale);
         _ljCtx.stroke();
       } else {
         _ljCtx.beginPath();
-        for (let kk = segStart; kk <= ii && kk * _STRIDE < _LJ_FFT; kk++) {
-          const k = kk * _STRIDE;
-          let px, py;
-          if (_lj3d) { [px, py] = _project(_ljDataL[k], _ljDataR[k], _ljAnalZ ? _ljDataZ[k] : 0); }
-          else { px = _ljDataL[k]; py = -_ljDataR[k]; }
-          const sx2 = cx + px * scale, sy2 = cy + py * scale;
-          kk === segStart ? _ljCtx.moveTo(sx2, sy2) : _ljCtx.lineTo(sx2, sy2);
+        for (let k = segStart; k < i; k++) {
+          const L = _ljDataL[k], R = _ljDataR[k];
+          const Z = _lj3d && _ljAnalZ ? _ljDataZ[k] : 0;
+          const [px, py] = _lj3d ? _rot(L, -R, Z) : [L, -R];
+          const sx = ox + px * scale, sy = oy + py * scale;
+          k === segStart ? _ljCtx.moveTo(sx, sy) : _ljCtx.lineTo(sx, sy);
         }
         _ljCtx.stroke();
       }
@@ -173,18 +162,19 @@ function _ljStopAudio() {
   _ljShowControls(false);
 }
 
-function _ljMakeAnalyser() {
+function _ljMakeAnal() {
   const a = _ljAudio.createAnalyser();
-  a.fftSize = _LJ_FFT; a.smoothingTimeConstant = 0.5;
+  a.fftSize = _LJ_N * 2; // fftSize must be >= 2× the time-domain buffer
+  a.smoothingTimeConstant = 0.4;
   return a;
 }
 
 function _ljSetupCtx() {
   _ljStopAudio();
   _ljAudio = new AudioContext();
-  _ljAnalL = _ljMakeAnalyser();
-  _ljAnalR = _ljMakeAnalyser();
-  _ljAnalZ = _ljMakeAnalyser();
+  _ljAnalL = _ljMakeAnal();
+  _ljAnalR = _ljMakeAnal();
+  _ljAnalZ = _ljMakeAnal();
 }
 
 function _ljConnectStereo(src) {
@@ -192,7 +182,6 @@ function _ljConnectStereo(src) {
   src.connect(sp);
   sp.connect(_ljAnalL, 0);
   sp.connect(_ljAnalR, 1);
-  // Z = left channel delayed ~20ms
   const dz = _ljAudio.createDelay(0.1); dz.delayTime.value = 0.02;
   sp.connect(dz, 0); dz.connect(_ljAnalZ);
   src.connect(_ljAudio.destination);
@@ -209,8 +198,7 @@ function _ljConnectMono(src) {
 function _ljPlayFrom(offset) {
   _ljStopSrc();
   const src = _ljAudio.createBufferSource();
-  src.buffer = _ljBuffer; src.loop = true;
-  _ljSrc = src;
+  src.buffer = _ljBuffer; src.loop = true; _ljSrc = src;
   const stereo = _ljBuffer.numberOfChannels >= 2;
   stereo ? _ljConnectStereo(src) : _ljConnectMono(src);
   _ljOffset = offset; _ljStartTime = _ljAudio.currentTime;
@@ -241,36 +229,34 @@ window.ljSeek = (pct) => {
 window.ljToggle3d = () => {
   _lj3d = !_lj3d;
   _ljAutoRot = true;
+  if (_lj3d) { _ljRotX = 0.35; _ljRotY = 0.5; }
   const btn = document.getElementById('lj-3d-btn');
   if (btn) btn.textContent = _lj3d ? '2D' : '3D';
-  // reset rotation to a pleasant starting angle
-  if (_lj3d) { _ljRotX = 0.35; _ljRotY = 0.5; }
 };
 
 function _ljSetupDrag() {
   const onStart = (px, py) => {
+    if (!_lj3d) return;
     _ljDrag = { x: px, y: py, rx: _ljRotX, ry: _ljRotY };
     _ljAutoRot = false;
+    _ljCanvas.style.cursor = 'grabbing';
   };
   const onMove = (px, py) => {
-    if (!_ljDrag || !_lj3d) return;
+    if (!_ljDrag) return;
     _ljRotY = _ljDrag.ry + (px - _ljDrag.x) * 0.007;
     _ljRotX = _ljDrag.rx + (py - _ljDrag.y) * 0.007;
     _ljRotX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, _ljRotX));
   };
-  const onEnd = () => { _ljDrag = null; };
-
-  _ljCanvas.addEventListener('mousedown', e => onStart(e.clientX, e.clientY));
-  window.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
-  window.addEventListener('mouseup', onEnd);
-  _ljCanvas.addEventListener('touchstart', e => {
-    onStart(e.touches[0].clientX, e.touches[0].clientY);
-    e.preventDefault();
-  }, { passive: false });
-  window.addEventListener('touchmove', e => {
-    if (_ljDrag) { onMove(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }
-  }, { passive: false });
-  window.addEventListener('touchend', onEnd);
+  const onEnd = () => {
+    _ljDrag = null;
+    _ljCanvas.style.cursor = _lj3d ? 'grab' : 'default';
+  };
+  _ljCanvas.addEventListener('mousedown',  e => onStart(e.clientX, e.clientY));
+  window.addEventListener('mousemove',     e => onMove(e.clientX, e.clientY));
+  window.addEventListener('mouseup',       onEnd);
+  _ljCanvas.addEventListener('touchstart', e => { onStart(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }, { passive: false });
+  window.addEventListener('touchmove',     e => { if (_ljDrag) { onMove(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); } }, { passive: false });
+  window.addEventListener('touchend',      onEnd);
 }
 
 window.ljUseMic = async () => {
@@ -314,7 +300,7 @@ window.ljUseSystem = async () => {
     _ljShowControls(false);
     _ljStatus('system audio');
   } catch(e) {
-    _ljStatus(e.name === 'NotAllowedError' ? 'permission denied' : 'mic · mono');
+    _ljStatus(e.name === 'NotAllowedError' ? 'permission denied' : 'unavailable');
     if (e.name !== 'NotAllowedError') window.ljUseMic();
   }
 };
@@ -324,7 +310,7 @@ window.ljOpen = () => {
   if (!wrap) return;
   if (!_ljCanvas) {
     _ljCanvas = document.createElement('canvas');
-    _ljCanvas.style.cssText = 'display:block;width:100%;height:100%;cursor:grab';
+    _ljCanvas.style.cssText = 'display:block;width:100%;height:100%;cursor:default';
     wrap.appendChild(_ljCanvas);
     _ljCtx = _ljCanvas.getContext('2d');
     window.addEventListener('resize', _ljResize);
