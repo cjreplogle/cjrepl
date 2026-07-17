@@ -156,9 +156,12 @@
       transition: opacity 0.35s ease, transform 0.35s ease, max-height 0.45s ease 0.05s, margin-bottom 0.45s ease 0.05s, margin-top 0.45s ease 0.05s;
     }
     #forfun .tab-btn {
-      max-height: 4em;
-      overflow: hidden;
+      max-height: 6em;
+      overflow: visible;
       margin-top: 6px;
+    }
+    #forfun .tab-btn.receded {
+      overflow: hidden;
     }
     .paper-entry { cursor: pointer; margin-bottom: 6px; margin-top: 10px; }
     .paper-title { padding-left: 1.6em; position: relative; }
@@ -223,6 +226,9 @@
       transition: opacity 0.45s ease 0.15s;
       margin-top: 0;
       margin-bottom: 0;
+    }
+    #forfun > * {
+      overflow: visible;
     }
     .tab-content.active {
       grid-template-rows: 1fr;
@@ -442,26 +448,13 @@
       });
 
       if (isOpening) {
-        // hide "For Fun" button and slide active sub-tab btn up to its position
-        if (forfunBtn) {
-          void forfunBtn.getBoundingClientRect();
-          const dy = forfunBtn.getBoundingClientRect().top - btn.getBoundingClientRect().top;
-          forfunBtn.style.transition = 'none'; forfunBtn.style.transform = '';
-          forfunBtn.classList.add('receded');
-          if (dy !== 0) {
-            btn.style.transition = 'none'; btn.style.transform = 'translateY(0)';
-            requestAnimationFrame(() => requestAnimationFrame(() => {
-              btn.style.transition = 'opacity 0.5s ease, transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94)';
-              btn.style.transform = `translateY(${dy}px)`;
-            }));
-          }
-        }
+        // collapse "For Fun" button so sub-tab label rises to top naturally
+        if (forfunBtn) { forfunBtn.style.transition = ''; forfunBtn.classList.add('receded'); }
         if (introEl) introEl.classList.add('tab-open');
         if (photoEl) photoEl.classList.add('tab-open');
       } else {
         // restore "For Fun" button
         if (forfunBtn) { forfunBtn.classList.remove('receded'); forfunBtn.style.transform = ''; forfunBtn.style.transition = ''; }
-        btn.style.transform = ''; btn.style.transition = '';
         if (introEl) introEl.classList.add('tab-open'); // forfun still open
         if (photoEl) photoEl.classList.add('tab-open');
       }
