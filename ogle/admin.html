@@ -6,7 +6,9 @@
   <title>ruminations — edit</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; height: 100%; background: #000; color: #fff; font-family: Georgia, serif; }
+    html, body { margin: 0; padding: 0; height: 100%; background: #111; color: #fff; font-family: Georgia, serif; transition: background 0.3s ease, color 0.3s ease; }
+    html.bg-white, html.bg-white body, html.bg-white button, html.bg-white a,
+    html.bg-white textarea, html.bg-white span, html.bg-white h2 { color: #111 !important; }
 
     #backdrop-wrap {
       position: fixed; bottom: 0; left: 0; right: 0; height: 100vh;
@@ -159,6 +161,13 @@
 <button onclick="toggleBackdropPanel()" style="position:fixed;bottom:22px;left:10px;font:inherit;font-size:1.2rem;background:none;border:none;cursor:pointer;padding:0;opacity:0.35;color:inherit;z-index:10" title="backdrop">◈</button>
 
 <script>
+  (function() {
+    const bg = localStorage.getItem('siteBg') || 'dark';
+    const bgMap = { transparent:'transparent', black:'#000', dark:'#111', white:'#fff' };
+    document.documentElement.style.background = bgMap[bg] || '#111';
+    document.documentElement.style.colorScheme = bg === 'white' ? 'light' : 'dark';
+    document.documentElement.classList.toggle('bg-white', bg === 'white');
+  })();
   (function() {
     const name = localStorage.getItem('backdrop') || 'borealis';
     window._bdInitial = name;
