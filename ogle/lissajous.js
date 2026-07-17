@@ -330,11 +330,16 @@ function _ljSetupDrag() {
 window.ljUseMic = async () => {
   try {
     _ljStatus('waiting for mic…');
-    _ljSetupCtx();
+    _ljStopAudio();
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
       video: false,
     });
+    _ljAudio = new AudioContext();
+    _ljAnalL = _ljMakeAnal();
+    _ljAnalR = _ljMakeAnal();
+    _ljAnalZ = _ljMakeAnal();
+    await _ljAudio.resume();
     _ljStream = stream;
     _ljConnectMono(_ljAudio.createMediaStreamSource(stream));
     _ljShowControls(false);
