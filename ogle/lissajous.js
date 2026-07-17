@@ -58,20 +58,27 @@ function _ljDraw() {
 
   _ljCtx.save();
   _ljCtx.shadowBlur = 3;
-  _ljCtx.shadowColor = '#00ff88';
   _ljCtx.lineWidth = 1.2;
   _ljCtx.lineJoin = 'round';
 
-  // Estimate dominant frequency bin from FFT magnitude
-  const _freqData = new Uint8Array(_LJ_FFT);
-  _ljAnalL.getByteFrequencyData(_freqData);
-  let freqPeak = 0, freqSum = 0;
-  for (let b = 0; b < _LJ_FFT / 2; b++) { freqSum += _freqData[b]; if (_freqData[b] > _freqData[freqPeak]) freqPeak = b; }
-  // Map peak bin to hue: bass (low bins) → red/orange, mid → green, high → blue/violet
-  const freqRatio = freqPeak / (_LJ_FFT / 2); // 0=bass, 1=treble
-  const hue = Math.round(freqRatio * 280); // 0=red, 140=green, 280=blue-violet
-  const avgAmp = freqSum / (_LJ_FFT / 2);
-  const brightness = Math.min(1, avgAmp / 80);
+  // Color gradient stops: red → purple → blue → teal
+  const _GRAD = [[255,50,50],[170,40,255],[40,90,255],[0,210,190]];
+  function _segColor(s, e) {
+    // zero-crossing rate of L channel estimates local pitch
+    let zc = 0;
+    for (let k = s + 1; k < e; k++)
+      if (_ljDataL[k-1] * _ljDataL[k] < 0) zc++;
+    const t = Math.min(1, (zc / Math.max(1, e - s)) / 0.22);
+    const scaled = t * (_GRAD.length - 1);
+    const gi = Math.min(Math.floor(scaled), _GRAD.length - 2);
+    const f = scaled - gi;
+    const a = _GRAD[gi], b = _GRAD[gi + 1];
+    return [
+      Math.round(a[0] + f * (b[0] - a[0])),
+      Math.round(a[1] + f * (b[1] - a[1])),
+      Math.round(a[2] + f * (b[2] - a[2])),
+    ];
+  }
 
   let segStart = -1;
   for (let i = 0; i <= _LJ_FFT; i++) {
@@ -86,11 +93,11 @@ function _ljDraw() {
 
     if (isBreak && segStart !== -1) {
       const len = i - segStart;
-      const alpha = 0.55 + brightness * 0.4;
-      _ljCtx.strokeStyle = `hsla(${hue},100%,70%,${alpha})`;
-      _ljCtx.shadowColor = `hsla(${hue},100%,70%,0.6)`;
+      const [r, g, b] = _segColor(segStart, i);
+      const col = `rgb(${r},${g},${b})`;
+      _ljCtx.strokeStyle = col;
+      _ljCtx.shadowColor = col;
       if (len === 1) {
-        // Tiny 2-px segment in direction of motion
         const x = cx + _ljDataL[segStart] * scale;
         const y = cy - _ljDataR[segStart] * scale;
         const nx = segStart + 1 < _LJ_FFT ? cx + _ljDataL[segStart + 1] * scale : x;
