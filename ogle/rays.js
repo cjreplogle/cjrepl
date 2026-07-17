@@ -1,3 +1,4 @@
+(function(){
 const RAYS_EL = document.getElementById('fire');
 const _mob = /Mobi|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
 let raysW = 0, raysH = 0;
@@ -136,3 +137,4 @@ window.addEventListener('resize', () => {
 
 if (localStorage.getItem('backdrop') === 'rays')
   window.startRays();
+})();

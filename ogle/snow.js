@@ -1,3 +1,4 @@
+(function(){
 const SNOW_EL = document.getElementById('fire');
 const _mob = /Mobi|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
 let snowW = 0, snowH = 0;
@@ -139,3 +140,4 @@ window.addEventListener('resize', () => {
 
 if (localStorage.getItem('backdrop') === 'snow')
   window.startSnow();
+})();

@@ -1,3 +1,4 @@
+(function(){
 const FIRE_EL = document.getElementById('fire');
 const _mob = /Mobi|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
 const FIRE_ROWS = 55;
@@ -130,3 +131,4 @@ window.addEventListener('resize', () => {
 
 if (localStorage.getItem('backdrop') === 'fire')
   window.startFire();
+})();

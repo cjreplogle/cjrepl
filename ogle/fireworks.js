@@ -1,3 +1,4 @@
+(function(){
 const FW_EL = document.getElementById('fire');
 const _mob = /Mobi|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
 let fwW = 0, fwH = 0;
@@ -201,3 +202,4 @@ window.addEventListener('resize', () => {
 
 if (localStorage.getItem('backdrop') === 'fireworks')
   window.startFireworks();
+})();

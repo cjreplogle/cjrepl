@@ -1,3 +1,4 @@
+(function(){
 let borCanvas, borCtx;
 let borW = 0, borH = 0, borCW = 0, borCH = 0;
 let borRunning = false;
@@ -127,3 +128,4 @@ window.addEventListener('resize', () => {
 
 if (!localStorage.getItem('backdrop') || localStorage.getItem('backdrop') === 'borealis')
   window.startBorealis();
+})();

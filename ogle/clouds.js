@@ -1,3 +1,4 @@
+(function(){
 const CLOUD_EL = document.getElementById('fire');
 const _mob = /Mobi|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
 let cloudW = 0, cloudH = 0;
@@ -170,3 +171,4 @@ window.addEventListener('resize', () => {
 
 if (localStorage.getItem('backdrop') === 'clouds')
   window.startClouds();
+})();

@@ -1,3 +1,4 @@
+(function(){
 const WATER_EL = document.getElementById('fire');
 const _mob = /Mobi|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
 
@@ -94,3 +95,4 @@ window.addEventListener('resize', () => {
 
 if (localStorage.getItem('backdrop') === 'water')
   window.startWater();
+})();
