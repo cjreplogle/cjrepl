@@ -146,12 +146,19 @@
     .tab-btn.active, .tabs > .tab-btn.active {
       opacity: 1;
     }
-    .tabs > .tab-btn.receded {
+    .tabs > .tab-btn.receded,
+    #forfun .tab-btn.receded {
       opacity: 0;
       max-height: 0;
       margin-bottom: 0;
+      margin-top: 0;
       pointer-events: none;
-      transition: opacity 0.35s ease, transform 0.35s ease, max-height 0.45s ease 0.05s, margin-bottom 0.45s ease 0.05s;
+      transition: opacity 0.35s ease, transform 0.35s ease, max-height 0.45s ease 0.05s, margin-bottom 0.45s ease 0.05s, margin-top 0.45s ease 0.05s;
+    }
+    #forfun .tab-btn {
+      max-height: 4em;
+      overflow: hidden;
+      margin-top: 6px;
     }
     .paper-entry { cursor: pointer; margin-bottom: 6px; margin-top: 10px; }
     .paper-title { padding-left: 1.6em; position: relative; }
@@ -274,21 +281,21 @@
     <button class="tab-btn" onclick="switchTab('forfun', this)"><span class="selector"> </span>For Fun</button>
     <div id="forfun" class="tab-content">
       <div>
-        <button class="tab-btn" onclick="switchSubTab('mb-content', this)" style="font-size:0.85rem;margin-top:8px"><span class="selector"> </span>mandelbrot<span class="tab-hint"> — drag · scroll · dblclick to tour</span></button>
+        <button class="tab-btn" onclick="switchSubTab('mb-content', this)" style="font-size:0.85rem"><span class="selector"> </span>mandelbrot<span class="tab-hint"> — drag · scroll · dblclick to tour</span></button>
         <div id="mb-content" class="tab-content"><div>
           <div style="position:relative">
             <div id="mandelbrot"></div>
             <div id="mb-label" style="position:absolute;top:0;right:0;font-family:monospace;font-size:0.6rem;opacity:0.4;pointer-events:none"></div>
           </div>
         </div></div>
-        <button class="tab-btn" onclick="switchSubTab('tb-content', this)" style="margin-top:4px;font-size:0.85rem"><span class="selector"> </span>three-body<span class="tab-hint"> — click to cycle · dblclick to randomize</span></button>
+        <button class="tab-btn" onclick="switchSubTab('tb-content', this)" style="font-size:0.85rem"><span class="selector"> </span>three-body<span class="tab-hint"> — click to cycle · dblclick to randomize</span></button>
         <div id="tb-content" class="tab-content"><div>
           <div style="position:relative">
             <div id="threebody" style="font-family:monospace;font-size:0.75rem;line-height:1.1;white-space:pre;overflow:hidden;height:24rem;"></div>
             <div id="tb-label" style="position:absolute;top:0;right:0;font-family:monospace;font-size:0.6rem;opacity:0.4;pointer-events:none"></div>
           </div>
         </div></div>
-        <button class="tab-btn" onclick="switchSubTab('lj-content', this)" style="margin-top:4px;font-size:0.85rem"><span class="selector"> </span>lissajous<span class="tab-hint"> — audio visualizer</span></button>
+        <button class="tab-btn" onclick="switchSubTab('lj-content', this)" style="font-size:0.85rem"><span class="selector"> </span>lissajous<span class="tab-hint"> — audio visualizer</span></button>
         <div id="lj-content" class="tab-content"><div>
           <div id="lj-canvas-wrap" style="width:min(100%,40vh);aspect-ratio:1;background:#000;border-radius:4px;overflow:hidden;position:relative;margin-top:6px"></div>
           <div style="margin-top:6px;display:flex;gap:10px;align-items:center;font-size:0.78rem;opacity:0.7;flex-wrap:wrap">
@@ -343,6 +350,11 @@
           el.style.transform = '';
         });
       });
+      // restore sub-tab buttons when forfun closes
+      subTabOrder0.forEach(sid => {
+        const b = _subBtn(sid);
+        if (b) { b.classList.remove('receded'); b.style.transform = ''; }
+      });
 
       if (isOpening) {
         if (introEl) introEl.classList.add('tab-open');
@@ -390,11 +402,13 @@
 
     const subTabOrder0 = ['mb-content', 'tb-content', 'lj-content'];
 
+    function _subBtn(id) { return document.querySelector(`[onclick="switchSubTab('${id}', this)"]`); }
+
     function closeSubTab(id) {
       const content = document.getElementById(id);
       if (!content.classList.contains('active')) return;
       content.classList.remove('active');
-      const btn = document.querySelector(`[onclick="switchSubTab('${id}', this)"]`);
+      const btn = _subBtn(id);
       if (btn) btn.classList.remove('active');
       if (id === 'lj-content') { window.ljClose && window.ljClose(); }
     }
@@ -404,9 +418,27 @@
       // close all other sub-tabs first
       subTabOrder0.forEach(sid => { if (sid !== id) closeSubTab(sid); });
       const content = document.getElementById(id);
+      const subIdx = subTabOrder0.indexOf(id);
+
+      // recede or restore sibling buttons
+      subTabOrder0.forEach((sid, i) => {
+        const b = _subBtn(sid);
+        if (!b) return;
+        if (sid === id) {
+          b.classList.remove('receded');
+          b.style.transform = '';
+        } else if (isOpening) {
+          const dir = i < subIdx ? -1 : 1;
+          b.style.transform = `translateY(${dir * 14}px)`;
+          b.classList.add('receded');
+        } else {
+          b.classList.remove('receded');
+          b.style.transform = '';
+        }
+      });
+
       content.classList.toggle('active');
       btn.classList.toggle('active');
-      const subIdx = subTabOrder0.indexOf(id);
       if (content.classList.contains('active') && subIdx >= 0) setFocus(4 + subIdx);
       else setFocus(3); // back to forfun btn
       if (id === 'mb-content' && content.classList.contains('active')) {
@@ -504,6 +536,8 @@
         if (forfunOpen && subFocus >= 0) {
           document.getElementById(subTabOrder[subFocus]).classList.remove('active');
           btns[4 + subFocus].classList.remove('active');
+          // restore all sub-tab buttons
+          subTabOrder0.forEach(sid => { const b = _subBtn(sid); if (b) { b.classList.remove('receded'); b.style.transform = ''; } });
           if (subFocus > 0) {
             const prevSub = subFocus - 1;
             setFocus(4 + prevSub);
