@@ -88,15 +88,12 @@ function _ljDraw() {
 
   if (_lj3d && _ljAutoRot && !_ljDrag) _ljRotY += 0.005;
 
-  const _spotifyData = window._spGetData && window._spGetData();
-  if (!_spotifyData) {
-    if (!_ljAnalL) return;
-    // Kick suspended AudioContext back to life every frame
-    if (_ljAudio && _ljAudio.state === 'suspended') { _ljAudio.resume(); return; }
-    _ljAnalL.getFloatTimeDomainData(_ljDataL);
-    _ljAnalR.getFloatTimeDomainData(_ljDataR);
-    if (_lj3d && _ljAnalZ) _ljAnalZ.getFloatTimeDomainData(_ljDataZ);
-  }
+  if (!_ljAnalL) return;
+  // Kick suspended AudioContext back to life every frame
+  if (_ljAudio && _ljAudio.state === 'suspended') { _ljAudio.resume(); return; }
+  _ljAnalL.getFloatTimeDomainData(_ljDataL);
+  _ljAnalR.getFloatTimeDomainData(_ljDataR);
+  if (_lj3d && _ljAnalZ) _ljAnalZ.getFloatTimeDomainData(_ljDataZ);
 
   const w = _ljCanvas.width, h = _ljCanvas.height;
   if (!w || !h) return;

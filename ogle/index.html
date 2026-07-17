@@ -307,7 +307,6 @@
           <div id="lj-canvas-wrap" style="width:min(100%,40vh);aspect-ratio:1;background:#000;border-radius:4px;overflow:hidden;position:relative;margin-top:6px"></div>
           <div style="margin-top:6px;display:flex;gap:10px;align-items:center;font-size:0.78rem;opacity:0.7;flex-wrap:wrap">
             <button id="lj-3d-btn" onclick="window.ljToggle3d && window.ljToggle3d()" style="font:inherit;background:none;border:1px solid rgba(255,255,255,0.3);color:inherit;cursor:pointer;padding:2px 8px;border-radius:3px">3D</button>
-            <button id="lj-sp-btn" onclick="window.spToggle && window.spToggle()" style="font:inherit;background:none;border:1px solid rgba(255,255,255,0.3);color:inherit;cursor:pointer;padding:2px 8px;border-radius:3px">spotify</button>
             <button id="lj-mic-btn" onclick="window.ljUseMic && window.ljUseMic()" style="font:inherit;background:none;border:1px solid rgba(255,255,255,0.3);color:inherit;cursor:pointer;padding:2px 8px;border-radius:3px">mic</button>
             <label style="cursor:pointer;border:1px solid rgba(255,255,255,0.3);padding:2px 8px;border-radius:3px">load file<input id="lj-file" type="file" accept="audio/*,.mp3,.mp4,.m4a,.aac,.wav,.ogg,.flac,.opus,.aiff,.aif" style="display:none" onchange="window.ljLoadFile && window.ljLoadFile(this.files[0])"></label>
             <button id="lj-play-btn" onclick="window.ljTogglePlay && window.ljTogglePlay()" style="font:inherit;background:none;border:1px solid rgba(255,255,255,0.3);color:inherit;cursor:pointer;padding:2px 8px;border-radius:3px;display:none">▶</button>
@@ -466,8 +465,8 @@
         if (content.classList.contains('active')) {
           if (!window.ljUseMic) {
             const s = document.createElement('script'); s.src = 'lissajous.js?v=' + Date.now(); document.head.appendChild(s);
-            s.onload = () => { window.ljOpen && window.ljOpen(); if (window._spToken && _spToken() && _spExpiry() > Date.now() && !window._spActive) spStart(); };
-          } else { window.ljOpen && window.ljOpen(); if (window._spToken && _spToken() && _spExpiry() > Date.now() && !window._spActive) spStart(); }
+            s.onload = () => window.ljOpen && window.ljOpen();
+          } else { window.ljOpen && window.ljOpen(); }
         } else { window.ljClose && window.ljClose(); }
       }
     }
@@ -1033,6 +1032,5 @@
   </script>
   <script src="mandelbrot.js" defer></script>
   <script src="threebody.js" defer></script>
-  <script src="spotify.js"></script>
 </body>
 </html>
