@@ -8,6 +8,7 @@
     html {
       background: #111;
       color-scheme: dark;
+      transition: background 0.3s ease;
     }
     @media (max-width: 768px) {
       html, body { overflow: hidden; height: 100%; touch-action: none; }
@@ -22,6 +23,7 @@
       line-height: 1.6;
       position: relative;
       z-index: 1;
+      transition: color 0.3s ease;
       background: transparent;
     }
     .intro {
@@ -867,6 +869,13 @@
       <button onclick="setBackdrop('off')"       id="bd-off"       style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">off</button>
     </div>
     <div style="display:grid;grid-template-columns:max-content 1fr;gap:4px 8px;align-items:center;margin-top:4px">
+      <span style="opacity:0.5;font-size:0.7rem">background</span>
+      <span id="bg-btns">
+        <button id="bg-transparent" onclick="setBg('transparent')" style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">glass</button>
+        <button id="bg-black"       onclick="setBg('black')"       style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">black</button>
+        <button id="bg-dark"        onclick="setBg('dark')"        style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">dark</button>
+        <button id="bg-white"       onclick="setBg('white')"       style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">white</button>
+      </span>
       <span style="opacity:0.5;font-size:0.7rem">opacity</span>
       <input id="bd-opacity" type="range" min="0" max="1" step="0.05" style="accent-color:currentColor" oninput="setBackdropOpacity(this.value)">
       <span style="opacity:0.5;font-size:0.7rem">speed</span>
@@ -891,6 +900,27 @@
     setTimeout(() => {
       BACKDROP_WRAP.style.opacity = getBackdropOpacity();
     }, 120);
+
+    const _bgMap = {
+      transparent: { bg: 'transparent', color: '#fff', scheme: 'dark', bodyBg: 'transparent' },
+      black:       { bg: '#000',         color: '#fff', scheme: 'dark', bodyBg: 'transparent' },
+      dark:        { bg: '#111',         color: '#fff', scheme: 'dark', bodyBg: 'transparent' },
+      white:       { bg: '#fff',         color: '#111', scheme: 'light', bodyBg: 'transparent' },
+    };
+    function setBg(name) {
+      const t = _bgMap[name]; if (!t) return;
+      localStorage.setItem('siteBg', name);
+      document.documentElement.style.background = t.bg;
+      document.documentElement.style.colorScheme = t.scheme;
+      document.body.style.color = t.color;
+      document.querySelectorAll('#bg-btns button').forEach(b => b.style.fontWeight = '');
+      const active = document.getElementById('bg-' + name);
+      if (active) active.style.fontWeight = 'bold';
+    }
+    (function() {
+      const saved = localStorage.getItem('siteBg') || 'dark';
+      setBg(saved);
+    })();
 
     function setBackdropOpacity(val) {
       localStorage.setItem('backdropOpacity', val);
@@ -976,6 +1006,9 @@
       document.querySelectorAll('#backdrop-panel button').forEach(b => b.style.fontWeight = '');
       const active = document.getElementById('bd-' + mode);
       if (active) active.style.fontWeight = 'bold';
+      const bg = localStorage.getItem('siteBg') || 'dark';
+      const activeBg = document.getElementById('bg-' + bg);
+      if (activeBg) activeBg.style.fontWeight = 'bold';
     });
     // close on outside click
     document.addEventListener('click', e => {
