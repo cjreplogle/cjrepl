@@ -12,10 +12,11 @@ document.addEventListener('keydown', e => {
 });
 
 const _probe = document.createElement('span');
-_probe.style.cssText = 'font-family:monospace;font-size:0.6rem;visibility:hidden;position:fixed';
+_probe.style.cssText = 'font-family:monospace;font-size:0.6rem;line-height:1.1;visibility:hidden;position:fixed';
 _probe.textContent = 'X';
 document.body.appendChild(_probe);
 const charW = _probe.getBoundingClientRect().width || 7;
+const charH = _probe.getBoundingClientRect().height || 11;
 document.body.removeChild(_probe);
 
 function mandelbrot(cx, cy) {
@@ -29,13 +30,19 @@ function mandelbrot(cx, cy) {
   return i;
 }
 
+function mbXSpan(cols) {
+  // x span matches visual aspect ratio so widening shows more, not zooms in
+  return zoom * (cols * charW) / (30 * charH);
+}
+
 function mbRender() {
-  const cols = Math.max(20, Math.floor(window.innerWidth / Math.max(1, charW)));
+  const cols = Math.max(20, Math.floor(MB.getBoundingClientRect().width / Math.max(1, charW)));
   const rows = 30;
+  const xSpan = mbXSpan(cols);
   let out = '';
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      const cx = viewX + (c / cols - 0.5) * zoom * 2.1;
+      const cx = viewX + (c / cols - 0.5) * xSpan;
       const cy = viewY + (r / rows - 0.5) * zoom;
       const n = mandelbrot(cx, cy);
       const idx = n === MAX_ITER ? 0 : Math.floor(n / MAX_ITER * (CHARS.length - 1)) + 1;
@@ -164,8 +171,8 @@ MB.addEventListener('mousedown', e => {
 window.addEventListener('mouseup', () => { dragging = false; MB.style.cursor = 'grab'; });
 window.addEventListener('mousemove', e => {
   if (!dragging) return;
-  const cols = Math.max(20, Math.floor(window.innerWidth / Math.max(1, charW)));
-  viewX -= (e.clientX - lastX) / cols * zoom * 2.1 * 0.3;
+  const cols = Math.max(20, Math.floor(MB.getBoundingClientRect().width / Math.max(1, charW)));
+  viewX -= (e.clientX - lastX) / cols * mbXSpan(cols) * 0.3;
   viewY -= (e.clientY - lastY) / 20 * zoom * 0.3;
   lastX = e.clientX; lastY = e.clientY;
   mbRender();
@@ -183,8 +190,8 @@ let lastTX, lastTY;
 MB.addEventListener('touchstart', e => { lastTX = e.touches[0].clientX; lastTY = e.touches[0].clientY; });
 MB.addEventListener('touchmove', e => {
   e.preventDefault();
-  const cols = Math.max(20, Math.floor(window.innerWidth / Math.max(1, charW)));
-  viewX -= (e.touches[0].clientX - lastTX) / cols * zoom * 2.1 * 0.3;
+  const cols = Math.max(20, Math.floor(MB.getBoundingClientRect().width / Math.max(1, charW)));
+  viewX -= (e.touches[0].clientX - lastTX) / cols * mbXSpan(cols) * 0.3;
   viewY -= (e.touches[0].clientY - lastTY) / 20 * zoom * 0.3;
   lastTX = e.touches[0].clientX; lastTY = e.touches[0].clientY;
   mbRender();
@@ -206,3 +213,10 @@ window.mbOpen = function() {
     setTimeout(mbRender, 400);
   }
 };
+
+let _mbResizeTimer;
+window.addEventListener('resize', () => {
+  if (!mbLoopRunning) return;
+  clearTimeout(_mbResizeTimer);
+  _mbResizeTimer = setTimeout(mbRender, 80);
+});

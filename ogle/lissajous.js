@@ -88,9 +88,15 @@ function _ljDraw() {
 
   if (_lj3d && _ljAutoRot && !_ljDrag) _ljRotY += 0.005;
 
-  _ljAnalL.getFloatTimeDomainData(_ljDataL);
-  _ljAnalR.getFloatTimeDomainData(_ljDataR);
-  if (_lj3d && _ljAnalZ) _ljAnalZ.getFloatTimeDomainData(_ljDataZ);
+  const _spotifyData = window._spGetData && window._spGetData();
+  if (!_spotifyData) {
+    if (!_ljAnalL) return;
+    // Kick suspended AudioContext back to life every frame
+    if (_ljAudio && _ljAudio.state === 'suspended') { _ljAudio.resume(); return; }
+    _ljAnalL.getFloatTimeDomainData(_ljDataL);
+    _ljAnalR.getFloatTimeDomainData(_ljDataR);
+    if (_lj3d && _ljAnalZ) _ljAnalZ.getFloatTimeDomainData(_ljDataZ);
+  }
 
   const w = _ljCanvas.width, h = _ljCanvas.height;
   if (!w || !h) return;
@@ -354,15 +360,38 @@ window.ljLoadFile = async (file) => {
 window.ljUseSystem = async () => {
   try {
     _ljStatus('requesting system audio…');
-    _ljSetupCtx();
-    const stream = await navigator.mediaDevices.getDisplayMedia({ audio: true, video: { width: 1, height: 1, frameRate: 1 } });
-    if (!stream.getAudioTracks().length) { _ljStatus('no audio track'); return; }
+    _ljStopAudio();
+    const stream = await navigator.mediaDevices.getDisplayMedia({ audio: true, video: true });
+    console.log('[lj] tracks:', stream.getTracks().map(t => t.kind + ':' + t.label));
+    if (!stream.getAudioTracks().length) {
+      stream.getTracks().forEach(t => t.stop());
+      _ljStatus('no audio — share a Tab and enable "Share tab audio"');
+      return;
+    }
+    // Create AudioContext after user gesture resolves so it starts in running state
+    _ljAudio = new AudioContext();
+    _ljAnalL = _ljMakeAnal();
+    _ljAnalR = _ljMakeAnal();
+    _ljAnalZ = _ljMakeAnal();
+    await _ljAudio.resume();
     _ljStream = stream;
     const src = _ljAudio.createMediaStreamSource(stream);
-    const stereo = stream.getAudioTracks()[0].getSettings().channelCount >= 2;
+    const stereo = (stream.getAudioTracks()[0].getSettings().channelCount ?? 1) >= 2;
     stereo ? _ljConnectStereo(src) : _ljConnectMono(src);
     _ljShowControls(false);
-    _ljStatus('system audio');
+    _ljStatus('system audio · ' + _ljAudio.state);
+
+    // Update status when AudioContext state changes
+    _ljAudio.addEventListener('statechange', () => {
+      if (!_ljAudio) return;
+      _ljStatus('system audio · ' + _ljAudio.state);
+      if (_ljAudio.state === 'suspended') _ljAudio.resume();
+    });
+
+    // Notify if the stream track ends (user clicks "Stop sharing")
+    stream.getAudioTracks().forEach(t => {
+      t.addEventListener('ended', () => _ljStatus('stream ended — reshare to continue'));
+    });
   } catch(e) {
     _ljStatus(e.name === 'NotAllowedError' ? 'permission denied' : 'unavailable');
     if (e.name !== 'NotAllowedError') window.ljUseMic();
