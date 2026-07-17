@@ -101,7 +101,7 @@ function raysFrame() {
   if (!raysRunning) return;
   raysStep();
   raysRender();
-  setTimeout(() => requestAnimationFrame(raysFrame), (_mob?80:40) / (window._backdropSpeed || 1));
+  _raysFrameTimer = setTimeout(() => requestAnimationFrame(raysFrame), (_mob?80:40) / (window._backdropSpeed || 1));
 }
 
 function _raysCols() { return Math.ceil(window.innerWidth * 1.15 / 6); }
@@ -122,11 +122,12 @@ window.startRays = () => {
 
 window.stopRays = () => {
   raysRunning = false;
+  clearTimeout(_raysFrameTimer);
   RAYS_EL.innerHTML = '';
   raysGrid = []; raysActive = [];
 };
 
-let _raysResizeTimer;
+let _raysResizeTimer, _raysFrameTimer;
 window.addEventListener('resize', () => {
   if (!raysRunning) return;
   clearTimeout(_raysResizeTimer);

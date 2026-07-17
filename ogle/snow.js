@@ -103,7 +103,7 @@ function snowFrame() {
   if (!snowRunning) return;
   snowStep();
   snowRender();
-  setTimeout(() => requestAnimationFrame(snowFrame), (_mob?120:60) / (window._backdropSpeed || 1));
+  _snowFrameTimer = setTimeout(() => requestAnimationFrame(snowFrame), (_mob?120:60) / (window._backdropSpeed || 1));
 }
 
 function _snowCols() { return Math.ceil(window.innerWidth * 1.15 / 6); }
@@ -125,11 +125,12 @@ window.startSnow = () => {
 
 window.stopSnow = () => {
   snowRunning = false;
+  clearTimeout(_snowFrameTimer);
   SNOW_EL.innerHTML = '';
   flakes = []; snowGrid = []; snowColorGrid = [];
 };
 
-let _snowResizeTimer;
+let _snowResizeTimer, _snowFrameTimer;
 window.addEventListener('resize', () => {
   if (!snowRunning) return;
   clearTimeout(_snowResizeTimer);

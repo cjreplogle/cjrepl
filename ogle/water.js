@@ -1,100 +1,63 @@
 const WATER_EL = document.getElementById('fire');
 const _mob = /Mobi|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
-const DAMP = 0.720;
 
-let waterW = 0, waterH = 0;
-let cur = [], prv = [];
-let waterRunning = false;
-let lastMX = -1, lastMY = -1, lastMoveTime = 0;
+let waterW = 0, waterRunning = false, waterT = 0;
+let _waterFrameTimer, _waterResizeTimer, _waterRafId;
 
-function waterChar(h) {
-  if (h >  2.5) return '#';
-  if (h >  1.8) return '*';
-  if (h >  1.1) return '^';
-  if (h >  0.5) return "'";
-  if (h >  0.1) return '~';
-  if (h > -0.1) return '-';
-  if (h > -0.5) return '_';
-  if (h > -1.1) return '.';
-  if (h > -1.8) return ',';
-  return '`';
-}
-
-function waterColor(h) {
-  const t = Math.min(1, Math.abs(h) / 3);
-  const v = Math.floor(140 + t * 100);
-  return `rgb(${Math.floor(v * 0.6)},${Math.floor(v * 0.8)},${v})`;
-}
+const ROWS = 22; // total rows rendered
 
 function _waterCols() { return Math.ceil(window.innerWidth * 1.15 / 6); }
 
-function waterInit(cols) {
-  const lineH = parseFloat(getComputedStyle(WATER_EL).fontSize || '12') * 1.15;
-  waterH = Math.max(40, Math.ceil(window.innerHeight / lineH));
-  waterW = cols;
-  cur = Array.from({ length: waterH }, () => new Float32Array(cols));
-  prv = Array.from({ length: waterH }, () => new Float32Array(cols));
+// Returns surface row index (0 = top of ROWS block)
+function surfRow(col, t) {
+  const h =
+    2.2 * Math.sin(0.038 * col + 0.55 * t) +
+    1.2 * Math.sin(0.071 * col - 0.80 * t + 1.4) +
+    0.6 * Math.sin(0.118 * col + 1.35 * t + 2.7) +
+    0.3 * Math.sin(0.190 * col - 1.90 * t + 0.6);
+  const maxH = 4.3;
+  // map [-maxH, maxH] → [1, ROWS-5], so bottom rows always filled
+  return Math.round(1 + (h / maxH + 1) * 0.5 * (ROWS - 7));
 }
 
-function waterResize(newCols) {
-  if (newCols === waterW) return;
-  if (newCols < waterW) { waterW = newCols; return; }
-  for (let r = 0; r < waterH; r++) {
-    const nc = new Float32Array(newCols); nc.set(cur[r]); cur[r] = nc;
-    const np = new Float32Array(newCols); np.set(prv[r]); prv[r] = np;
-  }
-  waterW = newCols;
-}
-
-function disturb(row, col, strength) {
-  const r0 = Math.max(0, row - 2), r1 = Math.min(waterH - 1, row + 2);
-  const c0 = Math.max(0, col - 3), c1 = Math.min(waterW - 1, col + 3);
-  for (let r = r0; r <= r1; r++)
-    for (let c = c0; c <= c1; c++) {
-      const d = Math.sqrt((r - row) ** 2 + (c - col) ** 2);
-      cur[r][c] += strength * Math.max(0, 1 - d / 3.5);
-    }
-}
-
-function waterStep() {
-  const cols = waterW, rows = waterH;
-  for (let r = 1; r < rows - 1; r++) {
-    for (let c = 1; c < cols - 1; c++) {
-      const n = cur[r-1][c] + cur[r+1][c] + cur[r][c-1] + cur[r][c+1];
-      prv[r][c] = (n / 2 - prv[r][c]) * DAMP;
-    }
-  }
-  for (let c = 0; c < cols; c++) {
-    prv[0][c] = prv[1][c];
-    prv[rows-1][c] = prv[rows-2][c];
-  }
-  for (let r = 0; r < rows; r++) {
-    prv[r][0] = prv[r][1];
-    prv[r][cols-1] = prv[r][cols-2];
-  }
-  // ambient drips from the bottom
-  // continuous background turbulence across the whole surface
-  const numDrops = Math.floor(cols / 14);
-  for (let i = 0; i < numDrops; i++) {
-    if (Math.random() < 0.5)
-      disturb(
-        Math.floor(Math.random() * rows),
-        Math.floor(Math.random() * cols),
-        14 + Math.random() * 18
-      );
-  }
-  [cur, prv] = [prv, cur];
-}
+// Color: bright at crest, deeper blue below
+function wc(r, g, b) { return `rgb(${r},${g},${b})`; }
+const CREST_COLORS  = [wc(210,238,255), wc(190,225,255), wc(170,215,255)];
+const BODY_COLORS   = [wc(90,160,230), wc(60,130,205), wc(40,100,180), wc(25,75,155), wc(15,55,130)];
+const DEEP_COLOR    = wc(10,40,110);
 
 function waterRender() {
-  const cols = waterW, rows = waterH;
+  const cols = waterW, t = waterT;
+
+  // precompute surface row per column
+  const surf = new Int32Array(cols);
+  for (let c = 0; c < cols; c++) surf[c] = surfRow(c, t);
+
   let html = '';
-  for (let r = 0; r < rows; r++) {
+  for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < cols; c++) {
-      const h = cur[r][c];
-      const ch = waterChar(h);
-      if (Math.abs(h) < 0.05) { html += ch; continue; }
-      html += `<span style="color:${waterColor(h)}">${ch}</span>`;
+      const s = surf[c];
+      if (r < s) {
+        html += ' ';
+        continue;
+      }
+      if (r === s) {
+        // crest — pick char by local slope
+        const sl = surf[Math.min(cols - 1, c + 2)] - surf[Math.max(0, c - 2)];
+        const ch = sl < -1 ? '\'' : sl > 1 ? '.' : '~';
+        const col_i = Math.abs(sl) > 2 ? 0 : Math.abs(sl) > 0 ? 1 : 2;
+        html += `<span style="color:${CREST_COLORS[col_i]}">${ch}</span>`;
+        continue;
+      }
+      const depth = r - s; // 1 = just below crest
+      let ch, color;
+      if (depth === 1)      { ch = '~'; color = BODY_COLORS[0]; }
+      else if (depth === 2) { ch = '-'; color = BODY_COLORS[1]; }
+      else if (depth === 3) { ch = '~'; color = BODY_COLORS[2]; }
+      else if (depth === 4) { ch = '-'; color = BODY_COLORS[3]; }
+      else if (depth === 5) { ch = '~'; color = BODY_COLORS[4]; }
+      else                  { ch = '='; color = DEEP_COLOR; }
+      html += `<span style="color:${color}">${ch}</span>`;
     }
     html += '\n';
   }
@@ -103,60 +66,30 @@ function waterRender() {
 
 function waterFrame() {
   if (!waterRunning) return;
-  waterStep();
+  waterT += 0.035 * (window._backdropSpeed || 1);
   waterRender();
-  setTimeout(() => requestAnimationFrame(waterFrame), (_mob?360:180) / (window._backdropSpeed || 1));
+  _waterFrameTimer = setTimeout(() => { _waterRafId = requestAnimationFrame(waterFrame); }, _mob ? 50 : 33);
 }
-
-const waterMoveHandler = e => {
-  if (!waterW) return;
-  const now = performance.now();
-  const dx = e.clientX - lastMX, dy = e.clientY - lastMY;
-  const speed = Math.sqrt(dx*dx + dy*dy) / Math.max(1, now - lastMoveTime);
-  if (speed > 0.05 && lastMX >= 0) {
-    const charW = window.innerWidth / waterW;
-    const charH = WATER_EL.getBoundingClientRect().height / waterH;
-    const col = Math.floor(e.clientX / charW);
-    const elTop = WATER_EL.getBoundingClientRect().top;
-    const row = Math.floor((e.clientY - elTop) / charH);
-    if (row >= 0 && row < waterH)
-      disturb(row, col, Math.min(0.375, speed * 0.75));
-    else if (e.clientY > elTop)
-      disturb(waterH - 1, col, Math.min(0.25, speed * 0.5));
-  }
-  lastMX = e.clientX; lastMY = e.clientY; lastMoveTime = now;
-};
 
 window.startWater = () => {
   if (waterRunning) return;
-  waterInit(_waterCols());
-
-  // pre-warm: seed disturbances across the grid then simulate into motion
-  for (let i = 0; i < 24; i++)
-    disturb(
-      Math.floor(Math.random() * waterH),
-      Math.floor(Math.random() * waterW),
-      5 + Math.random() * 5
-    );
-  for (let i = 0; i < 500; i++) waterStep();
-
+  waterW = _waterCols();
+  waterT = Math.random() * 100;
   waterRunning = true;
-  window.addEventListener('mousemove', waterMoveHandler);
   requestAnimationFrame(waterFrame);
 };
 
 window.stopWater = () => {
   waterRunning = false;
-  window.removeEventListener('mousemove', waterMoveHandler);
+  clearTimeout(_waterFrameTimer);
+  cancelAnimationFrame(_waterRafId);
   WATER_EL.innerHTML = '';
-  cur = []; prv = [];
 };
 
-let _waterResizeTimer;
 window.addEventListener('resize', () => {
   if (!waterRunning) return;
   clearTimeout(_waterResizeTimer);
-  _waterResizeTimer = setTimeout(() => { if (waterRunning) waterResize(_waterCols()); }, 100);
+  _waterResizeTimer = setTimeout(() => { if (waterRunning) waterW = _waterCols(); }, 100);
 });
 
 if (localStorage.getItem('backdrop') === 'water')

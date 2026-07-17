@@ -104,7 +104,7 @@ function vorFrame() {
   if (!vorRunning) return;
   vorStep();
   vorRender();
-  setTimeout(() => requestAnimationFrame(vorFrame), (_mob?120:60) / (window._backdropSpeed || 1));
+  _vorFrameTimer = setTimeout(() => requestAnimationFrame(vorFrame), (_mob?120:60) / (window._backdropSpeed || 1));
 }
 
 function _vorCols() { return Math.ceil(window.innerWidth * 1.15 / 6); }
@@ -122,11 +122,12 @@ window.startVoronoi = () => {
 
 window.stopVoronoi = () => {
   vorRunning = false;
+  clearTimeout(_vorFrameTimer);
   VORONOI_EL.innerHTML = '';
   seeds = [];
 };
 
-let _vorResizeTimer;
+let _vorResizeTimer, _vorFrameTimer;
 window.addEventListener('resize', () => {
   if (!vorRunning) return;
   clearTimeout(_vorResizeTimer);

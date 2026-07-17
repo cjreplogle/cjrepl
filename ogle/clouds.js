@@ -55,9 +55,9 @@ function cloudTexture(cx, cy) {
 }
 
 function cloudDensityAt(c, r) {
-  // cloud base varies per column — sits in bottom 15% of grid with some height variation
+  // cloud base varies per column — sits in top 15% of grid
   const baseOffset = cloudBaseOffset(c);
-  const base = cloudH * (0.88 + baseOffset * 0.08);
+  const base = cloudH * (0.22 + baseOffset * 0.06);
   const distAbove = base - r;
 
   // hard flat bottom
@@ -77,9 +77,9 @@ function cloudDensityAt(c, r) {
 }
 
 function highCloudDensityAt(c, r) {
-  // sits higher up — base between 55–68% down the grid
+  // sits even higher — very top of grid
   const baseOffset = highBaseOffset(c);
-  const base = cloudH * (0.62 + baseOffset * 0.10);
+  const base = cloudH * (0.12 + baseOffset * 0.04);
   const distAbove = base - r;
 
   // hard flat bottom
@@ -135,7 +135,7 @@ function cloudFrame() {
   if (!cloudRunning) return;
   cloudT += 0.5;
   cloudRender();
-  setTimeout(() => requestAnimationFrame(cloudFrame), (_mob?160:80) / (window._backdropSpeed || 1));
+  _cloudFrameTimer = setTimeout(() => requestAnimationFrame(cloudFrame), (_mob?160:80) / (window._backdropSpeed || 1));
 }
 
 function cloudInit(cols) {
@@ -157,10 +157,11 @@ window.startClouds = () => {
 
 window.stopClouds = () => {
   cloudRunning = false;
+  clearTimeout(_cloudFrameTimer);
   CLOUD_EL.innerHTML = '';
 };
 
-let _cloudResizeTimer;
+let _cloudResizeTimer, _cloudFrameTimer;
 window.addEventListener('resize', () => {
   if (!cloudRunning) return;
   clearTimeout(_cloudResizeTimer);

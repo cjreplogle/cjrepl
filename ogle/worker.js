@@ -19,6 +19,11 @@ export default {
     if (request.method !== 'POST')
       return new Response('method not allowed', { status: 405, headers: CORS });
 
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { success } = await env.RATE_LIMITER.limit({ key: ip });
+    if (!success)
+      return json({ error: 'too many requests' }, 429);
+
     let payload;
     try { payload = await request.json(); }
     catch { return json({ error: 'bad request' }, 400); }

@@ -151,7 +151,7 @@ function fwFrame() {
   if (!fwRunning) return;
   fwStep();
   fwRender();
-  setTimeout(() => requestAnimationFrame(fwFrame), (_mob?80:40) / (window._backdropSpeed || 1));
+  _fwFrameTimer = setTimeout(() => requestAnimationFrame(fwFrame), (_mob?80:40) / (window._backdropSpeed || 1));
 }
 
 const fwClickHandler = e => {
@@ -186,12 +186,13 @@ window.startFireworks = () => {
 
 window.stopFireworks = () => {
   fwRunning = false;
+  clearTimeout(_fwFrameTimer);
   window.removeEventListener('click', fwClickHandler);
   FW_EL.innerHTML = '';
   fwBright = []; fwColor = []; rockets = []; sparks = [];
 };
 
-let _fwResizeTimer;
+let _fwResizeTimer, _fwFrameTimer;
 window.addEventListener('resize', () => {
   if (!fwRunning) return;
   clearTimeout(_fwResizeTimer);

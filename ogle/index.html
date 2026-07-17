@@ -854,7 +854,7 @@
       requestAnimationFrame(tick);
     })();
   </script>
-  <div id="backdrop-panel" style="display:none;position:fixed;bottom:28px;right:10px;font-size:0.75rem;color:inherit;background:rgba(128,128,128,0.18);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(128,128,128,0.25);border-radius:6px;padding:8px 10px;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,0.18);min-width:180px">
+  <div id="backdrop-panel" style="opacity:0;pointer-events:none;transition:opacity 0.2s ease,transform 0.2s ease;transform:translateY(4px);position:fixed;bottom:48px;right:10px;font-size:0.75rem;color:inherit;background:rgba(128,128,128,0.18);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(128,128,128,0.25);border-radius:6px;padding:8px 10px;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,0.18);min-width:180px">
     <div style="margin-bottom:6px">
       <span style="opacity:0.5;margin-right:6px">backdrop</span>
       <button onclick="setBackdrop('water')" id="bd-water" style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">water</button>
@@ -903,10 +903,13 @@
       window._backdropSpeed = parseFloat(val);
     }
 
+    function _bdPanelOpen() { return document.getElementById('backdrop-panel').style.opacity === '1'; }
     function toggleBackdropPanel() {
       const p = document.getElementById('backdrop-panel');
-      const opening = p.style.display === 'none';
-      p.style.display = opening ? '' : 'none';
+      const opening = !_bdPanelOpen();
+      p.style.opacity = opening ? '1' : '0';
+      p.style.pointerEvents = opening ? '' : 'none';
+      p.style.transform = opening ? 'translateY(0)' : 'translateY(4px)';
       if (opening) {
         document.getElementById('bd-opacity').value = getBackdropOpacity();
         document.getElementById('bd-speed').value = localStorage.getItem('backdropSpeed') || '1';
@@ -917,6 +920,16 @@
       clouds:'clouds.js',fireworks:'fireworks.js',snow:'snow.js',borealis:'borealis.js'
     };
     const _bdLoaded = new Set();
+    // Preload all backdrop scripts in background so switching is instant
+    setTimeout(() => {
+      const current = localStorage.getItem('backdrop') || 'fire';
+      Object.entries(_bdScripts).forEach(([mode, src]) => {
+        if (mode === current || _bdLoaded.has(mode)) return;
+        _bdLoaded.add(mode);
+        const s = document.createElement('script'); s.src = src;
+        document.head.appendChild(s);
+      });
+    }, 2000);
     function setBackdrop(mode) {
       localStorage.setItem('backdrop', mode);
       if (window.stopWater)     window.stopWater();
@@ -946,7 +959,8 @@
       document.querySelectorAll('#backdrop-panel button').forEach(b => b.style.fontWeight = '');
       const active = document.getElementById('bd-' + mode);
       if (active) active.style.fontWeight = 'bold';
-      document.getElementById('backdrop-panel').style.display = 'none';
+      const p = document.getElementById('backdrop-panel');
+      p.style.opacity = '0'; p.style.pointerEvents = 'none'; p.style.transform = 'translateY(4px)';
     }
     // highlight active on open
     document.querySelector('[onclick="toggleBackdropPanel()"]').addEventListener('click', () => {
@@ -957,10 +971,11 @@
     });
     // close on outside click
     document.addEventListener('click', e => {
+      if (!_bdPanelOpen()) return;
       const panel = document.getElementById('backdrop-panel');
-      if (panel.style.display === 'none') return;
-      if (!panel.contains(e.target) && !e.target.closest('[onclick="toggleBackdropPanel()"]'))
-        panel.style.display = 'none';
+      if (!panel.contains(e.target) && !e.target.closest('[onclick="toggleBackdropPanel()"]')) {
+        panel.style.opacity = '0'; panel.style.pointerEvents = 'none'; panel.style.transform = 'translateY(4px)';
+      }
     });
   </script>
   <script>

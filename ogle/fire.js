@@ -14,8 +14,8 @@ const fireMoveHandler = e => {
 const fireLeaveHandler = () => { mouseCol = -1; };
 
 function fireColor(h) {
-  const v = Math.floor(80 + (h / MAX_HEAT) * 160);
-  return `rgb(${v},${v},${v})`;
+  const v = Math.floor(68 + (h / MAX_HEAT) * 145);
+  return `rgb(${v},${Math.floor(v * 0.67)},${Math.floor(v * 0.67)})`;
 }
 
 function _fireCols() { return Math.ceil(window.innerWidth * 1.15 / 6); }
@@ -59,6 +59,9 @@ function fireStep() {
   }
 }
 
+// Sparse per-cell orange trickle state: stores remaining orange frames
+const _orangeMap = new Map();
+
 function fireRender() {
   const cols = fireW;
   let html = '';
@@ -69,7 +72,24 @@ function fireRender() {
       const idx = Math.min(Math.floor(h / MAX_HEAT * (FIRE_CHARS.length - 1)), FIRE_CHARS.length - 1);
       const ch = FIRE_CHARS[idx];
       if (ch === ' ') { html += ' '; continue; }
-      html += `<span style="color:${fireColor(h)}">${ch}</span>`;
+      const key = r * 4096 + c;
+      // decay existing orange trickles
+      const orange = _orangeMap.get(key) || 0;
+      if (orange > 0) _orangeMap.set(key, orange - 1);
+      // seed new trickles on hot cells
+      if (h > MAX_HEAT * 0.45 && Math.random() < 0.010) _orangeMap.set(key, 8 + Math.floor(Math.random() * 10));
+      // occasional dark blue at the bottom few rows
+      const nearBottom = r >= FIRE_ROWS - 5;
+      const isBlue = nearBottom && Math.random() < 0.012;
+      if (orange > 0) {
+        const v = Math.floor(68 + (h / MAX_HEAT) * 145);
+        const color = `rgb(${Math.min(255, Math.floor(v * 1.1))},${Math.floor(v * 0.58)},${Math.floor(v * 0.18)})`;
+        html += `<span style="color:${color}">${ch}</span>`;
+      } else if (isBlue) {
+        html += `<span style="color:rgb(60,80,160)">${ch}</span>`;
+      } else {
+        html += `<span style="color:${fireColor(h)}">${ch}</span>`;
+      }
     }
     html += '\n';
   }
@@ -80,7 +100,7 @@ function fireFrame() {
   if (!fireRunning) return;
   fireStep();
   fireRender();
-  setTimeout(() => requestAnimationFrame(fireFrame), (_mob?120:60) / (window._backdropSpeed || 1));
+  _fireFrameTimer = setTimeout(() => requestAnimationFrame(fireFrame), (_mob?120:60) / (window._backdropSpeed || 1));
 }
 
 window.startFire = () => {
@@ -94,13 +114,14 @@ window.startFire = () => {
 
 window.stopFire = () => {
   fireRunning = false;
+  clearTimeout(_fireFrameTimer);
   window.removeEventListener('mousemove', fireMoveHandler);
   window.removeEventListener('mouseleave', fireLeaveHandler);
   FIRE_EL.innerHTML = '';
   heat = [];
 };
 
-let _fireResizeTimer;
+let _fireResizeTimer, _fireFrameTimer;
 window.addEventListener('resize', () => {
   if (!fireRunning) return;
   clearTimeout(_fireResizeTimer);
