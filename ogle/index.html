@@ -281,7 +281,7 @@
         </div></div>
         <button class="tab-btn" onclick="switchSubTab('lj-content', this)" style="margin-top:4px;font-size:0.85rem"><span class="selector"> </span>lissajous<span class="tab-hint"> — audio visualizer</span></button>
         <div id="lj-content" class="tab-content"><div>
-          <div id="lj-canvas-wrap" style="width:100%;height:10rem;background:#000;border-radius:4px;overflow:hidden;position:relative;margin-top:6px"></div>
+          <div id="lj-canvas-wrap" style="width:min(100%,40vh);aspect-ratio:1;background:#000;border-radius:4px;overflow:hidden;position:relative;margin-top:6px"></div>
           <div style="margin-top:6px;display:flex;gap:10px;align-items:center;font-size:0.78rem;opacity:0.7;flex-wrap:wrap">
             <button id="lj-mic-btn" onclick="window.ljUseMic && window.ljUseMic()" style="font:inherit;background:none;border:1px solid rgba(255,255,255,0.3);color:inherit;cursor:pointer;padding:2px 8px;border-radius:3px">mic</button>
             <label style="cursor:pointer;border:1px solid rgba(255,255,255,0.3);padding:2px 8px;border-radius:3px">load file<input id="lj-file" type="file" accept="audio/*" style="display:none" onchange="window.ljLoadFile && window.ljLoadFile(this.files[0])"></label>
@@ -595,12 +595,12 @@
     const segments = [
       { text: "Hi, I'm " },
       { text: "CJ Replogle", bold: true },
+      { text: "." },
       { mobBr: true },
-      { text: ". I'm a biomedical engineering student @ Ohio State." },
+      { text: "I'm a biomedical engineering student @ Ohio State." },
       { backspace: "student @ Ohio State.".length, pauseBefore: 500 },
       { text: "graduate of Ohio State." },
-      { backspace: ". I'm a biomedical engineering graduate of Ohio State.".length + 1, pauseBefore: 900 },
-      { text: ". " },
+      { backspace: "I'm a biomedical engineering graduate of Ohio State.".length + 1, pauseBefore: 900 },
       { mobBr: true },
       { text: "I'm currently an incoming medical student @ " },
       { text: "University of Cincinnati", link: "https://med.uc.edu" },
@@ -625,7 +625,7 @@
         }
         if (seg.mobBr) { chars.push({ mobBr: true }); if (i === segIndex) break; continue; }
         const text = i < segIndex ? seg.text : seg.text.slice(0, charIndex);
-        for (const ch of text) chars.push({ ch, bold: seg.bold || false, link: seg.link || null, sub: i >= 2 });
+        for (const ch of text) chars.push({ ch, bold: seg.bold || false, link: seg.link || null, sub: i >= 4 });
         if (i === segIndex) break;
       }
       // render chars back to HTML, grouping consecutive same-format runs

@@ -61,6 +61,17 @@ function _ljDraw() {
   _ljCtx.lineWidth = 1.2;
   _ljCtx.lineJoin = 'round';
 
+  // Estimate dominant frequency bin from FFT magnitude
+  const _freqData = new Uint8Array(_LJ_FFT);
+  _ljAnalL.getByteFrequencyData(_freqData);
+  let freqPeak = 0, freqSum = 0;
+  for (let b = 0; b < _LJ_FFT / 2; b++) { freqSum += _freqData[b]; if (_freqData[b] > _freqData[freqPeak]) freqPeak = b; }
+  // Map peak bin to hue: bass (low bins) → red/orange, mid → green, high → blue/violet
+  const freqRatio = freqPeak / (_LJ_FFT / 2); // 0=bass, 1=treble
+  const hue = Math.round(freqRatio * 280); // 0=red, 140=green, 280=blue-violet
+  const avgAmp = freqSum / (_LJ_FFT / 2);
+  const brightness = Math.min(1, avgAmp / 80);
+
   let segStart = -1;
   for (let i = 0; i <= _LJ_FFT; i++) {
     const amp = i < _LJ_FFT ? Math.abs(_ljDataL[i]) + Math.abs(_ljDataR[i]) : 0;
@@ -74,16 +85,21 @@ function _ljDraw() {
 
     if (isBreak && segStart !== -1) {
       const len = i - segStart;
+      const alpha = 0.55 + brightness * 0.4;
+      _ljCtx.strokeStyle = `hsla(${hue},100%,70%,${alpha})`;
+      _ljCtx.shadowColor = `hsla(${hue},100%,70%,0.6)`;
       if (len === 1) {
+        // Tiny 2-px segment in direction of motion
         const x = cx + _ljDataL[segStart] * scale;
         const y = cy - _ljDataR[segStart] * scale;
-        const bright = Math.min(1, jump / _TRANSIENT_THRESH);
-        _ljCtx.strokeStyle = `rgba(160,255,190,${0.4 + bright * 0.5})`;
+        const nx = segStart + 1 < _LJ_FFT ? cx + _ljDataL[segStart + 1] * scale : x;
+        const ny = segStart + 1 < _LJ_FFT ? cy - _ljDataR[segStart + 1] * scale : y;
+        const dx = nx - x, dy = ny - y, dn = Math.sqrt(dx*dx + dy*dy) || 1;
         _ljCtx.beginPath();
-        _ljCtx.arc(x, y, 1 + bright * 1.2, 0, Math.PI * 2);
+        _ljCtx.moveTo(x - dx/dn, y - dy/dn);
+        _ljCtx.lineTo(x + dx/dn, y + dy/dn);
         _ljCtx.stroke();
       } else {
-        _ljCtx.strokeStyle = 'rgba(0,255,136,0.75)';
         _ljCtx.beginPath();
         for (let k = segStart; k < i; k++) {
           const x = cx + _ljDataL[k] * scale;

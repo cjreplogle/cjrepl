@@ -107,9 +107,15 @@ function vorFrame() {
   setTimeout(() => requestAnimationFrame(vorFrame), (_mob?120:60) / (window._backdropSpeed || 1));
 }
 
+function _vorCols() { return Math.ceil(window.innerWidth * 1.15 / 6); }
+function vorResize(newCols) {
+  if (newCols <= vorW) { vorW = newCols; return; }
+  vorW = newCols; // seeds drift naturally, no reinit needed
+}
+
 window.startVoronoi = () => {
   if (vorRunning) return;
-  vorInit(Math.ceil(window.innerWidth / 6));
+  vorInit(_vorCols());
   vorRunning = true;
   requestAnimationFrame(vorFrame);
 };
@@ -124,7 +130,7 @@ let _vorResizeTimer;
 window.addEventListener('resize', () => {
   if (!vorRunning) return;
   clearTimeout(_vorResizeTimer);
-  _vorResizeTimer = setTimeout(() => { if (vorRunning) vorInit(Math.ceil(window.innerWidth / 6)); }, 100);
+  _vorResizeTimer = setTimeout(() => { if (vorRunning) vorResize(_vorCols()); }, 100);
 });
 
 if (localStorage.getItem('backdrop') === 'voronoi')

@@ -26,12 +26,24 @@ function waterColor(h) {
   return `rgb(${Math.floor(v * 0.6)},${Math.floor(v * 0.8)},${v})`;
 }
 
+function _waterCols() { return Math.ceil(window.innerWidth * 1.15 / 6); }
+
 function waterInit(cols) {
   const lineH = parseFloat(getComputedStyle(WATER_EL).fontSize || '12') * 1.15;
   waterH = Math.max(40, Math.ceil(window.innerHeight / lineH));
   waterW = cols;
   cur = Array.from({ length: waterH }, () => new Float32Array(cols));
   prv = Array.from({ length: waterH }, () => new Float32Array(cols));
+}
+
+function waterResize(newCols) {
+  if (newCols === waterW) return;
+  if (newCols < waterW) { waterW = newCols; return; }
+  for (let r = 0; r < waterH; r++) {
+    const nc = new Float32Array(newCols); nc.set(cur[r]); cur[r] = nc;
+    const np = new Float32Array(newCols); np.set(prv[r]); prv[r] = np;
+  }
+  waterW = newCols;
 }
 
 function disturb(row, col, strength) {
@@ -117,7 +129,7 @@ const waterMoveHandler = e => {
 
 window.startWater = () => {
   if (waterRunning) return;
-  waterInit(Math.ceil(window.innerWidth / 6));
+  waterInit(_waterCols());
 
   // pre-warm: seed disturbances across the grid then simulate into motion
   for (let i = 0; i < 24; i++)
@@ -144,7 +156,7 @@ let _waterResizeTimer;
 window.addEventListener('resize', () => {
   if (!waterRunning) return;
   clearTimeout(_waterResizeTimer);
-  _waterResizeTimer = setTimeout(() => { if (waterRunning) waterInit(Math.ceil(window.innerWidth / 6)); }, 100);
+  _waterResizeTimer = setTimeout(() => { if (waterRunning) waterResize(_waterCols()); }, 100);
 });
 
 if (localStorage.getItem('backdrop') === 'water')

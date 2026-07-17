@@ -166,9 +166,19 @@ const fwClickHandler = e => {
   rockets.push(spawnRocket(col, row));
 };
 
+function _fwCols() { return Math.ceil(window.innerWidth * 1.15 / 6); }
+function fwResize(newCols) {
+  if (newCols <= fwW) { fwW = newCols; return; }
+  for (let r = 0; r < fwH; r++) {
+    const nb = new Float32Array(newCols); nb.set(fwBright[r]); fwBright[r] = nb;
+    while (fwColor[r].length < newCols) fwColor[r].push(null);
+  }
+  fwW = newCols;
+}
+
 window.startFireworks = () => {
   if (fwRunning) return;
-  fwInit(Math.ceil(window.innerWidth / 6));
+  fwInit(_fwCols());
   fwRunning = true;
   window.addEventListener('click', fwClickHandler);
   requestAnimationFrame(fwFrame);
@@ -185,7 +195,7 @@ let _fwResizeTimer;
 window.addEventListener('resize', () => {
   if (!fwRunning) return;
   clearTimeout(_fwResizeTimer);
-  _fwResizeTimer = setTimeout(() => { if (fwRunning) fwInit(Math.ceil(window.innerWidth / 6)); }, 100);
+  _fwResizeTimer = setTimeout(() => { if (fwRunning) fwResize(_fwCols()); }, 100);
 });
 
 if (localStorage.getItem('backdrop') === 'fireworks')

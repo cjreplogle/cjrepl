@@ -104,9 +104,18 @@ function raysFrame() {
   setTimeout(() => requestAnimationFrame(raysFrame), (_mob?80:40) / (window._backdropSpeed || 1));
 }
 
+function _raysCols() { return Math.ceil(window.innerWidth * 1.15 / 6); }
+function raysResize(newCols) {
+  if (newCols <= raysW) { raysW = newCols; return; }
+  for (let r = 0; r < raysH; r++) {
+    const nr = new Float32Array(newCols); nr.set(raysGrid[r]); raysGrid[r] = nr;
+  }
+  raysW = newCols;
+}
+
 window.startRays = () => {
   if (raysRunning) return;
-  raysInit(Math.ceil(window.innerWidth / 6));
+  raysInit(_raysCols());
   raysRunning = true;
   requestAnimationFrame(raysFrame);
 };
@@ -121,7 +130,7 @@ let _raysResizeTimer;
 window.addEventListener('resize', () => {
   if (!raysRunning) return;
   clearTimeout(_raysResizeTimer);
-  _raysResizeTimer = setTimeout(() => { if (raysRunning) raysInit(Math.ceil(window.innerWidth / 6)); }, 100);
+  _raysResizeTimer = setTimeout(() => { if (raysRunning) raysResize(_raysCols()); }, 100);
 });
 
 if (localStorage.getItem('backdrop') === 'rays')

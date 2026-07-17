@@ -106,9 +106,19 @@ function snowFrame() {
   setTimeout(() => requestAnimationFrame(snowFrame), (_mob?120:60) / (window._backdropSpeed || 1));
 }
 
+function _snowCols() { return Math.ceil(window.innerWidth * 1.15 / 6); }
+function snowResize(newCols) {
+  if (newCols <= snowW) { snowW = newCols; return; }
+  for (let r = 0; r < snowH; r++) {
+    const ng = new Float32Array(newCols); ng.set(snowGrid[r]); snowGrid[r] = ng;
+    while (snowColorGrid[r].length < newCols) snowColorGrid[r].push(null);
+  }
+  snowW = newCols;
+}
+
 window.startSnow = () => {
   if (snowRunning) return;
-  snowInit(Math.ceil(window.innerWidth / 6));
+  snowInit(_snowCols());
   snowRunning = true;
   requestAnimationFrame(snowFrame);
 };
@@ -123,7 +133,7 @@ let _snowResizeTimer;
 window.addEventListener('resize', () => {
   if (!snowRunning) return;
   clearTimeout(_snowResizeTimer);
-  _snowResizeTimer = setTimeout(() => { if (snowRunning) snowInit(Math.ceil(window.innerWidth / 6)); }, 100);
+  _snowResizeTimer = setTimeout(() => { if (snowRunning) snowResize(_snowCols()); }, 100);
 });
 
 if (localStorage.getItem('backdrop') === 'snow')

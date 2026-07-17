@@ -145,9 +145,12 @@ function cloudInit(cols) {
   cloudT = Math.random() * 1000;
 }
 
+function _cloudCols() { return Math.ceil(window.innerWidth * 1.15 / 6); }
+function cloudResize(newCols) { cloudW = newCols; }
+
 window.startClouds = () => {
   if (cloudRunning) return;
-  cloudInit(Math.ceil(window.innerWidth / 6));
+  cloudInit(_cloudCols());
   cloudRunning = true;
   requestAnimationFrame(cloudFrame);
 };
@@ -161,7 +164,7 @@ let _cloudResizeTimer;
 window.addEventListener('resize', () => {
   if (!cloudRunning) return;
   clearTimeout(_cloudResizeTimer);
-  _cloudResizeTimer = setTimeout(() => { if (cloudRunning) cloudInit(Math.ceil(window.innerWidth / 6)); }, 100);
+  _cloudResizeTimer = setTimeout(() => { if (cloudRunning) cloudResize(_cloudCols()); }, 100);
 });
 
 if (localStorage.getItem('backdrop') === 'clouds')

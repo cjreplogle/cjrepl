@@ -18,10 +18,24 @@ function fireColor(h) {
   return `rgb(${v},${v},${v})`;
 }
 
+function _fireCols() { return Math.ceil(window.innerWidth * 1.15 / 6); }
+
 function fireInit(cols) {
   fireW = cols;
-  heat = Array.from({ length: FIRE_ROWS }, () => new Array(cols).fill(0));
-  for (let c = 0; c < cols; c++) heat[FIRE_ROWS - 1][c] = MAX_HEAT;
+  heat = Array.from({ length: FIRE_ROWS }, (_, r) =>
+    new Array(cols).fill(r >= FIRE_ROWS - 2 ? MAX_HEAT : 0)
+  );
+}
+
+// Non-destructive resize: expand columns without clearing old content
+function fireResize(newCols) {
+  if (newCols === fireW) return;
+  if (newCols < fireW) { fireW = newCols; return; }
+  for (let r = 0; r < FIRE_ROWS; r++) {
+    const fill = r >= FIRE_ROWS - 2 ? MAX_HEAT : 0;
+    while (heat[r].length < newCols) heat[r].push(fill);
+  }
+  fireW = newCols;
 }
 
 function fireStep() {
@@ -71,7 +85,7 @@ function fireFrame() {
 
 window.startFire = () => {
   if (fireRunning) return;
-  fireInit(Math.ceil(window.innerWidth / 6));
+  fireInit(_fireCols());
   fireRunning = true;
   window.addEventListener('mousemove', fireMoveHandler);
   window.addEventListener('mouseleave', fireLeaveHandler);
@@ -90,7 +104,7 @@ let _fireResizeTimer;
 window.addEventListener('resize', () => {
   if (!fireRunning) return;
   clearTimeout(_fireResizeTimer);
-  _fireResizeTimer = setTimeout(() => { if (fireRunning) fireInit(Math.ceil(window.innerWidth / 6)); }, 100);
+  _fireResizeTimer = setTimeout(() => { if (fireRunning) fireResize(_fireCols()); }, 100);
 });
 
 if (localStorage.getItem('backdrop') === 'fire')
