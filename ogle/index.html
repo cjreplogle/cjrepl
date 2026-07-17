@@ -919,13 +919,15 @@
       clouds:'clouds.js',fireworks:'fireworks.js',snow:'snow.js',borealis:'borealis.js'
     };
     const _bdLoaded = new Set();
-    // Preload all backdrop scripts in background so switching is instant
+    const _bdPending = new Set();
+    // Preload all backdrop scripts after page settles — mark loaded only in onload
     setTimeout(() => {
       const current = localStorage.getItem('backdrop') || 'fire';
       Object.entries(_bdScripts).forEach(([mode, src]) => {
-        if (mode === current || _bdLoaded.has(mode)) return;
-        _bdLoaded.add(mode);
+        if (mode === current || _bdLoaded.has(mode) || _bdPending.has(mode)) return;
+        _bdPending.add(mode);
         const s = document.createElement('script'); s.src = src;
+        s.onload = () => { _bdLoaded.add(mode); _bdPending.delete(mode); };
         document.head.appendChild(s);
       });
     }, 2000);
@@ -945,14 +947,19 @@
         }
         if (window[startKey]) window[startKey]();
       }
-      if (_bdScripts[mode] && !_bdLoaded.has(mode)) {
-        _bdLoaded.add(mode);
+      if (_bdLoaded.has(mode)) {
+        doStart();
+      } else if (!_bdPending.has(mode)) {
+        _bdPending.add(mode);
         const s = document.createElement('script');
         s.src = _bdScripts[mode];
-        s.onload = doStart;
+        s.onload = () => { _bdLoaded.add(mode); _bdPending.delete(mode); doStart(); };
         document.head.appendChild(s);
       } else {
-        doStart();
+        // still preloading — wait for it then start
+        const interval = setInterval(() => {
+          if (_bdLoaded.has(mode)) { clearInterval(interval); doStart(); }
+        }, 50);
       }
       document.querySelectorAll('#backdrop-panel button').forEach(b => b.style.fontWeight = '');
       const active = document.getElementById('bd-' + mode);

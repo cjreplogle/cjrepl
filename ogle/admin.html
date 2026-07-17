@@ -196,27 +196,36 @@
     clouds:'clouds.js',fireworks:'fireworks.js',snow:'snow.js',borealis:'borealis.js'
   };
   const _bdLoaded = new Set();
+  const _bdPending = new Set();
   setTimeout(() => {
     const current = localStorage.getItem('backdrop') || 'fire';
     Object.entries(_bdScripts).forEach(([mode, src]) => {
-      if (mode === current || _bdLoaded.has(mode)) return;
-      _bdLoaded.add(mode);
+      if (mode === current || _bdLoaded.has(mode) || _bdPending.has(mode)) return;
+      _bdPending.add(mode);
       const s = document.createElement('script'); s.src = src;
+      s.onload = () => { _bdLoaded.add(mode); _bdPending.delete(mode); };
       document.head.appendChild(s);
     });
   }, 2000);
   function setBackdrop(mode) {
     localStorage.setItem('backdrop', mode);
-    ['Water','Fire','Voronoi','Rays','Clouds','Fireworks','Snow','Borealis'].forEach(n => {
+    ['Water','Fire','Rays','Clouds','Fireworks','Snow','Borealis'].forEach(n => {
       if (window['stop'+n]) window['stop'+n]();
     });
     const startKey = 'start' + mode.charAt(0).toUpperCase() + mode.slice(1);
     function doStart() { if (window[startKey]) window[startKey](); }
-    if (_bdScripts[mode] && !_bdLoaded.has(mode)) {
-      _bdLoaded.add(mode);
-      const s = document.createElement('script'); s.src = _bdScripts[mode]; s.onload = doStart;
+    if (_bdLoaded.has(mode)) {
+      doStart();
+    } else if (!_bdPending.has(mode)) {
+      _bdPending.add(mode);
+      const s = document.createElement('script'); s.src = _bdScripts[mode];
+      s.onload = () => { _bdLoaded.add(mode); _bdPending.delete(mode); doStart(); };
       document.head.appendChild(s);
-    } else { doStart(); }
+    } else {
+      const interval = setInterval(() => {
+        if (_bdLoaded.has(mode)) { clearInterval(interval); doStart(); }
+      }, 50);
+    }
     document.querySelectorAll('#backdrop-panel button').forEach(b => b.style.fontWeight = '');
     const active = document.getElementById('bd-' + mode);
     if (active) active.style.fontWeight = 'bold';
