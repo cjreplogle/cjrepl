@@ -74,8 +74,9 @@
   <h2>cjre.pl — ruminations</h2>
 
   <div id="login-view">
-    <label>GitHub token (repo scope)</label>
-    <input type="password" id="token" placeholder="ghp_..." autocomplete="off">
+    <label>password</label>
+    <input type="password" id="token" placeholder="···" autocomplete="current-password"
+           onkeydown="if(event.key==='Enter')login()">
     <div class="actions" style="margin-top:20px">
       <button class="btn" onclick="login()">sign in</button>
       <p id="status"></p>
@@ -83,7 +84,7 @@
   </div>
 
   <div id="post-view" style="display:none">
-    <p class="meta">signed in as <strong id="username"></strong> · <a href="#" onclick="logout();return false">sign out</a></p>
+    <p class="meta"><a href="#" onclick="logout();return false">sign out</a></p>
     <textarea id="body" placeholder="write something…" spellcheck="false"></textarea>
     <div class="actions">
       <button class="btn" onclick="publish()">publish</button>
@@ -107,25 +108,20 @@
 </script>
 
 <script>
-  const OWNER = 'cjreplogle';
-  const REPO  = 'cjrepl';
-  const PATH  = 'ogle/ruminations.json';
-  const KEY   = 'gh_ruminations_token';
+  // Replace this with your deployed Worker URL
+  const WORKER_URL = 'https://ruminations-worker.cjreplogle.workers.dev';
+  const KEY = 'ruminations_authed';
 
   const statusEl = document.getElementById('status');
   function setStatus(msg) { statusEl.textContent = msg; }
 
   async function login() {
-    const token = document.getElementById('token').value.trim();
-    if (!token) { setStatus('enter a token'); return; }
-    setStatus('verifying…');
-    const res = await fetch('https://api.github.com/user', {
-      headers: { Authorization: 'token ' + token }
-    });
-    if (!res.ok) { setStatus('invalid token'); return; }
-    const user = await res.json();
-    localStorage.setItem(KEY, token);
-    showPostView(user.login);
+    const pw = document.getElementById('token').value.trim();
+    if (!pw) { setStatus('enter password'); return; }
+    // Verify password by attempting a publish with empty body (worker rejects empty before auth)
+    // Instead just store and verify on first real publish — or do a quick ping
+    localStorage.setItem(KEY, pw);
+    showPostView();
     setStatus('');
   }
 
@@ -137,45 +133,38 @@
     setStatus('');
   }
 
-  function showPostView(name) {
-    document.getElementById('username').textContent = name;
+  function showPostView() {
     document.getElementById('login-view').style.display = 'none';
     document.getElementById('post-view').style.display = 'flex';
     setTimeout(() => document.getElementById('body').focus(), 50);
   }
 
   async function publish() {
-    const token = localStorage.getItem(KEY);
-    const body  = document.getElementById('body').value.trim();
+    const password = localStorage.getItem(KEY);
+    const body = document.getElementById('body').value.trim();
     if (!body) { setStatus('write something first'); return; }
     setStatus('publishing…');
-    const headers = { Authorization: 'token ' + token, 'Content-Type': 'application/json' };
-    const apiBase = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`;
     try {
-      const res  = await fetch(apiBase, { headers });
-      const file = await res.json();
-      if (!file.content) { setStatus('error: ' + JSON.stringify(file)); return; }
-      const current = JSON.parse(decodeURIComponent(escape(atob(file.content.replace(/\n/g,'')))));
-      const date = new Date().toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
-      current.unshift({ date, body });
-      const json    = JSON.stringify(current, null, 2);
-      const updated = btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, p) => String.fromCharCode('0x'+p)));
-      const put = await fetch(apiBase, {
-        method: 'PUT', headers,
-        body: JSON.stringify({ message: 'add rumination', content: updated, sha: file.sha }),
+      const res = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password, body }),
       });
-      if (put.ok) { setStatus('published'); document.getElementById('body').value = ''; }
-      else { const err = await put.json(); setStatus('error: ' + (err.message || put.status)); }
+      const data = await res.json();
+      if (data.ok) {
+        setStatus('published');
+        document.getElementById('body').value = '';
+      } else if (res.status === 401) {
+        setStatus('wrong password');
+        logout();
+      } else {
+        setStatus('error: ' + (data.error || res.status));
+      }
     } catch(e) { setStatus('error: ' + e.message); }
   }
 
-  (async () => {
-    const token = localStorage.getItem(KEY);
-    if (!token) return;
-    const res = await fetch('https://api.github.com/user', { headers: { Authorization: 'token ' + token } });
-    if (res.ok) { const u = await res.json(); showPostView(u.login); }
-    else localStorage.removeItem(KEY);
-  })();
+  // Auto-show post view if previously signed in
+  if (localStorage.getItem(KEY)) showPostView();
 </script>
 </body>
 </html>
