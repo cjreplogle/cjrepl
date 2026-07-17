@@ -15,7 +15,8 @@ const _MIN_DISP = 0.08;  // skip segments whose peak displacement from origin is
 // red → purple → blue → teal
 const _GRAD = [[255,50,50],[170,40,255],[40,90,255],[0,210,190]];
 
-function _segColor(s, e) {
+// Returns [colorString, t] where t=0 is bass/red, t=1 is treble/teal
+function _segInfo(s, e) {
   let zc = 0;
   for (let k = s + 1; k < e; k++)
     if (_ljDataL[k-1] * _ljDataL[k] < 0) zc++;
@@ -24,7 +25,8 @@ function _segColor(s, e) {
   const gi = Math.min(Math.floor(scaled), _GRAD.length - 2);
   const f = scaled - gi;
   const a = _GRAD[gi], b = _GRAD[gi + 1];
-  return `rgb(${Math.round(a[0]+f*(b[0]-a[0]))},${Math.round(a[1]+f*(b[1]-a[1]))},${Math.round(a[2]+f*(b[2]-a[2]))})`;
+  const col = `rgb(${Math.round(a[0]+f*(b[0]-a[0]))},${Math.round(a[1]+f*(b[1]-a[1]))},${Math.round(a[2]+f*(b[2]-a[2]))})`;
+  return [col, t];
 }
 
 // 3D state
@@ -142,25 +144,28 @@ function _ljDraw() {
       }
       if (peak < _MIN_DISP) { segStart = -1; if (silent) segStart = -1; continue; }
 
-      const col = _segColor(segStart, i);
+      const [col, zcT] = _segInfo(segStart, i);
       _ljCtx.strokeStyle = col;
       _ljCtx.shadowColor = col;
 
       const len = i - segStart;
-      if (len === 1) {
-        // single sample → draw a tiny line in direction of motion
-        const L = _ljDataL[segStart], R = _ljDataR[segStart];
-        const Z = _lj3d && _ljAnalZ ? _ljDataZ[segStart] : 0;
-        const nxt = Math.min(segStart + 1, _LJ_N - 1);
-        const nL = _ljDataL[nxt], nR = _ljDataR[nxt];
-        const nZ = _lj3d && _ljAnalZ ? _ljDataZ[nxt] : 0;
-        let [px, py] = _lj3d ? _rot(L, -R, Z) : [L, -R];
-        let [nx, ny] = _lj3d ? _rot(nL, -nR, nZ) : [nL, -nR];
-        const dx = nx - px, dy = ny - py, dn = Math.sqrt(dx*dx + dy*dy) || 1;
-        _ljCtx.beginPath();
-        _ljCtx.moveTo(ox + (px - dx/dn) * scale, oy + (py - dy/dn) * scale);
-        _ljCtx.lineTo(ox + (px + dx/dn) * scale, oy + (py + dy/dn) * scale);
-        _ljCtx.stroke();
+      // Low-frequency (bass/red) content → particles; mid/high → connected segments
+      const asParticles = zcT < 0.35 || len === 1;
+
+      if (asParticles) {
+        // Draw each sample as a tiny oriented line segment
+        for (let k = segStart; k < i; k++) {
+          const L = _ljDataL[k], R = _ljDataR[k];
+          const Z = _lj3d && _ljAnalZ ? _ljDataZ[k] : 0;
+          const [px, py] = _lj3d ? _rot(L, -R, Z) : [L, -R];
+          const nxt = Math.min(k + 1, _LJ_N - 1);
+          const [nx, ny] = _lj3d ? _rot(_ljDataL[nxt], -_ljDataR[nxt], _lj3d && _ljAnalZ ? _ljDataZ[nxt] : 0) : [_ljDataL[nxt], -_ljDataR[nxt]];
+          const dx = nx - px, dy = ny - py, dn = Math.sqrt(dx*dx + dy*dy) || 1;
+          _ljCtx.beginPath();
+          _ljCtx.moveTo(ox + (px - dx/dn) * scale, oy + (py - dy/dn) * scale);
+          _ljCtx.lineTo(ox + (px + dx/dn) * scale, oy + (py + dy/dn) * scale);
+          _ljCtx.stroke();
+        }
       } else {
         _ljCtx.beginPath();
         for (let k = segStart; k < i; k++) {
