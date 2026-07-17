@@ -58,7 +58,7 @@ function cloudTexture(cx, cy) {
 function cloudDensityAt(c, r) {
   // cloud base varies per column — sits in top 15% of grid
   const baseOffset = cloudBaseOffset(c);
-  const base = cloudH * (0.22 + baseOffset * 0.06);
+  const base = cloudH * (0.32 + baseOffset * 0.06);
   const distAbove = base - r;
 
   // hard flat bottom
@@ -80,7 +80,7 @@ function cloudDensityAt(c, r) {
 function highCloudDensityAt(c, r) {
   // sits even higher — very top of grid
   const baseOffset = highBaseOffset(c);
-  const base = cloudH * (0.12 + baseOffset * 0.04);
+  const base = cloudH * (0.20 + baseOffset * 0.04);
   const distAbove = base - r;
 
   // hard flat bottom
