@@ -7,9 +7,10 @@ const _ljDataL = new Float32Array(_LJ_N);
 const _ljDataR = new Float32Array(_LJ_N);
 const _ljDataZ = new Float32Array(_LJ_N);
 
-const _THRESH  = 0.12;  // transient break threshold
-const _MAX_SEG = 48;    // max samples per segment before forced break
-const _MIN_AMP = 0.025; // skip near-silent samples
+const _THRESH   = 0.12;  // transient break threshold
+const _MAX_SEG  = 48;    // max samples per segment before forced break
+const _MIN_AMP  = 0.06;  // skip near-silent samples
+const _MIN_DISP = 0.08;  // skip segments whose peak displacement from origin is too small
 
 // red → purple → blue → teal
 const _GRAD = [[255,50,50],[170,40,255],[40,90,255],[0,210,190]];
@@ -111,6 +112,14 @@ function _ljDraw() {
     if (!silent && !end && segStart < 0) segStart = i;
 
     if (doBreak && segStart >= 0) {
+      // skip segments too close to origin (suppresses center clutter)
+      let peak = 0;
+      for (let k = segStart; k < i; k++) {
+        const d = Math.abs(_ljDataL[k]) + Math.abs(_ljDataR[k]);
+        if (d > peak) peak = d;
+      }
+      if (peak < _MIN_DISP) { segStart = -1; if (silent) segStart = -1; continue; }
+
       const col = _segColor(segStart, i);
       _ljCtx.strokeStyle = col;
       _ljCtx.shadowColor = col;
