@@ -259,7 +259,7 @@
 </head>
 <body>
   <div class="url-tag">cjre.pl/ogle</div>
-  <img class="profile-photo" src="me.jpg" alt="CJ Replogle">
+  <img class="profile-photo" alt="CJ Replogle">
   <div class="intro">
     <p id="typed"></p>
   </div>
@@ -681,6 +681,13 @@
       if (seg.link) return `<a href="${seg.link}">${text}</a>`;
       return text;
     }
+
+    // Pick one photo at random and load only that one
+    (function() {
+      const photos = ['me2.jpg','me3.jpg','me4.jpg','me5.jpg','me6.jpg','me7.jpg','me8.jpg'];
+      const pick = photos[Math.floor(Math.random() * photos.length)];
+      document.querySelector('.profile-photo').src = pick;
+    })();
 
     const topBtns = Array.from(document.querySelectorAll('.tabs > .tab-btn'));
     function revealTab(i) {
