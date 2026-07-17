@@ -109,7 +109,7 @@
     .tabs {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 0;
       margin-top: 32px;
     }
     .tab-btn {
@@ -128,21 +128,30 @@
       opacity: 0;
       transform: translateX(-8px);
       transition: opacity 0.4s ease, transform 0.4s ease;
+      max-height: 4em;
+      margin-bottom: 4px;
+      overflow: hidden;
+    }
+    .tabs {
+      gap: 0;
     }
     .tabs > .tab-btn.visible {
       opacity: 1;
       transform: translateX(0);
-      transition: opacity 0.9s ease, transform 0.9s ease;
+      transition: opacity 0.9s ease, transform 0.9s ease, max-height 0.5s ease, margin-bottom 0.5s ease;
     }
     .tabs > .tab-btn.visible.repositioning {
-      transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), max-height 0.4s ease, margin-bottom 0.4s ease;
     }
     .tab-btn.active, .tabs > .tab-btn.active {
       opacity: 1;
     }
     .tabs > .tab-btn.receded {
       opacity: 0;
-      transition: opacity 0.5s ease;
+      max-height: 0;
+      margin-bottom: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease, transform 0.35s ease, max-height 0.45s ease 0.05s, margin-bottom 0.45s ease 0.05s;
     }
     .paper-entry { cursor: pointer; margin-bottom: 6px; margin-top: 10px; }
     .paper-title { padding-left: 1.6em; position: relative; }
@@ -327,9 +336,9 @@
         const tabEl = document.getElementById(tabId);
         if (tabEl) tabEl.classList.remove('active');
 
-        // clear transforms — force-clear below handles cleanup before measuring
+        // clear inline transforms so buttons slide back naturally
         [b, tabEl].forEach(el => {
-          if (!el || !el.style.transform) return;
+          if (!el) return;
           el.style.transition = '';
           el.style.transform = '';
         });
@@ -342,8 +351,9 @@
         document.getElementById(id).classList.add('active');
         topBtnsList.forEach(b => {
           if (b !== btn) {
+            const dir = topBtnsList.indexOf(b) < clickedIdx ? -1 : 1;
             b.style.transition = '';
-            b.style.transform = '';
+            b.style.transform = `translateY(${dir * 18}px)`;
             b.classList.add('receded');
           }
         });
