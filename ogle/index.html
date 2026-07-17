@@ -859,9 +859,8 @@
       <span style="opacity:0.5;margin-right:6px">backdrop</span>
       <button onclick="setBackdrop('water')" id="bd-water" style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">water</button>
       <button onclick="setBackdrop('fire')"  id="bd-fire"  style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">fire</button>
-      <button onclick="setBackdrop('voronoi')" id="bd-voronoi" style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">voronoi</button>
       <button onclick="setBackdrop('rays')"   id="bd-rays"   style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">rays</button>
-      <button onclick="setBackdrop('clouds')"    id="bd-clouds"    style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">clouds</button>
+      <button onclick="setBackdrop('clouds')"    id="bd-clouds"    style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">air</button>
       <button onclick="setBackdrop('fireworks')" id="bd-fireworks" style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">fireworks</button>
       <button onclick="setBackdrop('snow')"      id="bd-snow"      style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">snow</button>
       <button onclick="setBackdrop('borealis')" id="bd-borealis" style="font:inherit;background:none;border:none;cursor:pointer;padding:0 4px;opacity:0.6">borealis</button>
@@ -916,7 +915,7 @@
       }
     }
     const _bdScripts = {
-      water:'water.js',fire:'fire.js',voronoi:'voronoi.js',rays:'rays.js',
+      water:'water.js',fire:'fire.js',rays:'rays.js',
       clouds:'clouds.js',fireworks:'fireworks.js',snow:'snow.js',borealis:'borealis.js'
     };
     const _bdLoaded = new Set();
@@ -934,7 +933,6 @@
       localStorage.setItem('backdrop', mode);
       if (window.stopWater)     window.stopWater();
       if (window.stopFire)      window.stopFire();
-      if (window.stopVoronoi)   window.stopVoronoi();
       if (window.stopRays)      window.stopRays();
       if (window.stopClouds)    window.stopClouds();
       if (window.stopFireworks) window.stopFireworks();
