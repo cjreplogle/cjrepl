@@ -420,6 +420,10 @@
       const content = document.getElementById(id);
       const subIdx = subTabOrder0.indexOf(id);
 
+      const forfunBtn = document.querySelector('[onclick="switchTab(\'forfun\', this)"]');
+      const introEl = document.querySelector('.intro');
+      const photoEl = document.querySelector('.profile-photo');
+
       // recede or restore sibling buttons
       subTabOrder0.forEach((sid, i) => {
         const b = _subBtn(sid);
@@ -436,6 +440,31 @@
           b.style.transform = '';
         }
       });
+
+      if (isOpening) {
+        // hide "For Fun" button and slide active sub-tab btn up to its position
+        if (forfunBtn) {
+          void forfunBtn.getBoundingClientRect();
+          const dy = forfunBtn.getBoundingClientRect().top - btn.getBoundingClientRect().top;
+          forfunBtn.style.transition = 'none'; forfunBtn.style.transform = '';
+          forfunBtn.classList.add('receded');
+          if (dy !== 0) {
+            btn.style.transition = 'none'; btn.style.transform = 'translateY(0)';
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+              btn.style.transition = 'opacity 0.5s ease, transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94)';
+              btn.style.transform = `translateY(${dy}px)`;
+            }));
+          }
+        }
+        if (introEl) introEl.classList.add('tab-open');
+        if (photoEl) photoEl.classList.add('tab-open');
+      } else {
+        // restore "For Fun" button
+        if (forfunBtn) { forfunBtn.classList.remove('receded'); forfunBtn.style.transform = ''; forfunBtn.style.transition = ''; }
+        btn.style.transform = ''; btn.style.transition = '';
+        if (introEl) introEl.classList.add('tab-open'); // forfun still open
+        if (photoEl) photoEl.classList.add('tab-open');
+      }
 
       content.classList.toggle('active');
       btn.classList.toggle('active');
@@ -536,8 +565,11 @@
         if (forfunOpen && subFocus >= 0) {
           document.getElementById(subTabOrder[subFocus]).classList.remove('active');
           btns[4 + subFocus].classList.remove('active');
-          // restore all sub-tab buttons
-          subTabOrder0.forEach(sid => { const b = _subBtn(sid); if (b) { b.classList.remove('receded'); b.style.transform = ''; } });
+          btns[4 + subFocus].style.transform = ''; btns[4 + subFocus].style.transition = '';
+          // restore all sub-tab buttons and the "For Fun" button
+          subTabOrder0.forEach(sid => { const b = _subBtn(sid); if (b) { b.classList.remove('receded'); b.style.transform = ''; b.style.transition = ''; } });
+          const forfunBtn = document.querySelector('[onclick="switchTab(\'forfun\', this)"]');
+          if (forfunBtn) { forfunBtn.classList.remove('receded'); forfunBtn.style.transform = ''; forfunBtn.style.transition = ''; }
           if (subFocus > 0) {
             const prevSub = subFocus - 1;
             setFocus(4 + prevSub);
