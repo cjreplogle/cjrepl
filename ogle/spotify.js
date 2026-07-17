@@ -112,12 +112,16 @@ async function _spPoll() {
     _spTrackName = item.name;
     _spArtist    = item.artists.map(a => a.name).join(', ');
     _spAnalysis  = null;
-    _spSetStatus('spotify · loading · ' + _spTrackName);
-    const analysis = await _spFetch('/audio-analysis/' + _spTrackId);
-    if (analysis) _spAnalysis = analysis;
-  }
-
-  if (_spAnalysis) {
+    _spSetStatus((_spPlaying ? '▶ ' : '⏸ ') + _spArtist + ' — ' + _spTrackName + ' · loading…');
+    // fetch analysis in background — don't block the poll cycle
+    const loadId = _spTrackId;
+    _spFetch('/audio-analysis/' + loadId).then(analysis => {
+      if (analysis && _spTrackId === loadId) {
+        _spAnalysis = analysis;
+        _spSetStatus((_spPlaying ? '▶ ' : '⏸ ') + _spArtist + ' — ' + _spTrackName);
+      }
+    });
+  } else if (_spAnalysis) {
     _spSetStatus((_spPlaying ? '▶ ' : '⏸ ') + _spArtist + ' — ' + _spTrackName);
   }
 }
