@@ -281,7 +281,7 @@
 </head>
 <body>
   <div class="url-tag">cjre.pl/ogle</div>
-  <img class="profile-photo" alt="CJ Replogle">
+  <img class="profile-photo" alt="CJ Replogle" style="cursor:pointer" onclick="(function(){const photos=['me2.jpg','me4.jpg','me5.jpg','me6.jpg'];const current=document.querySelector('.profile-photo').src.split('/').pop();const others=photos.filter(p=>p!==current);this.src=others[Math.floor(Math.random()*others.length)];}).call(this)">
   <div class="intro">
     <p id="typed" spellcheck="false"></p>
   </div>
