@@ -222,6 +222,25 @@ window.ljLoadFile = async (file) => {
   }
 };
 
+window.ljUseSystem = async () => {
+  try {
+    _ljStatus('requesting system audio…');
+    _ljSetupCtx();
+    const stream = await navigator.mediaDevices.getDisplayMedia({ audio: true, video: true });
+    stream.getVideoTracks().forEach(t => t.stop());
+    if (!stream.getAudioTracks().length) { _ljStatus('no audio track'); return; }
+    _ljStream = stream;
+    const src = _ljAudio.createMediaStreamSource(stream);
+    const stereo = stream.getAudioTracks()[0].getSettings().channelCount >= 2;
+    stereo ? _ljConnectStereo(src) : _ljConnectMono(src);
+    _ljShowControls(false);
+    _ljStatus('system audio');
+  } catch(e) {
+    _ljStatus(e.name === 'NotAllowedError' ? 'permission denied' : 'mic · mono');
+    if (e.name !== 'NotAllowedError') window.ljUseMic();
+  }
+};
+
 window.ljOpen = () => {
   const wrap = document.getElementById('lj-canvas-wrap');
   if (!wrap) return;
@@ -234,7 +253,7 @@ window.ljOpen = () => {
   }
   _ljResize();
   if (!_ljAnimId) _ljDraw();
-  window.ljUseMic();
+  window.ljUseSystem();
 };
 
 window.ljClose = () => {
