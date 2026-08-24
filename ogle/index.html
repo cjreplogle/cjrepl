@@ -233,6 +233,15 @@
     #forfun > * {
       overflow: visible;
     }
+    #ruminations-inner {
+      overflow-y: auto;
+      max-height: 55vh;
+      padding-right: 0.5em;
+      touch-action: pan-y;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
     .tab-content.active {
       grid-template-rows: 1fr;
     }
@@ -608,7 +617,28 @@
       }
     }
 
+    // returns the ruminations list element if it's open, scrollable, and the
+    // event happened inside it — otherwise null
+    function rumScroller(target) {
+      const rum = document.getElementById('ruminations');
+      const el = document.getElementById('ruminations-inner');
+      if (!rum || !el || !rum.classList.contains('active')) return null;
+      if (!el.contains(target)) return null;
+      if (el.scrollHeight <= el.clientHeight + 1) return null;
+      return el;
+    }
+
     window.addEventListener('wheel', function(e) {
+      const sc = rumScroller(e.target);
+      if (sc) {
+        const atTop = sc.scrollTop <= 0;
+        const atBottom = sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 1;
+        // let the list scroll natively until we hit an edge in that direction
+        if ((e.deltaY < 0 && !atTop) || (e.deltaY > 0 && !atBottom)) {
+          scrollAccum = 0;
+          return;
+        }
+      }
       e.preventDefault();
       scrollAccum += e.deltaY;
       if (Math.abs(scrollAccum) >= SCROLL_STEP && !scrollCooldown) {
@@ -620,11 +650,12 @@
       }
     }, { passive: false });
 
-    let touchStartY = 0, touchStartedInTB = false;
+    let touchStartY = 0, touchStartedInTB = false, touchStartedInRum = false;
     window.addEventListener('touchstart', function(e) {
       touchStartY = e.touches[0].clientY;
       const tb = document.getElementById('threebody');
       touchStartedInTB = tb ? tb.contains(e.target) : false;
+      touchStartedInRum = !!rumScroller(e.target);
     }, { passive: true });
     window.addEventListener('touchend', function(e) {
       if (scrollCooldown) return;
@@ -632,6 +663,13 @@
       const dy = touchStartY - e.changedTouches[0].clientY;
       if (Math.abs(dy) < 40) return;
       const dir = dy > 0 ? 1 : -1;
+      if (touchStartedInRum) {
+        const sc = document.getElementById('ruminations-inner');
+        const atTop = sc.scrollTop <= 0;
+        const atBottom = sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 1;
+        // swiping within the list scrolls it; only navigate away at an edge
+        if ((dir < 0 && !atTop) || (dir > 0 && !atBottom)) return;
+      }
       scrollCooldown = true;
       scrollNavStep(dir);
       setTimeout(() => { scrollCooldown = false; }, 550);
@@ -1068,7 +1106,7 @@
             return;
           }
           el.innerHTML = posts.map(p => `
-            <div style="margin:10px 0 1.4em;padding-left:1.6em">
+            <div style="margin:0 0 1.2rem;padding-left:1.6em">
               <p style="font-size:0.75rem;opacity:0.35;margin:0 0 4px">${p.date}</p>
               <p style="font-size:0.85rem;margin:0;white-space:pre-wrap">${p.body}</p>
             </div>`).join('');
