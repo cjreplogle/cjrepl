@@ -6,26 +6,27 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Ruminations — CJ Replogle</title>
 <style>
-  body { font-family:"Times New Roman",Times,serif; max-width:640px; margin:0 auto; padding:24px 20px 64px; }
-  pre { font-family:inherit; white-space:pre-wrap; margin:0; }
-  a { color:inherit; }
-  #login label { opacity:0.6; }
-  #login input { font-family:inherit; font-size:1rem; border:none; border-bottom:1px solid #999; padding:2px 0; outline:none; }
-  #login button, #out { font-family:inherit; font-size:0.95rem; cursor:pointer; background:none; border:none; padding:0; text-decoration:underline; color:inherit; }
-  #status { opacity:0.5; font-size:0.85rem; margin-left:8px; }
-  .entry { margin:0 0 1.5em; }
-  .date { opacity:0.5; font-size:0.82rem; margin:0 0 0.25em; }
-  .text { margin:0; white-space:pre-wrap; line-height:1.55; }
+  body { font-family:"Times New Roman",Times,serif; color:#000; background:#fff;
+         margin:12px; max-width:46em; line-height:1.4; }
+  h1 { font-size:1.9em; margin:0 0 0.5em; }
+  hr { border:none; border-top:1px solid #000; margin:1em 0; }
+  p { margin:0.5em 0; }
+  #login label { }
+  #login input { font-family:inherit; font-size:1rem; border:1px solid #999; padding:2px 4px; }
+  #login button, #out { font-family:inherit; font-size:1rem; cursor:pointer;
+                        background:none; border:none; padding:0; color:#00e; text-decoration:underline; }
+  #status { color:#555; font-size:0.9em; margin-left:8px; }
+  .entry { margin:0 0 1.1em; }
+  .date { color:#555; font-size:0.85em; margin:0 0 0.2em; }
+  .text { margin:0; white-space:pre-wrap; }
+  .foot { font-size:0.85em; }
 </style>
 </head>
 <body>
-
-<pre>RUMINATIONS <span style="opacity:0.4">— private</span>
-
-</pre>
+<h1>Ruminations</h1>
 
 <div id="login">
-  <label for="pw">password </label>
+  <label for="pw">Password:</label>
   <input type="password" id="pw" autocomplete="current-password"
          onkeydown="if(event.key==='Enter')signin()">
   <button onclick="signin()">sign in</button>
@@ -34,10 +35,8 @@
 
 <div id="list" style="display:none"></div>
 
-<pre>
----
-<a href="/ogle/plain/">← back</a><span id="out-wrap" style="display:none">  ·  <button id="out" onclick="signout();return false">sign out</button></span>
-</pre>
+<hr>
+<p class="foot"><a href="/ogle/plain/">&larr; back</a><span id="out-wrap" style="display:none"> &middot; <button id="out" onclick="signout();return false">sign out</button></span></p>
 
 <script>
   const WORKER_URL = 'https://ruminations-worker.cjreplogle.workers.dev';
@@ -61,7 +60,7 @@
       el.style.display = '';
       el.innerHTML = posts.length
         ? posts.map(p => `<div class="entry"><p class="date">${esc(p.date)}</p><p class="text">${esc(p.body)}</p></div>`).join('')
-        : '<pre>Nothing yet.</pre>';
+        : '<p>Nothing yet.</p>';
       setStatus('');
     } catch(e) { setStatus('error: ' + e.message); }
   }
