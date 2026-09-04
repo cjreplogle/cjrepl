@@ -2,6 +2,13 @@ name = "ruminations-worker"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 
+# Private store for ruminations. Create the namespace once with:
+#   wrangler kv namespace create RUMINATIONS
+# then paste the returned id below.
+[[kv_namespaces]]
+binding = "RUMINATIONS"
+id = "1b83e25b16004c4a97c6c97826b05f1f"
+
 [[unsafe.bindings]]
 type = "ratelimit"
 name = "RATE_LIMITER"

@@ -233,15 +233,6 @@
     #forfun > * {
       overflow: visible;
     }
-    #ruminations-inner {
-      overflow-y: auto;
-      max-height: 55vh;
-      padding-right: 0.5em;
-      touch-action: pan-y;
-      overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: thin;
-    }
     .tab-content.active {
       grid-template-rows: 1fr;
     }
@@ -300,8 +291,6 @@
     <div id="papers" class="tab-content"><div id="papers-list"></div></div>
     <button class="tab-btn" onclick="switchTab('projects', this)"><span class="selector"> </span>Projects</button>
     <div id="projects" class="tab-content"><div><p style="margin:10px 0 6px;padding-left:1.6em;font-size:0.85rem;opacity:0.5">Coming soon.</p></div></div>
-    <button class="tab-btn" onclick="switchTab('ruminations', this)"><span class="selector"> </span>Ruminations</button>
-    <div id="ruminations" class="tab-content"><div id="ruminations-inner"><p style="opacity:0.4;font-size:0.85rem;padding-left:1.6em;margin:10px 0 6px">Loading...</p></div></div>
     <button class="tab-btn" onclick="switchTab('forfun', this)"><span class="selector"> </span>For Fun</button>
     <div id="forfun" class="tab-content">
       <div>
@@ -337,7 +326,7 @@
   </div>
 
   <script>
-    const tabIds = ['papers', 'projects', 'ruminations', 'forfun', 'mb-content', 'tb-content', 'lj-content'];
+    const tabIds = ['papers', 'projects', 'forfun', 'mb-content', 'tb-content', 'lj-content'];
     const subTabIds = new Set(['mb-content', 'tb-content', 'lj-content']);
     const btns = document.querySelectorAll('.tab-btn');
     let focusedTab = -1; // -1 = none focused
@@ -473,8 +462,8 @@
 
       content.classList.toggle('active');
       btn.classList.toggle('active');
-      if (content.classList.contains('active') && subIdx >= 0) setFocus(4 + subIdx);
-      else setFocus(3); // back to forfun btn
+      if (content.classList.contains('active') && subIdx >= 0) setFocus(3 + subIdx);
+      else setFocus(2); // back to forfun btn
       if (id === 'mb-content' && content.classList.contains('active')) {
         if (window.mbOpen) window.mbOpen();
       }
@@ -506,8 +495,8 @@
     let scrollCooldown = false;
 
     function scrollNavStep(dir) {
-      const mainTabCount = 4; // papers, projects, ruminations, forfun
-      const forfunIdx = 3;
+      const mainTabCount = 3; // papers, projects, forfun
+      const forfunIdx = 2;
       const subTabOrder = ['mb-content', 'tb-content', 'lj-content']; // subtab ids in order
       const papersOpen = document.getElementById('papers').classList.contains('active');
       const forfunOpen = document.getElementById('forfun').classList.contains('active');
@@ -515,7 +504,7 @@
         document.getElementById(id).classList.contains('active'));
 
       // which subtab is currently focused (4 = mb, 5 = tb in btns array)
-      const subFocus = forfunOpen ? (focusedTab === 4 ? 0 : focusedTab === 5 ? 1 : -1) : -1;
+      const subFocus = forfunOpen ? (focusedTab === 3 ? 0 : focusedTab === 4 ? 1 : -1) : -1;
 
       if (dir > 0) {
         // iterate paper entries
@@ -529,21 +518,21 @@
           const nextSub = subFocus + 1;
           if (nextSub < subTabOrder.length) {
             const subId = subTabOrder[nextSub];
-            const subBtn = btns[4 + nextSub];
+            const subBtn = btns[3 + nextSub];
             // close previous subtab if open
             if (subFocus >= 0) {
               const prevId = subTabOrder[subFocus];
               document.getElementById(prevId).classList.remove('active');
-              btns[4 + subFocus].classList.remove('active');
+              btns[3 + subFocus].classList.remove('active');
             }
-            setFocus(4 + nextSub);
+            setFocus(3 + nextSub);
             switchSubTab(subId, subBtn);
             return;
           }
           // past last subtab — close forfun subtabs and fall through to next main tab
           subTabOrder.forEach((id, i) => {
             document.getElementById(id).classList.remove('active');
-            btns[4 + i].classList.remove('active');
+            btns[3 + i].classList.remove('active');
           });
           // stay on forfun, no more main tabs after it
           return;
@@ -559,8 +548,8 @@
           switchTab(tabIds[nextTab], btns[nextTab]);
         } else if (focusedTab === forfunIdx && forfunOpen && subFocus === -1) {
           // just opened forfun — focus first subtab
-          setFocus(4);
-          switchSubTab(subTabOrder[0], btns[4]);
+          setFocus(3);
+          switchSubTab(subTabOrder[0], btns[3]);
         }
       } else {
         if (papersOpen && paperFocus > 0) { setPaperFocus(paperFocus - 1); return; }
@@ -569,16 +558,16 @@
         // navigate back through subtabs
         if (forfunOpen && subFocus >= 0) {
           document.getElementById(subTabOrder[subFocus]).classList.remove('active');
-          btns[4 + subFocus].classList.remove('active');
-          btns[4 + subFocus].style.transform = ''; btns[4 + subFocus].style.transition = '';
+          btns[3 + subFocus].classList.remove('active');
+          btns[3 + subFocus].style.transform = ''; btns[3 + subFocus].style.transition = '';
           // restore all sub-tab buttons and the "For Fun" button
           subTabOrder0.forEach(sid => { const b = _subBtn(sid); if (b) { b.classList.remove('receded'); b.style.transform = ''; b.style.transition = ''; } });
           const forfunBtn = document.querySelector('[onclick="switchTab(\'forfun\', this)"]');
           if (forfunBtn) { forfunBtn.classList.remove('receded'); forfunBtn.style.transform = ''; forfunBtn.style.transition = ''; }
           if (subFocus > 0) {
             const prevSub = subFocus - 1;
-            setFocus(4 + prevSub);
-            switchSubTab(subTabOrder[prevSub], btns[4 + prevSub]);
+            setFocus(3 + prevSub);
+            switchSubTab(subTabOrder[prevSub], btns[3 + prevSub]);
           } else {
             setFocus(forfunIdx); // back to forfun btn
           }
@@ -1095,29 +1084,6 @@
     })();
   </script>
 
-  <script>
-    function loadRuminations() {
-      fetch('ruminations.json?t=' + Date.now())
-        .then(r => r.json())
-        .then(posts => {
-          const el = document.getElementById('ruminations-inner');
-          if (!posts.length) {
-            el.innerHTML = '<p style="opacity:0.4;font-size:0.85rem;padding-left:1.6em;margin:10px 0 6px">Nothing yet.</p>';
-            return;
-          }
-          el.innerHTML = posts.map(p => `
-            <div style="margin:0 0 1.2rem;padding-left:1.6em">
-              <p style="font-size:0.75rem;opacity:0.35;margin:0 0 4px">${p.date}</p>
-              <p style="font-size:0.85rem;margin:0;white-space:pre-wrap">${p.body}</p>
-            </div>`).join('');
-        })
-        .catch(() => {
-          document.getElementById('ruminations-inner').innerHTML =
-            '<p style="opacity:0.4;font-size:0.85rem;padding-left:1.6em;margin:10px 0 6px">Could not load posts.</p>';
-        });
-    }
-    loadRuminations();
-  </script>
   <script>
     (function() {
       const bd = localStorage.getItem('backdrop') || 'borealis';
