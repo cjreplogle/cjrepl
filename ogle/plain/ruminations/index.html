@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Ruminations — CJ Replogle</title>
+<style>
+  body { font-family:"Times New Roman",Times,serif; max-width:640px; margin:0 auto; padding:24px 20px 64px; }
+  pre { font-family:inherit; white-space:pre-wrap; margin:0; }
+  a { color:inherit; }
+  #login label { opacity:0.6; }
+  #login input { font-family:inherit; font-size:1rem; border:none; border-bottom:1px solid #999; padding:2px 0; outline:none; }
+  #login button, #out { font-family:inherit; font-size:0.95rem; cursor:pointer; background:none; border:none; padding:0; text-decoration:underline; color:inherit; }
+  #status { opacity:0.5; font-size:0.85rem; margin-left:8px; }
+  .entry { margin:0 0 1.5em; }
+  .date { opacity:0.5; font-size:0.82rem; margin:0 0 0.25em; }
+  .text { margin:0; white-space:pre-wrap; line-height:1.55; }
+</style>
+</head>
+<body>
+
+<pre>RUMINATIONS <span style="opacity:0.4">— private</span>
+
+</pre>
+
+<div id="login">
+  <label for="pw">password </label>
+  <input type="password" id="pw" autocomplete="current-password"
+         onkeydown="if(event.key==='Enter')signin()">
+  <button onclick="signin()">sign in</button>
+  <span id="status"></span>
+</div>
+
+<div id="list" style="display:none"></div>
+
+<pre>
+---
+<a href="/ogle/plain/">← back</a><span id="out-wrap" style="display:none">  ·  <button id="out" onclick="signout();return false">sign out</button></span>
+</pre>
+
+<script>
+  const WORKER_URL = 'https://ruminations-worker.cjreplogle.workers.dev';
+  const KEY = 'ruminations_authed';
+
+  function esc(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function setStatus(m){ document.getElementById('status').textContent = m || ''; }
+
+  async function load(){
+    const pw = localStorage.getItem(KEY);
+    if (!pw) return;
+    setStatus('loading…');
+    try {
+      const res = await fetch(WORKER_URL, { headers: { Authorization: 'Bearer ' + pw } });
+      if (res.status === 401) { setStatus('wrong password'); signout(); return; }
+      if (!res.ok) { setStatus('could not load'); return; }
+      const posts = await res.json();
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('out-wrap').style.display = '';
+      const el = document.getElementById('list');
+      el.style.display = '';
+      el.innerHTML = posts.length
+        ? posts.map(p => `<div class="entry"><p class="date">${esc(p.date)}</p><p class="text">${esc(p.body)}</p></div>`).join('')
+        : '<pre>Nothing yet.</pre>';
+      setStatus('');
+    } catch(e) { setStatus('error: ' + e.message); }
+  }
+
+  function signin(){
+    const pw = document.getElementById('pw').value.trim();
+    if (!pw) { setStatus('enter password'); return; }
+    localStorage.setItem(KEY, pw);
+    load();
+  }
+
+  function signout(){
+    localStorage.removeItem(KEY);
+    const el = document.getElementById('list');
+    el.style.display = 'none'; el.innerHTML = '';
+    document.getElementById('login').style.display = '';
+    document.getElementById('out-wrap').style.display = 'none';
+    document.getElementById('pw').value = '';
+    setStatus('');
+  }
+
+  if (localStorage.getItem(KEY)) load();
+</script>
+</body>
+</html>
