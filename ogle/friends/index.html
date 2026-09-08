@@ -12,6 +12,21 @@
   hr { border:none; border-top:1px solid #000; margin:1em 0; }
   p { margin:0.6em 0; }
   .top-back { margin:0 0 0.6em; font-size:0.9em; }
+  #sortcb { display:none; }
+  .sortbtn { cursor:pointer; font-size:0.85em; color:#00e; text-decoration:underline; }
+  .sortbtn::before { content:"sort: by date"; }
+  #sortcb:checked ~ .sortbtn::before { content:"sort: alphabetical"; }
+  .albums { display:flex; flex-direction:column; }
+  /* default order: by date (oldest to newest) */
+  #a-swim { order:1; }
+  #a-ny   { order:2; }
+  #a-como { order:3; }
+  #a-euro { order:4; }
+  /* alphabetical order when toggled */
+  #sortcb:checked ~ .albums #a-euro { order:1; }
+  #sortcb:checked ~ .albums #a-como { order:2; }
+  #sortcb:checked ~ .albums #a-ny   { order:3; }
+  #sortcb:checked ~ .albums #a-swim { order:4; }
   .foot { font-size:0.85em; color:#555; }
   .foot a { color:#555; }
 </style>
@@ -22,10 +37,15 @@
 
 <hr>
 
-<p><a href="https://cjre.pl/ogle/friends/como">Lake Como</a> &mdash; May 2026</p>
-<p><a href="https://cjre.pl/ogle/friends/swimming">Swimming</a> &mdash; 2023&ndash;2026</p>
-<p><a href="https://cjre.pl/ogle/friends/newyork">New York</a> &mdash; 2024, 2026</p>
-<p><a href="https://cjre.pl/ogle/friends/euro">Euro Trip</a> &mdash; May 2026</p>
+<input type="checkbox" id="sortcb">
+<label class="sortbtn" for="sortcb"></label>
+
+<div class="albums">
+<p id="a-como"><a href="https://cjre.pl/ogle/friends/como">Lake Como</a> &mdash; May 2026</p>
+<p id="a-swim"><a href="https://cjre.pl/ogle/friends/swimming">Swimming</a> &mdash; 2023&ndash;2026</p>
+<p id="a-ny"><a href="https://cjre.pl/ogle/friends/newyork">New York</a> &mdash; 2024, 2026</p>
+<p id="a-euro"><a href="https://cjre.pl/ogle/friends/euro">Euro Trip</a> &mdash; May 2026</p>
+</div>
 
 <hr>
 
