@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noimageindex">
+<title>Euro Trip 2026 &mdash; CJ Replogle</title>
+<style>
+  body { font-family:"Times New Roman",Times,serif; color:#000; background:#fff;
+         margin:12px; max-width:46em; line-height:1.4; }
+  h1 { font-size:1.9em; margin:0 0 0.1em; }
+  hr { border:none; border-top:1px solid #000; margin:1em 0; }
+  p { margin:0.6em 0; }
+  .top-back { margin:0 0 0.6em; font-size:0.9em; }
+  .gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(12em, 1fr)); gap:0.5em; }
+  .gallery figure { margin:0; }
+  .expand { display:none; }
+  .gallery label { display:block; cursor:pointer; }
+  .gallery img { display:block; width:100%; height:10em; object-fit:cover; }
+  .gallery figure:has(.expand:checked) { grid-column:1 / -1; }
+  .gallery figure:has(.expand:checked) img { height:auto; max-height:85vh; object-fit:contain; }
+  .foot { font-size:0.85em; color:#555; }
+  .foot a { color:#555; }
+</style>
+</head>
+<body>
+<p class="top-back"><a href="https://cjre.pl/ogle/friends">&larr; back</a></p>
+<h1>Euro Trip 2026</h1>
+
+<p>Europe, 2026.</p>
+
+<hr>
+
+<div class="gallery">
+<figure><input type="checkbox" id="e1" class="expand"><label for="e1"><img data-src="u1.jpg" alt="Euro trip"></label></figure>
+<figure><input type="checkbox" id="e2" class="expand"><label for="e2"><img data-src="u2.jpg" alt="Euro trip"></label></figure>
+<figure><input type="checkbox" id="e3" class="expand"><label for="e3"><img data-src="u3.jpg" alt="Euro trip"></label></figure>
+<figure><input type="checkbox" id="e4" class="expand"><label for="e4"><img data-src="u4.jpg" alt="Euro trip"></label></figure>
+<figure><input type="checkbox" id="e5" class="expand"><label for="e5"><img data-src="u5.jpg" alt="Euro trip"></label></figure>
+<figure><input type="checkbox" id="e6" class="expand"><label for="e6"><img data-src="u6.jpg" alt="Euro trip"></label></figure>
+<figure><input type="checkbox" id="e7" class="expand"><label for="e7"><img data-src="u7.jpg" alt="Euro trip"></label></figure>
+<figure><input type="checkbox" id="e8" class="expand"><label for="e8"><img data-src="u8.jpg" alt="Euro trip"></label></figure>
+<figure><input type="checkbox" id="e9" class="expand"><label for="e9"><img data-src="u9.jpg" alt="Euro trip"></label></figure>
+<figure><input type="checkbox" id="e10" class="expand"><label for="e10"><img data-src="u10.jpg" alt="Euro trip"></label></figure>
+<figure><input type="checkbox" id="e11" class="expand"><label for="e11"><img data-src="u11.jpg" alt="Euro trip"></label></figure>
+<figure><input type="checkbox" id="e12" class="expand"><label for="e12"><img data-src="u12.jpg" alt="Euro trip"></label></figure>
+<figure><input type="checkbox" id="e13" class="expand"><label for="e13"><img data-src="u13.jpg" alt="Euro trip"></label></figure>
+<figure><input type="checkbox" id="e14" class="expand"><label for="e14"><img data-src="u14.jpg" alt="Euro trip"></label></figure>
+<figure><input type="checkbox" id="e15" class="expand"><label for="e15"><img data-src="u15.jpg" alt="Euro trip"></label></figure>
+</div>
+
+<hr>
+
+<p class="foot"><a href="https://cjre.pl/">cjre.pl</a> / contact: replogcj(at)mail.uc.edu</p>
+
+<script>
+// Load images one at a time, in order: each starts once the previous finishes.
+(function () {
+  var imgs = document.querySelectorAll("img[data-src]");
+  var i = 0;
+  function next() {
+    if (i >= imgs.length) return;
+    var img = imgs[i++];
+    img.onload = img.onerror = next;
+    img.src = img.getAttribute("data-src");
+  }
+  next();
+})();
+</script>
+</body>
+</html>
