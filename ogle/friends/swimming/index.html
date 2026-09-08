@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noimageindex">
+<title>Swimming &mdash; CJ Replogle</title>
+<style>
+  body { font-family:"Times New Roman",Times,serif; color:#000; background:#fff;
+         margin:12px; max-width:46em; line-height:1.4; }
+  h1 { font-size:1.9em; margin:0 0 0.1em; }
+  hr { border:none; border-top:1px solid #000; margin:1em 0; }
+  p { margin:0.6em 0; }
+  .top-back { margin:0 0 0.6em; font-size:0.9em; }
+  .gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(12em, 1fr)); gap:0.5em; }
+  .gallery figure { margin:0; }
+  .expand { display:none; }
+  .gallery label { display:block; cursor:pointer; }
+  .gallery img { display:block; width:100%; height:10em; object-fit:cover; }
+  .gallery figure:has(.expand:checked) { grid-column:1 / -1; }
+  .gallery figure:has(.expand:checked) img { height:auto; max-height:85vh; object-fit:contain; }
+  .foot { font-size:0.85em; color:#555; }
+  .foot a { color:#555; }
+</style>
+</head>
+<body>
+<p class="top-back"><a href="https://cjre.pl/ogle/friends">&larr; back</a></p>
+<h1>Swimming</h1>
+
+<p>Some photos from club swim, 2023&ndash;2026.</p>
+
+<hr>
+
+<div class="gallery">
+<figure><input type="checkbox" id="e1" class="expand"><label for="e1"><img data-src="s1.jpg" alt="Club swim"></label></figure>
+<figure><input type="checkbox" id="e2" class="expand"><label for="e2"><img data-src="s2.jpg" alt="Club swim"></label></figure>
+<figure><input type="checkbox" id="e3" class="expand"><label for="e3"><img data-src="s3.jpg" alt="Nationals team"></label></figure>
+<figure><input type="checkbox" id="e4" class="expand"><label for="e4"><img data-src="s4.jpg" alt="Diving off the blocks at nationals"></label></figure>
+<figure><input type="checkbox" id="e5" class="expand"><label for="e5"><img data-src="s5.jpg" alt="College Club Swimming group photo"></label></figure>
+<figure><input type="checkbox" id="e6" class="expand"><label for="e6"><img data-src="s6.jpg" alt="Teammates poolside"></label></figure>
+<figure><input type="checkbox" id="e7" class="expand"><label for="e7"><img data-src="s7.jpg" alt="Team at the natatorium"></label></figure>
+<figure><input type="checkbox" id="e8" class="expand"><label for="e8"><img data-src="s8.jpg" alt="Team in green"></label></figure>
+<figure><input type="checkbox" id="e9" class="expand"><label for="e9"><img data-src="s9.jpg" alt="Team in green"></label></figure>
+<figure><input type="checkbox" id="e10" class="expand"><label for="e10"><img data-src="s10.jpg" alt="Teammates at nationals"></label></figure>
+<figure><input type="checkbox" id="e11" class="expand"><label for="e11"><img data-src="s11.jpg" alt="Swimming butterfly in a race"></label></figure>
+</div>
+
+<hr>
+
+<p class="foot"><a href="https://cjre.pl/">cjre.pl</a> / contact: replogcj(at)mail.uc.edu</p>
+
+<script>
+// Load images one at a time, in order: each starts once the previous finishes.
+(function () {
+  var imgs = document.querySelectorAll("img[data-src]");
+  var i = 0;
+  function next() {
+    if (i >= imgs.length) return;
+    var img = imgs[i++];
+    img.onload = img.onerror = next;
+    img.src = img.getAttribute("data-src");
+  }
+  next();
+})();
+</script>
+</body>
+</html>
