@@ -13,8 +13,25 @@
   p { margin:0.5em 0; }
   .sub { margin:0 0 0.4em; }
   .cv { font-size:0.6em; font-weight:normal; margin-left:0.4em; vertical-align:middle; }
+  label.cv { cursor:pointer; color:#00e; text-decoration:underline; }
   .paper { margin:0 0 1em; }
   .paper .cite { display:block; margin-left:1.6em; }
+  #pres-toggle { display:none; }
+  #presentations { display:none; }
+  body:has(#pres-toggle:checked) #presentations { display:block; }
+  body:has(#pres-toggle:checked) .show-pres { display:none; }
+  #presentations { counter-reset:pres; }
+  #presentations .paper { margin:0 0 0.25em 2em; text-indent:-2em; font-size:0.75em; }
+  #presentations .paper::before { counter-increment:pres; content:"[" counter(pres) "] "; }
+  .hide-one { display:none; }
+  .mini { cursor:pointer; color:#00e; text-decoration:none; }
+  .dismiss { vertical-align:super; font-size:0.8em; margin-left:0.1em; }
+  .restore { margin-left:0.3em; }
+  .paper .restore { display:none; }
+  .paper:has(.hide-one:checked) .pbody { display:none; }
+  .paper:has(.hide-one:checked) .dismiss { display:none; }
+  .paper:has(.hide-one:checked) .restore { display:inline; }
+  #projects-body { font-size:0.85em; }
   .foot { font-size:0.85em; color:#555; }
   .foot a { color:#555; }
 </style>
@@ -25,7 +42,8 @@
 
 <hr>
 
-<h2>Research <a class="cv" href="CJReplogle_CV.pdf">[CV]</a></h2>
+<input type="checkbox" id="pres-toggle">
+<h2 id="research">Research <a class="cv" href="CJReplogle_CV.pdf">[CV]</a> <label class="cv show-pres" for="pres-toggle">[Show Presentations]</label></h2>
 <div class="paper">
   <a href="https://doi.org/10.1053/j.sart.2025.04.007">Anatomic total shoulder arthroplasty using a short humeral stem and a non-augmented, minimally cemented all-polyethylene glenoid</a>
   <span class="cite">Kurcz, Brian P., Dennis A. DeBernardis, Aaron Roberts, Peter Regala, Carl J. Replogle, Cassie M. Fleckenstein, Joseph Nolan, and Samer S. Hasan. In Seminars in Arthroplasty: JSES. WB Saunders, 2025.</span>
@@ -35,8 +53,19 @@
   <span class="cite">Replogle, Carl J. Undergraduate thesis, The Ohio State University College of Engineering, 2026.</span>
 </div>
 
+<div id="presentations">
+  <h2>Presentations <label class="cv" for="pres-toggle">[Hide Presentations]</label></h2>
+  <p class="paper"><input type="checkbox" id="p1" class="hide-one"><label class="mini restore" for="p1">[+]</label><span class="pbody">Barnes, J., <strong>Replogle, C.J.</strong>, Diop, K., Liu, Y., Klausner, J., Smith, A., Marshall, J., Walter, B., Schilaty, N., Bates, N., McBride-Gagyi, S., Purmessur, D. (December 2025). &ldquo;Lower Limb Joint Degeneration Following Intervertebral Disc Injury and Force-Based Manipulation in a Mouse Model&rdquo; [Poster], Orthopedic Research Society 2026 Annual Meeting, Charlotte, NC.<label class="mini dismiss" for="p1">[&minus;]</label></span></p>
+  <p class="paper"><input type="checkbox" id="p2" class="hide-one"><label class="mini restore" for="p2">[+]</label><span class="pbody">Smallwood, R., Dort, T., <strong>Replogle, C.J.</strong>, Barnes, J., Sprangel, K., Willows, J., Blaszkiewicz, M., Peters, S., Greco, N., Townsend, K., McBride-Gagyi, S. &ldquo;Effects of Estradiol (17-&alpha;) on Osteoarthritis and Bone Development in Genetically Heterogeneous Het3 Male Mice.&rdquo; [Poster] Orthopedic Research Society Annual Meeting; February 10th, 2025.<label class="mini dismiss" for="p2">[&minus;]</label></span></p>
+  <p class="paper"><input type="checkbox" id="p3" class="hide-one"><label class="mini restore" for="p3">[+]</label><span class="pbody"><strong>Replogle, C.J.</strong>, Smallwood, R., Dort, T., Sprangel, K., Willows, J., Peters, S., Greco, N., Townsend, K., McBride-Gagyi, S. &ldquo;Effects of Estradiol (17-&alpha;) on Osteoarthritis and Bone Development in Genetically Heterogenous Het3 Male Mice&rdquo; [Poster] Engineering in Healthcare: Industry and Research Symposium; January 25th, 2025; Columbus, OH.<label class="mini dismiss" for="p3">[&minus;]</label></span></p>
+  <p class="paper"><input type="checkbox" id="p4" class="hide-one"><label class="mini restore" for="p4">[+]</label><span class="pbody"><strong>Replogle, C.J.</strong>, Ghorai, S.K., Gangavaram, A., Whitlock, P.W. &ldquo;Fabrication of Patient Specific Bioinductive 3D Printed Scaffold for Osteochondral Defect Repair&rdquo; [Poster] Cincinnati Children&rsquo;s Hospital Medical Center Summer Undergraduate Research Fellowship Capstone Poster Session; July 31st, 2024; Cincinnati, OH.<label class="mini dismiss" for="p4">[&minus;]</label></span></p>
+  <p class="paper"><input type="checkbox" id="p5" class="hide-one"><label class="mini restore" for="p5">[+]</label><span class="pbody">Hasan, S., Fleckenstein, C., <strong>Replogle, C.</strong>, Roberts, A., DeBernardis, D., Kurcz, B. &ldquo;Anatomic Total Shoulder Arthroplasty Using a Short Humeral Stem and a Non-Augmented Minimally Cemented All-Polyethylene Glenoid: Minimum 2-Years Outcome and Predictors of Clinical Failure.&rdquo; [Abstract] 15th International Congress on Shoulder and Elbow Surgery; September 5&ndash;8th, 2023; Rome, Italy.<label class="mini dismiss" for="p5">[&minus;]</label></span></p>
+  <p class="paper"><input type="checkbox" id="p6" class="hide-one"><label class="mini restore" for="p6">[+]</label><span class="pbody"><strong>Replogle, C.J.</strong>, Ghorai, S.K., Henkel, W., Whitlock, P.W. &ldquo;Biofabrication of Osteochondral Scaffolds Containing Embedded Decellularized Matrix-PLA Microspheres.&rdquo; [Poster] Cincinnati Children&rsquo;s Hospital Medical Center Summer Undergraduate Research Fellowship Capstone Poster Session; August 2nd, 2023; Cincinnati, OH.<label class="mini dismiss" for="p6">[&minus;]</label></span></p>
+  <p class="paper"><input type="checkbox" id="p7" class="hide-one"><label class="mini restore" for="p7">[+]</label><span class="pbody"><strong>Replogle, C.J.</strong>, Fleckenstein, C., Hasan, S.S. &ldquo;Early Outcome Following Anatomic Total Shoulder Replacement Using Short Stem Humeral and Minimally Cemented Glenoid Components.&rdquo; [Talk and Poster] Summit Country Day School Science Research Institute Colloquium; February 28th, 2022; Cincinnati, OH.<label class="mini dismiss" for="p7">[&minus;]</label></span></p>
+</div>
+
 <h2>Projects</h2>
-<p>Surely will get around to throwing all my interesting stuff in here at some point...</p>
+<p id="projects-body">Surely will get around to throwing all my interesting stuff in here at some point...</p>
 
 <hr>
 
