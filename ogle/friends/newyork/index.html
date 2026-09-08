@@ -16,7 +16,7 @@
   .gallery figure { margin:0; }
   .expand { display:none; }
   .gallery label { display:block; cursor:pointer; }
-  .gallery img { display:block; width:100%; height:10em; object-fit:cover; }
+  .gallery img { display:block; width:100%; height:10em; object-fit:cover; background:#eee; }
   .gallery figure:has(.expand:checked) { grid-column:1 / -1; }
   .gallery figure:has(.expand:checked) img { height:auto; max-height:85vh; object-fit:contain; }
   .foot { font-size:0.85em; color:#555; }
@@ -32,12 +32,12 @@
 <hr>
 
 <div class="gallery">
-<figure><input type="checkbox" id="e1" class="expand"><label for="e1"><img data-src="n1.jpg" alt="New York"></label></figure>
-<figure><input type="checkbox" id="e2" class="expand"><label for="e2"><img data-src="n2.jpg" alt="New York"></label></figure>
-<figure><input type="checkbox" id="e3" class="expand"><label for="e3"><img data-src="n3.jpg" alt="New York"></label></figure>
-<figure><input type="checkbox" id="e4" class="expand"><label for="e4"><img data-src="n4.jpg" alt="New York"></label></figure>
-<figure><input type="checkbox" id="e5" class="expand"><label for="e5"><img data-src="n5.jpg" alt="New York"></label></figure>
-<figure><input type="checkbox" id="e6" class="expand"><label for="e6"><img data-src="n6.jpg" alt="New York"></label></figure>
+<figure><input type="checkbox" id="e1" class="expand"><label for="e1"><img src="thumb/n1.jpg" data-full="n1.jpg" alt="New York" fetchpriority="high"></label></figure>
+<figure><input type="checkbox" id="e2" class="expand"><label for="e2"><img src="thumb/n2.jpg" data-full="n2.jpg" alt="New York" loading="lazy"></label></figure>
+<figure><input type="checkbox" id="e3" class="expand"><label for="e3"><img src="thumb/n3.jpg" data-full="n3.jpg" alt="New York" loading="lazy"></label></figure>
+<figure><input type="checkbox" id="e4" class="expand"><label for="e4"><img src="thumb/n4.jpg" data-full="n4.jpg" alt="New York" loading="lazy"></label></figure>
+<figure><input type="checkbox" id="e5" class="expand"><label for="e5"><img src="thumb/n5.jpg" data-full="n5.jpg" alt="New York" loading="lazy"></label></figure>
+<figure><input type="checkbox" id="e6" class="expand"><label for="e6"><img src="thumb/n6.jpg" data-full="n6.jpg" alt="New York" loading="lazy"></label></figure>
 </div>
 
 <hr>
@@ -45,17 +45,15 @@
 <p class="foot"><a href="https://cjre.pl/">cjre.pl</a> / contact: replogcj(at)mail.uc.edu</p>
 
 <script>
-// Load images one at a time, in order: each starts once the previous finishes.
+// Load the full-size image only when a photo is expanded.
 (function () {
-  var imgs = document.querySelectorAll("img[data-src]");
-  var i = 0;
-  function next() {
-    if (i >= imgs.length) return;
-    var img = imgs[i++];
-    img.onload = img.onerror = next;
-    img.src = img.getAttribute("data-src");
-  }
-  next();
+  document.querySelectorAll(".expand").forEach(function (cb) {
+    cb.addEventListener("change", function () {
+      if (!cb.checked) return;
+      var img = cb.parentNode.querySelector("img[data-full]");
+      if (img) { img.src = img.getAttribute("data-full"); img.removeAttribute("data-full"); }
+    });
+  });
 })();
 </script>
 </body>
