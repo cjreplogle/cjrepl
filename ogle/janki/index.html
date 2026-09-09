@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,7 +16,7 @@
 
     body {
       margin: 0;
-      padding: 40px 20px;
+      padding: 10px 20px;
       background: #ffffff;
       color: #1f2328;
       font-family:
@@ -34,9 +35,7 @@
       margin: 0 auto;
     }
 
-    /*
-     * Fade-in animation
-     */
+    /* Fade-in */
     .fade-in {
       animation: fadeIn 0.45s ease-out;
     }
@@ -53,7 +52,6 @@
       }
     }
 
-    /* Respect users who prefer reduced motion */
     @media (prefers-reduced-motion: reduce) {
       .fade-in {
         animation: none;
@@ -121,7 +119,7 @@
       margin-top: 0.25em;
     }
 
-    /* Code */
+    /* Inline code */
     code,
     tt {
       padding: 0.2em 0.4em;
@@ -139,6 +137,7 @@
         monospace;
     }
 
+    /* Code blocks */
     pre {
       padding: 16px;
       overflow: auto;
@@ -213,12 +212,14 @@
       background: #f6f8fa;
     }
 
-    /* Strong / emphasis */
     strong {
       font-weight: 600;
     }
 
-    /* GitHub-style alerts */
+    /* ---------------------------------------------------------
+       GitHub-style alerts
+       --------------------------------------------------------- */
+
     .markdown-alert {
       padding: 8px 16px;
       margin-bottom: 16px;
@@ -278,13 +279,14 @@
       vertical-align: middle;
     }
 
-    /* Loading / error */
+    /* Loading */
     .loading {
       color: #656d76;
       text-align: center;
       padding: 40px 0;
     }
 
+    /* Error */
     .error {
       color: #cf222e;
       padding: 20px;
@@ -316,6 +318,7 @@
 </head>
 
 <body>
+
   <main id="content" class="markdown-body">
     <div class="loading">Loading…</div>
   </main>
@@ -333,19 +336,25 @@
     const RAW_REPO_URL =
       "https://raw.githubusercontent.com/cjreplogle/janki/master/";
 
-    /*
-     * Configure marked.
-     */
+
+    /* ---------------------------------------------------------
+       Configure Markdown renderer
+       --------------------------------------------------------- */
+
     marked.setOptions({
       gfm: true,
       breaks: false
     });
 
-    /*
-     * Load README.
-     */
+
+    /* ---------------------------------------------------------
+       Load README
+       --------------------------------------------------------- */
+
     fetch(README_URL)
+
       .then(response => {
+
         if (!response.ok) {
           throw new Error(
             `Failed to load README (${response.status})`
@@ -355,209 +364,318 @@
         return response.text();
       })
 
+
       .then(markdown => {
+
         /*
          * Render Markdown.
          */
         const html = marked.parse(markdown);
 
         const container = document.createElement("div");
+
         container.innerHTML = html;
 
-        /*
-         * ---------------------------------------------------------
-         * GitHub-style alerts
-         * ---------------------------------------------------------
-         */
-        container.querySelectorAll("blockquote").forEach(blockquote => {
-          const firstParagraph = blockquote.querySelector("p");
 
-          if (!firstParagraph) {
-            return;
-          }
+        /* -----------------------------------------------------
+           GitHub-style alerts
+           -----------------------------------------------------
 
-          const match = firstParagraph.textContent
-            .trim()
-            .match(
-              /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]$/i
+           Supports all of:
+
+           > [!WARNING]
+           > Text
+
+           >[!WARNING]
+           > Text
+
+           and multiline content.
+
+           Marked can place the marker and content inside
+           the same <p>, so we specifically look for the
+           marker at the START of the paragraph rather than
+           requiring the entire paragraph to equal [!WARNING].
+        ----------------------------------------------------- */
+
+        container
+          .querySelectorAll("blockquote")
+          .forEach(blockquote => {
+
+            const firstParagraph =
+              blockquote.querySelector("p");
+
+            if (!firstParagraph) {
+              return;
+            }
+
+            /*
+             * Look at the rendered HTML rather than only
+             * textContent. This allows us to preserve things
+             * like <strong>, links, etc.
+             */
+            const html = firstParagraph.innerHTML;
+
+            const match = html.match(
+              /^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*(?:<br\s*\/?>)?/i
             );
 
-          if (!match) {
-            return;
-          }
+            if (!match) {
+              return;
+            }
 
-          const type = match[1].toLowerCase();
+            const type =
+              match[1].toLowerCase();
 
-          /*
-           * Remove [!TYPE].
-           */
-          firstParagraph.remove();
 
-          /*
-           * Add alert classes.
-           */
-          blockquote.classList.add(
-            "markdown-alert",
-            `markdown-alert-${type}`
-          );
+            /*
+             * Remove ONLY the [!TYPE] marker.
+             *
+             * Everything else in the paragraph remains intact.
+             */
+            firstParagraph.innerHTML =
+              html.substring(match[0].length);
 
-          /*
-           * Add title.
-           */
-          const title = document.createElement("div");
-          title.className = "markdown-alert-title";
 
-          const titles = {
-            note: "Note",
-            tip: "Tip",
-            important: "Important",
-            warning: "Warning",
-            caution: "Caution"
-          };
+            /*
+             * Add alert classes.
+             */
+            blockquote.classList.add(
+              "markdown-alert",
+              `markdown-alert-${type}`
+            );
 
-          const icons = {
-            note: "ⓘ",
-            tip: "💡",
-            important: "❗",
-            warning: "⚠️",
-            caution: "🛑"
-          };
 
-          title.textContent =
-            `${icons[type]} ${titles[type]}`;
+            /*
+             * Create title.
+             */
+            const title =
+              document.createElement("div");
 
-          blockquote.prepend(title);
-        });
+            title.className =
+              "markdown-alert-title";
 
-        /*
-         * ---------------------------------------------------------
-         * Fix relative links
-         * ---------------------------------------------------------
-         */
-        container.querySelectorAll("a").forEach(link => {
-          const href = link.getAttribute("href");
 
-          if (!href) {
-            return;
-          }
+            const titles = {
+              note: "Note",
+              tip: "Tip",
+              important: "Important",
+              warning: "Warning",
+              caution: "Caution"
+            };
 
-          /*
-           * Leave anchors, external URLs, and mailto links alone.
-           */
-          if (
-            href.startsWith("#") ||
-            href.startsWith("http://") ||
-            href.startsWith("https://") ||
-            href.startsWith("mailto:")
-          ) {
-            return;
-          }
 
-          /*
-           * GitHub special links.
-           */
-          if (
-            href === "../../releases" ||
-            href === "../releases" ||
-            href === "releases"
-          ) {
-            link.href = `${REPO_URL}/releases`;
-            return;
-          }
+            const icons = {
+              note: "ⓘ",
+              tip: "💡",
+              important: "❗",
+              warning: "⚠️",
+              caution: "🛑"
+            };
 
-          if (
-            href === "../../issues" ||
-            href === "../issues" ||
-            href === "issues"
-          ) {
-            link.href = `${REPO_URL}/issues`;
-            return;
-          }
 
-          if (
-            href === "../../discussions" ||
-            href === "../discussions" ||
-            href === "discussions"
-          ) {
-            link.href = `${REPO_URL}/discussions`;
-            return;
-          }
+            title.textContent =
+              `${icons[type]} ${titles[type]}`;
 
-          /*
-           * Convert relative document links to GitHub.
-           */
-          link.href = new URL(
-            href,
-            REPO_BLOB_URL
-          ).href;
 
-          link.target = "_blank";
-          link.rel = "noopener noreferrer";
-        });
+            /*
+             * Put title at the beginning.
+             */
+            blockquote.prepend(title);
+          });
 
-        /*
-         * ---------------------------------------------------------
-         * Fix relative images
-         * ---------------------------------------------------------
-         */
-        container.querySelectorAll("img").forEach(img => {
-          const src = img.getAttribute("src");
 
-          if (!src) {
-            return;
-          }
+        /* -----------------------------------------------------
+           Fix relative links
+           ----------------------------------------------------- */
 
-          if (
-            src.startsWith("http://") ||
-            src.startsWith("https://") ||
-            src.startsWith("data:")
-          ) {
-            return;
-          }
+        container
+          .querySelectorAll("a")
+          .forEach(link => {
 
-          img.src = new URL(
-            src,
-            RAW_REPO_URL
-          ).href;
-        });
+            const href =
+              link.getAttribute("href");
 
-        /*
-         * External links open in a new tab.
-         */
-        container.querySelectorAll("a").forEach(link => {
-          if (link.href.startsWith("http")) {
+            if (!href) {
+              return;
+            }
+
+
+            /*
+             * Leave anchors, external URLs,
+             * and mailto links alone.
+             */
+            if (
+              href.startsWith("#") ||
+              href.startsWith("http://") ||
+              href.startsWith("https://") ||
+              href.startsWith("mailto:")
+            ) {
+              return;
+            }
+
+
+            /*
+             * GitHub special links.
+             */
+
+            if (
+              href === "../../releases" ||
+              href === "../releases" ||
+              href === "releases"
+            ) {
+              link.href =
+                `${REPO_URL}/releases`;
+
+              return;
+            }
+
+
+            if (
+              href === "../../issues" ||
+              href === "../issues" ||
+              href === "issues"
+            ) {
+              link.href =
+                `${REPO_URL}/issues`;
+
+              return;
+            }
+
+
+            if (
+              href === "../../discussions" ||
+              href === "../discussions" ||
+              href === "discussions"
+            ) {
+              link.href =
+                `${REPO_URL}/discussions`;
+
+              return;
+            }
+
+
+            /*
+             * Convert relative Markdown/document links
+             * to GitHub.
+             *
+             * Example:
+             *
+             * docs/practice-questions.md
+             *
+             * becomes:
+             *
+             * https://github.com/cjreplogle/janki/blob/master/docs/practice-questions.md
+             */
+            link.href =
+              new URL(
+                href,
+                REPO_BLOB_URL
+              ).href;
+
+
             link.target = "_blank";
             link.rel = "noopener noreferrer";
-          }
-        });
+          });
 
-        /*
-         * ---------------------------------------------------------
-         * Fade in the finished README.
-         * ---------------------------------------------------------
-         */
+
+        /* -----------------------------------------------------
+           Fix relative images
+           ----------------------------------------------------- */
+
+        container
+          .querySelectorAll("img")
+          .forEach(img => {
+
+            const src =
+              img.getAttribute("src");
+
+            if (!src) {
+              return;
+            }
+
+
+            /*
+             * Leave absolute/data URLs alone.
+             */
+            if (
+              src.startsWith("http://") ||
+              src.startsWith("https://") ||
+              src.startsWith("data:")
+            ) {
+              return;
+            }
+
+
+            /*
+             * Resolve relative images against
+             * the raw GitHub repository.
+             */
+            img.src =
+              new URL(
+                src,
+                RAW_REPO_URL
+              ).href;
+          });
+
+
+        /* -----------------------------------------------------
+           External links open in new tab
+           ----------------------------------------------------- */
+
+        container
+          .querySelectorAll("a")
+          .forEach(link => {
+
+            if (
+              link.href.startsWith("http")
+            ) {
+              link.target = "_blank";
+              link.rel = "noopener noreferrer";
+            }
+          });
+
+
+        /* -----------------------------------------------------
+           Fade in finished README
+           ----------------------------------------------------- */
+
         container.classList.add("fade-in");
 
-        /*
-         * Display rendered README.
-         */
+
+        /* -----------------------------------------------------
+           Display README
+           ----------------------------------------------------- */
+
         document
           .getElementById("content")
           .replaceChildren(container);
+
       })
 
+
+      /* -------------------------------------------------------
+         Error handling
+         ------------------------------------------------------- */
+
       .catch(error => {
+
         console.error(error);
 
-        document.getElementById("content").innerHTML = `
-          <div class="error">
-            <strong>Unable to load Janki.</strong>
-            <p>
-              The README could not be loaded from GitHub.
-            </p>
-          </div>
-        `;
+        document
+          .getElementById("content")
+          .innerHTML = `
+            <div class="error">
+              <strong>Unable to load Janki.</strong>
+
+              <p>
+                The README could not be loaded from GitHub.
+              </p>
+            </div>
+          `;
       });
+
   </script>
+
 </body>
 </html>
+```
