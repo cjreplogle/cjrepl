@@ -9,61 +9,316 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      line-height: 1.6;
-      max-width: 900px;
-      margin: 40px auto;
-      padding: 0 20px;
-      color: #24292f;
+    * {
+      box-sizing: border-box;
     }
 
+    body {
+      margin: 0;
+      padding: 40px 20px;
+      background: #ffffff;
+      color: #1f2328;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Helvetica,
+        Arial,
+        sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .markdown-body {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /*
+     * Fade-in animation
+     */
+    .fade-in {
+      animation: fadeIn 0.45s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Respect users who prefer reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      .fade-in {
+        animation: none;
+      }
+    }
+
+    /* Headings */
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 24px;
+      margin-bottom: 16px;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+
+    h1 {
+      padding-bottom: 0.3em;
+      font-size: 2em;
+    }
+
+    h2 {
+      padding-bottom: 0.3em;
+      border-bottom: 1px solid #d0d7de;
+      font-size: 1.5em;
+    }
+
+    h3 {
+      font-size: 1.25em;
+    }
+
+    h4 {
+      font-size: 1em;
+    }
+
+    /* Paragraphs */
+    p {
+      margin-top: 0;
+      margin-bottom: 16px;
+    }
+
+    /* Links */
     a {
       color: #0969da;
+      text-decoration: none;
     }
 
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* Images */
     img {
       max-width: 100%;
+      height: auto;
     }
 
-    code {
+    /* Lists */
+    ul,
+    ol {
+      margin-top: 0;
+      margin-bottom: 16px;
+      padding-left: 2em;
+    }
+
+    li + li {
+      margin-top: 0.25em;
+    }
+
+    /* Code */
+    code,
+    tt {
+      padding: 0.2em 0.4em;
+      margin: 0;
+      font-size: 85%;
       background: #f6f8fa;
-      padding: 2px 4px;
-      border-radius: 4px;
+      border-radius: 6px;
+      font-family:
+        ui-monospace,
+        SFMono-Regular,
+        "SF Mono",
+        Menlo,
+        Consolas,
+        "Liberation Mono",
+        monospace;
     }
 
     pre {
-      overflow-x: auto;
       padding: 16px;
+      overflow: auto;
+      margin-top: 0;
+      margin-bottom: 16px;
       background: #f6f8fa;
-      border-radius: 8px;
+      border-radius: 6px;
+      line-height: 1.45;
     }
 
+    pre code {
+      padding: 0;
+      margin: 0;
+      background: transparent;
+      border: 0;
+      font-size: 100%;
+      white-space: pre;
+    }
+
+    /* Blockquotes */
     blockquote {
-      margin-left: 0;
-      padding-left: 16px;
-      border-left: 4px solid #d0d7de;
-      color: #57606a;
+      margin: 0 0 16px;
+      padding: 0 1em;
+      color: #59636e;
+      border-left: 0.25em solid #d0d7de;
     }
 
+    blockquote > :first-child {
+      margin-top: 0;
+    }
+
+    blockquote > :last-child {
+      margin-bottom: 0;
+    }
+
+    /* Horizontal rules */
+    hr {
+      height: 0.25em;
+      padding: 0;
+      margin: 24px 0;
+      background: #d0d7de;
+      border: 0;
+    }
+
+    /* Tables */
     table {
-      border-collapse: collapse;
       width: 100%;
+      margin-bottom: 16px;
+      border-spacing: 0;
+      border-collapse: collapse;
+      display: block;
+      overflow-x: auto;
     }
 
-    th, td {
-      border: 1px solid #d0d7de;
+    th,
+    td {
       padding: 6px 13px;
+      border: 1px solid #d0d7de;
     }
 
     th {
+      font-weight: 600;
       background: #f6f8fa;
+    }
+
+    tr {
+      background: #ffffff;
+      border-top: 1px solid #d0d7de;
+    }
+
+    tr:nth-child(2n) {
+      background: #f6f8fa;
+    }
+
+    /* Strong / emphasis */
+    strong {
+      font-weight: 600;
+    }
+
+    /* GitHub-style alerts */
+    .markdown-alert {
+      padding: 8px 16px;
+      margin-bottom: 16px;
+      border-left: 4px solid;
+      border-radius: 4px;
+    }
+
+    .markdown-alert > *:last-child {
+      margin-bottom: 0;
+    }
+
+    .markdown-alert-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .markdown-alert-note {
+      color: #0969da;
+      border-color: #0969da;
+      background: #ddf4ff;
+    }
+
+    .markdown-alert-tip {
+      color: #1a7f37;
+      border-color: #1a7f37;
+      background: #dafbe1;
+    }
+
+    .markdown-alert-important {
+      color: #8250df;
+      border-color: #8250df;
+      background: #fbefff;
+    }
+
+    .markdown-alert-warning {
+      color: #9a6700;
+      border-color: #9a6700;
+      background: #fff8c5;
+    }
+
+    .markdown-alert-caution {
+      color: #cf222e;
+      border-color: #cf222e;
+      background: #ffebe9;
+    }
+
+    /* Task lists */
+    .task-list-item {
+      list-style-type: none;
+    }
+
+    .task-list-item input[type="checkbox"] {
+      margin: 0 0.35em 0.25em -1.6em;
+      vertical-align: middle;
+    }
+
+    /* Loading / error */
+    .loading {
+      color: #656d76;
+      text-align: center;
+      padding: 40px 0;
+    }
+
+    .error {
+      color: #cf222e;
+      padding: 20px;
+      border: 1px solid #ff8182;
+      border-radius: 6px;
+      background: #ffebe9;
+    }
+
+    /* Mobile */
+    @media (max-width: 600px) {
+      body {
+        padding: 20px 16px;
+        font-size: 15px;
+      }
+
+      h1 {
+        font-size: 1.75em;
+      }
+
+      h2 {
+        font-size: 1.35em;
+      }
+
+      pre {
+        font-size: 13px;
+      }
     }
   </style>
 </head>
 
 <body>
-  <main id="content">Loading…</main>
+  <main id="content" class="markdown-body">
+    <div class="loading">Loading…</div>
+  </main>
 
   <script>
     const README_URL =
@@ -75,63 +330,233 @@
     const REPO_BLOB_URL =
       `${REPO_URL}/blob/master/`;
 
+    const RAW_REPO_URL =
+      "https://raw.githubusercontent.com/cjreplogle/janki/master/";
+
+    /*
+     * Configure marked.
+     */
+    marked.setOptions({
+      gfm: true,
+      breaks: false
+    });
+
+    /*
+     * Load README.
+     */
     fetch(README_URL)
       .then(response => {
         if (!response.ok) {
-          throw new Error("Failed to load README");
+          throw new Error(
+            `Failed to load README (${response.status})`
+          );
         }
+
         return response.text();
       })
+
       .then(markdown => {
+        /*
+         * Render Markdown.
+         */
         const html = marked.parse(markdown);
 
         const container = document.createElement("div");
         container.innerHTML = html;
 
-        // Fix relative links so they point back to the Janki GitHub repo.
-        container.querySelectorAll("a").forEach(link => {
-          const href = link.getAttribute("href");
+        /*
+         * ---------------------------------------------------------
+         * GitHub-style alerts
+         * ---------------------------------------------------------
+         */
+        container.querySelectorAll("blockquote").forEach(blockquote => {
+          const firstParagraph = blockquote.querySelector("p");
 
-          if (!href || href.startsWith("#") ||
-              href.startsWith("http://") ||
-              href.startsWith("https://") ||
-              href.startsWith("mailto:")) {
+          if (!firstParagraph) {
             return;
           }
 
-          // GitHub's ../../releases link
-          if (href === "../../releases" || href === "../releases") {
+          const match = firstParagraph.textContent
+            .trim()
+            .match(
+              /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]$/i
+            );
+
+          if (!match) {
+            return;
+          }
+
+          const type = match[1].toLowerCase();
+
+          /*
+           * Remove [!TYPE].
+           */
+          firstParagraph.remove();
+
+          /*
+           * Add alert classes.
+           */
+          blockquote.classList.add(
+            "markdown-alert",
+            `markdown-alert-${type}`
+          );
+
+          /*
+           * Add title.
+           */
+          const title = document.createElement("div");
+          title.className = "markdown-alert-title";
+
+          const titles = {
+            note: "Note",
+            tip: "Tip",
+            important: "Important",
+            warning: "Warning",
+            caution: "Caution"
+          };
+
+          const icons = {
+            note: "ⓘ",
+            tip: "💡",
+            important: "❗",
+            warning: "⚠️",
+            caution: "🛑"
+          };
+
+          title.textContent =
+            `${icons[type]} ${titles[type]}`;
+
+          blockquote.prepend(title);
+        });
+
+        /*
+         * ---------------------------------------------------------
+         * Fix relative links
+         * ---------------------------------------------------------
+         */
+        container.querySelectorAll("a").forEach(link => {
+          const href = link.getAttribute("href");
+
+          if (!href) {
+            return;
+          }
+
+          /*
+           * Leave anchors, external URLs, and mailto links alone.
+           */
+          if (
+            href.startsWith("#") ||
+            href.startsWith("http://") ||
+            href.startsWith("https://") ||
+            href.startsWith("mailto:")
+          ) {
+            return;
+          }
+
+          /*
+           * GitHub special links.
+           */
+          if (
+            href === "../../releases" ||
+            href === "../releases" ||
+            href === "releases"
+          ) {
             link.href = `${REPO_URL}/releases`;
             return;
           }
 
-          // Other relative links, e.g. docs/practice-questions.md
-          link.href = new URL(href, REPO_BLOB_URL).href;
+          if (
+            href === "../../issues" ||
+            href === "../issues" ||
+            href === "issues"
+          ) {
+            link.href = `${REPO_URL}/issues`;
+            return;
+          }
+
+          if (
+            href === "../../discussions" ||
+            href === "../discussions" ||
+            href === "discussions"
+          ) {
+            link.href = `${REPO_URL}/discussions`;
+            return;
+          }
+
+          /*
+           * Convert relative document links to GitHub.
+           */
+          link.href = new URL(
+            href,
+            REPO_BLOB_URL
+          ).href;
+
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
         });
 
-        // Fix relative images too.
+        /*
+         * ---------------------------------------------------------
+         * Fix relative images
+         * ---------------------------------------------------------
+         */
         container.querySelectorAll("img").forEach(img => {
           const src = img.getAttribute("src");
 
-          if (!src ||
-              src.startsWith("http://") ||
-              src.startsWith("https://") ||
-              src.startsWith("data:")) {
+          if (!src) {
+            return;
+          }
+
+          if (
+            src.startsWith("http://") ||
+            src.startsWith("https://") ||
+            src.startsWith("data:")
+          ) {
             return;
           }
 
           img.src = new URL(
             src,
-            `https://raw.githubusercontent.com/cjreplogle/janki/master/`
+            RAW_REPO_URL
           ).href;
         });
 
-        document.getElementById("content").replaceChildren(container);
+        /*
+         * External links open in a new tab.
+         */
+        container.querySelectorAll("a").forEach(link => {
+          if (link.href.startsWith("http")) {
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+          }
+        });
+
+        /*
+         * ---------------------------------------------------------
+         * Fade in the finished README.
+         * ---------------------------------------------------------
+         */
+        container.classList.add("fade-in");
+
+        /*
+         * Display rendered README.
+         */
+        document
+          .getElementById("content")
+          .replaceChildren(container);
       })
+
       .catch(error => {
-        document.getElementById("content").innerHTML =
-          "<h1>Janki</h1><p>Unable to load README.</p>";
         console.error(error);
+
+        document.getElementById("content").innerHTML = `
+          <div class="error">
+            <strong>Unable to load Janki.</strong>
+            <p>
+              The README could not be loaded from GitHub.
+            </p>
+          </div>
+        `;
       });
   </script>
 </body>
