@@ -1,14 +1,70 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
   <title>Janki</title>
-
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #ffffff;
+      --text: #1f2328;
+      --muted: #59636e;
+      --border: #d0d7de;
+      --surface: #f6f8fa;
+      --link: #0969da;
+      --note-text: #0969da;
+      --note-border: #0969da;
+      --note-bg: #ddf4ff;
+      --tip-text: #1a7f37;
+      --tip-border: #1a7f37;
+      --tip-bg: #dafbe1;
+      --important-text: #8250df;
+      --important-border: #8250df;
+      --important-bg: #fbefff;
+      --warning-text: #9a6700;
+      --warning-border: #9a6700;
+      --warning-bg: #fff8c5;
+      --caution-text: #cf222e;
+      --caution-border: #cf222e;
+      --caution-bg: #ffebe9;
+      --error-text: #cf222e;
+      --error-border: #ff8182;
+      --error-bg: #ffebe9;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #000000;
+        --text: #ffffff;
+        --muted: #b0b8c1;
+        --border: #333333;
+        --surface: #111111;
+        --link: #58a6ff;
+        --note-text: #58a6ff;
+        --note-border: #58a6ff;
+        --note-bg: #06151f;
+        --tip-text: #56d364;
+        --tip-border: #56d364;
+        --tip-bg: #071a0d;
+        --important-text: #bc8cff;
+        --important-border: #bc8cff;
+        --important-bg: #160d24;
+        --warning-text: #e3b341;
+        --warning-border: #e3b341;
+        --warning-bg: #211a05;
+        --caution-text: #ff7b72;
+        --caution-border: #ff7b72;
+        --caution-bg: #210b0b;
+        --error-text: #ff7b72;
+        --error-border: #ff8182;
+        --error-bg: #210b0b;
+      }
+    }
+
     * {
       box-sizing: border-box;
     }
@@ -16,8 +72,8 @@
     body {
       margin: 0;
       padding: 10px;
-      background: #ffffff;
-      color: #1f2328;
+      background: var(--bg);
+      color: var(--text);
       font-family:
         -apple-system,
         BlinkMacSystemFont,
@@ -34,7 +90,6 @@
       margin: 0 auto;
     }
 
-    /* Fade-in */
     .fade-in {
       animation: fadeIn 0.45s ease-out;
     }
@@ -57,7 +112,6 @@
       }
     }
 
-    /* Headings */
     h1, h2, h3, h4, h5, h6 {
       margin-top: 24px;
       margin-bottom: 16px;
@@ -72,7 +126,7 @@
 
     h2 {
       padding-bottom: 0.3em;
-      border-bottom: 1px solid #d0d7de;
+      border-bottom: 1px solid var(--border);
       font-size: 1.5em;
     }
 
@@ -84,15 +138,13 @@
       font-size: 1em;
     }
 
-    /* Paragraphs */
     p {
       margin-top: 0;
       margin-bottom: 16px;
     }
 
-    /* Links */
     a {
-      color: #0969da;
+      color: var(--link);
       text-decoration: none;
     }
 
@@ -100,13 +152,11 @@
       text-decoration: underline;
     }
 
-    /* Images */
     img {
       max-width: 100%;
       height: auto;
     }
 
-    /* Lists */
     ul,
     ol {
       margin-top: 0;
@@ -118,13 +168,12 @@
       margin-top: 0.25em;
     }
 
-    /* Inline code */
     code,
     tt {
       padding: 0.2em 0.4em;
       margin: 0;
       font-size: 85%;
-      background: #f6f8fa;
+      background: var(--surface);
       border-radius: 6px;
       font-family:
         ui-monospace,
@@ -136,13 +185,12 @@
         monospace;
     }
 
-    /* Code blocks */
     pre {
       padding: 16px;
       overflow: auto;
       margin-top: 0;
       margin-bottom: 16px;
-      background: #f6f8fa;
+      background: var(--surface);
       border-radius: 6px;
       line-height: 1.45;
     }
@@ -156,12 +204,11 @@
       white-space: pre;
     }
 
-    /* Blockquotes */
     blockquote {
       margin: 0 0 16px;
       padding: 0 1em;
-      color: #59636e;
-      border-left: 0.25em solid #d0d7de;
+      color: var(--muted);
+      border-left: 0.25em solid var(--border);
     }
 
     blockquote > :first-child {
@@ -172,16 +219,14 @@
       margin-bottom: 0;
     }
 
-    /* Horizontal rules */
     hr {
       height: 0.25em;
       padding: 0;
       margin: 24px 0;
-      background: #d0d7de;
+      background: var(--border);
       border: 0;
     }
 
-    /* Tables */
     table {
       width: 100%;
       margin-bottom: 16px;
@@ -194,30 +239,26 @@
     th,
     td {
       padding: 6px 13px;
-      border: 1px solid #d0d7de;
+      border: 1px solid var(--border);
     }
 
     th {
       font-weight: 600;
-      background: #f6f8fa;
+      background: var(--surface);
     }
 
     tr {
-      background: #ffffff;
-      border-top: 1px solid #d0d7de;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
     }
 
     tr:nth-child(2n) {
-      background: #f6f8fa;
+      background: var(--surface);
     }
 
     strong {
       font-weight: 600;
     }
-
-    /* ---------------------------------------------------------
-       GitHub-style alerts
-       --------------------------------------------------------- */
 
     .markdown-alert {
       padding: 8px 16px;
@@ -239,36 +280,35 @@
     }
 
     .markdown-alert-note {
-      color: #0969da;
-      border-color: #0969da;
-      background: #ddf4ff;
+      color: var(--note-text);
+      border-color: var(--note-border);
+      background: var(--note-bg);
     }
 
     .markdown-alert-tip {
-      color: #1a7f37;
-      border-color: #1a7f37;
-      background: #dafbe1;
+      color: var(--tip-text);
+      border-color: var(--tip-border);
+      background: var(--tip-bg);
     }
 
     .markdown-alert-important {
-      color: #8250df;
-      border-color: #8250df;
-      background: #fbefff;
+      color: var(--important-text);
+      border-color: var(--important-border);
+      background: var(--important-bg);
     }
 
     .markdown-alert-warning {
-      color: #9a6700;
-      border-color: #9a6700;
-      background: #fff8c5;
+      color: var(--warning-text);
+      border-color: var(--warning-border);
+      background: var(--warning-bg);
     }
 
     .markdown-alert-caution {
-      color: #cf222e;
-      border-color: #cf222e;
-      background: #ffebe9;
+      color: var(--caution-text);
+      border-color: var(--caution-border);
+      background: var(--caution-bg);
     }
 
-    /* Task lists */
     .task-list-item {
       list-style-type: none;
     }
@@ -278,23 +318,20 @@
       vertical-align: middle;
     }
 
-    /* Loading */
     .loading {
-      color: #656d76;
+      color: var(--muted);
       text-align: center;
       padding: 40px 0;
     }
 
-    /* Error */
     .error {
-      color: #cf222e;
+      color: var(--error-text);
       padding: 20px;
-      border: 1px solid #ff8182;
+      border: 1px solid var(--error-border);
       border-radius: 6px;
-      background: #ffebe9;
+      background: var(--error-bg);
     }
 
-    /* Mobile */
     @media (max-width: 600px) {
       body {
         padding: 20px 16px;
@@ -314,10 +351,10 @@
       }
     }
   </style>
+
 </head>
 
 <body>
-
   <main id="content" class="markdown-body">
     <div class="loading">Loading…</div>
   </main>
@@ -335,25 +372,13 @@
     const RAW_REPO_URL =
       "https://raw.githubusercontent.com/cjreplogle/janki/master/";
 
-
-    /* ---------------------------------------------------------
-       Configure Markdown renderer
-       --------------------------------------------------------- */
-
     marked.setOptions({
       gfm: true,
       breaks: false
     });
 
-
-    /* ---------------------------------------------------------
-       Load README
-       --------------------------------------------------------- */
-
     fetch(README_URL)
-
       .then(response => {
-
         if (!response.ok) {
           throw new Error(
             `Failed to load README (${response.status})`
@@ -363,43 +388,15 @@
         return response.text();
       })
 
-
       .then(markdown => {
-
-        /*
-         * Render Markdown.
-         */
         const html = marked.parse(markdown);
-
         const container = document.createElement("div");
 
         container.innerHTML = html;
 
-
-        /* -----------------------------------------------------
-           GitHub-style alerts
-           -----------------------------------------------------
-
-           Supports all of:
-
-           > [!WARNING]
-           > Text
-
-           >[!WARNING]
-           > Text
-
-           and multiline content.
-
-           Marked can place the marker and content inside
-           the same <p>, so we specifically look for the
-           marker at the START of the paragraph rather than
-           requiring the entire paragraph to equal [!WARNING].
-        ----------------------------------------------------- */
-
         container
           .querySelectorAll("blockquote")
           .forEach(blockquote => {
-
             const firstParagraph =
               blockquote.querySelector("p");
 
@@ -407,11 +404,6 @@
               return;
             }
 
-            /*
-             * Look at the rendered HTML rather than only
-             * textContent. This allows us to preserve things
-             * like <strong>, links, etc.
-             */
             const html = firstParagraph.innerHTML;
 
             const match = html.match(
@@ -425,34 +417,19 @@
             const type =
               match[1].toLowerCase();
 
-
-            /*
-             * Remove ONLY the [!TYPE] marker.
-             *
-             * Everything else in the paragraph remains intact.
-             */
             firstParagraph.innerHTML =
               html.substring(match[0].length);
 
-
-            /*
-             * Add alert classes.
-             */
             blockquote.classList.add(
               "markdown-alert",
               `markdown-alert-${type}`
             );
 
-
-            /*
-             * Create title.
-             */
             const title =
               document.createElement("div");
 
             title.className =
               "markdown-alert-title";
-
 
             const titles = {
               note: "Note",
@@ -462,7 +439,6 @@
               caution: "Caution"
             };
 
-
             const icons = {
               note: "ⓘ",
               tip: "💡",
@@ -471,26 +447,15 @@
               caution: "🛑"
             };
 
-
             title.textContent =
               `${icons[type]} ${titles[type]}`;
 
-
-            /*
-             * Put title at the beginning.
-             */
             blockquote.prepend(title);
           });
-
-
-        /* -----------------------------------------------------
-           Fix relative links
-           ----------------------------------------------------- */
 
         container
           .querySelectorAll("a")
           .forEach(link => {
-
             const href =
               link.getAttribute("href");
 
@@ -498,11 +463,6 @@
               return;
             }
 
-
-            /*
-             * Leave anchors, external URLs,
-             * and mailto links alone.
-             */
             if (
               href.startsWith("#") ||
               href.startsWith("http://") ||
@@ -511,11 +471,6 @@
             ) {
               return;
             }
-
-
-            /*
-             * GitHub special links.
-             */
 
             if (
               href === "../../releases" ||
@@ -528,7 +483,6 @@
               return;
             }
 
-
             if (
               href === "../../issues" ||
               href === "../issues" ||
@@ -539,7 +493,6 @@
 
               return;
             }
-
 
             if (
               href === "../../discussions" ||
@@ -552,39 +505,19 @@
               return;
             }
 
-
-            /*
-             * Convert relative Markdown/document links
-             * to GitHub.
-             *
-             * Example:
-             *
-             * docs/practice-questions.md
-             *
-             * becomes:
-             *
-             * https://github.com/cjreplogle/janki/blob/master/docs/practice-questions.md
-             */
             link.href =
               new URL(
                 href,
                 REPO_BLOB_URL
               ).href;
 
-
             link.target = "_blank";
             link.rel = "noopener noreferrer";
           });
 
-
-        /* -----------------------------------------------------
-           Fix relative images
-           ----------------------------------------------------- */
-
         container
           .querySelectorAll("img")
           .forEach(img => {
-
             const src =
               img.getAttribute("src");
 
@@ -592,10 +525,6 @@
               return;
             }
 
-
-            /*
-             * Leave absolute/data URLs alone.
-             */
             if (
               src.startsWith("http://") ||
               src.startsWith("https://") ||
@@ -604,11 +533,6 @@
               return;
             }
 
-
-            /*
-             * Resolve relative images against
-             * the raw GitHub repository.
-             */
             img.src =
               new URL(
                 src,
@@ -616,15 +540,9 @@
               ).href;
           });
 
-
-        /* -----------------------------------------------------
-           External links open in new tab
-           ----------------------------------------------------- */
-
         container
           .querySelectorAll("a")
           .forEach(link => {
-
             if (
               link.href.startsWith("http")
             ) {
@@ -633,31 +551,14 @@
             }
           });
 
-
-        /* -----------------------------------------------------
-           Fade in finished README
-           ----------------------------------------------------- */
-
         container.classList.add("fade-in");
-
-
-        /* -----------------------------------------------------
-           Display README
-           ----------------------------------------------------- */
 
         document
           .getElementById("content")
           .replaceChildren(container);
-
       })
 
-
-      /* -------------------------------------------------------
-         Error handling
-         ------------------------------------------------------- */
-
       .catch(error => {
-
         console.error(error);
 
         document
@@ -665,14 +566,12 @@
           .innerHTML = `
             <div class="error">
               <strong>Unable to load Janki.</strong>
-
               <p>
                 The README could not be loaded from GitHub.
               </p>
             </div>
           `;
       });
-
   </script>
 
 </body>
