@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Metabolic Map Hotkey</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #ffffff;
+      --text: #1f2328;
+      --muted: #59636e;
+      --border: #d0d7de;
+      --surface: #f6f8fa;
+      --link: #0969da;
+      --note-text: #0969da;
+      --note-border: #0969da;
+      --note-bg: #ddf4ff;
+      --tip-text: #1a7f37;
+      --tip-border: #1a7f37;
+      --tip-bg: #dafbe1;
+      --important-text: #8250df;
+      --important-border: #8250df;
+      --important-bg: #fbefff;
+      --warning-text: #9a6700;
+      --warning-border: #9a6700;
+      --warning-bg: #fff8c5;
+      --caution-text: #cf222e;
+      --caution-border: #cf222e;
+      --caution-bg: #ffebe9;
+      --error-text: #cf222e;
+      --error-border: #ff8182;
+      --error-bg: #ffebe9;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #000000;
+        --text: #ffffff;
+        --muted: #b0b8c1;
+        --border: #333333;
+        --surface: #111111;
+        --link: #58a6ff;
+        --note-text: #58a6ff;
+        --note-border: #58a6ff;
+        --note-bg: #06151f;
+        --tip-text: #56d364;
+        --tip-border: #56d364;
+        --tip-bg: #071a0d;
+        --important-text: #bc8cff;
+        --important-border: #bc8cff;
+        --important-bg: #160d24;
+        --warning-text: #e3b341;
+        --warning-border: #e3b341;
+        --warning-bg: #211a05;
+        --caution-text: #ff7b72;
+        --caution-border: #ff7b72;
+        --caution-bg: #210b0b;
+        --error-text: #ff7b72;
+        --error-border: #ff8182;
+        --error-bg: #210b0b;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 10px;
+      background: var(--bg);
+      color: var(--text);
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Helvetica,
+        Arial,
+        sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .markdown-body {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.45s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fade-in {
+        animation: none;
+      }
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 24px;
+      margin-bottom: 16px;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+
+    h1 {
+      padding-bottom: 0.3em;
+      font-size: 2em;
+    }
+
+    h2 {
+      padding-bottom: 0.3em;
+      border-bottom: 1px solid var(--border);
+      font-size: 1.5em;
+    }
+
+    h3 {
+      font-size: 1.25em;
+    }
+
+    h4 {
+      font-size: 1em;
+    }
+
+    p {
+      margin-top: 0;
+      margin-bottom: 16px;
+    }
+
+    a {
+      color: var(--link);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    ul,
+    ol {
+      margin-top: 0;
+      margin-bottom: 16px;
+      padding-left: 2em;
+    }
+
+    li + li {
+      margin-top: 0.25em;
+    }
+
+    code,
+    tt {
+      padding: 0.2em 0.4em;
+      margin: 0;
+      font-size: 85%;
+      background: var(--surface);
+      border-radius: 6px;
+      font-family:
+        ui-monospace,
+        SFMono-Regular,
+        "SF Mono",
+        Menlo,
+        Consolas,
+        "Liberation Mono",
+        monospace;
+    }
+
+    pre {
+      padding: 16px;
+      overflow: auto;
+      margin-top: 0;
+      margin-bottom: 16px;
+      background: var(--surface);
+      border-radius: 6px;
+      line-height: 1.45;
+    }
+
+    pre code {
+      padding: 0;
+      margin: 0;
+      background: transparent;
+      border: 0;
+      font-size: 100%;
+      white-space: pre;
+    }
+
+    blockquote {
+      margin: 0 0 16px;
+      padding: 0 1em;
+      color: var(--muted);
+      border-left: 0.25em solid var(--border);
+    }
+
+    blockquote > :first-child {
+      margin-top: 0;
+    }
+
+    blockquote > :last-child {
+      margin-bottom: 0;
+    }
+
+    hr {
+      height: 0.25em;
+      padding: 0;
+      margin: 24px 0;
+      background: var(--border);
+      border: 0;
+    }
+
+    table {
+      width: 100%;
+      margin-bottom: 16px;
+      border-spacing: 0;
+      border-collapse: collapse;
+      display: block;
+      overflow-x: auto;
+    }
+
+    th,
+    td {
+      padding: 6px 13px;
+      border: 1px solid var(--border);
+    }
+
+    th {
+      font-weight: 600;
+      background: var(--surface);
+    }
+
+    tr {
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+    }
+
+    tr:nth-child(2n) {
+      background: var(--surface);
+    }
+
+    strong {
+      font-weight: 600;
+    }
+
+    .markdown-alert {
+      padding: 8px 16px;
+      margin-bottom: 16px;
+      border-left: 4px solid;
+      border-radius: 4px;
+    }
+
+    .markdown-alert > *:last-child {
+      margin-bottom: 0;
+    }
+
+    .markdown-alert-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .markdown-alert-note {
+      color: var(--note-text);
+      border-color: var(--note-border);
+      background: var(--note-bg);
+    }
+
+    .markdown-alert-tip {
+      color: var(--tip-text);
+      border-color: var(--tip-border);
+      background: var(--tip-bg);
+    }
+
+    .markdown-alert-important {
+      color: var(--important-text);
+      border-color: var(--important-border);
+      background: var(--important-bg);
+    }
+
+    .markdown-alert-warning {
+      color: var(--warning-text);
+      border-color: var(--warning-border);
+      background: var(--warning-bg);
+    }
+
+    .markdown-alert-caution {
+      color: var(--caution-text);
+      border-color: var(--caution-border);
+      background: var(--caution-bg);
+    }
+
+    .task-list-item {
+      list-style-type: none;
+    }
+
+    .task-list-item input[type="checkbox"] {
+      margin: 0 0.35em 0.25em -1.6em;
+      vertical-align: middle;
+    }
+
+    .loading {
+      color: var(--muted);
+      text-align: center;
+      padding: 40px 0;
+    }
+
+    .error {
+      color: var(--error-text);
+      padding: 20px;
+      border: 1px solid var(--error-border);
+      border-radius: 6px;
+      background: var(--error-bg);
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 20px 16px;
+        font-size: 15px;
+      }
+
+      h1 {
+        font-size: 1.75em;
+      }
+
+      h2 {
+        font-size: 1.35em;
+      }
+
+      pre {
+        font-size: 13px;
+      }
+    }
+  </style>
+
+</head>
+
+<body>
+  <main id="content" class="markdown-body">
+    <div class="loading">Loading…</div>
+  </main>
+
+  <script>
+    const README_URL =
+      "https://raw.githubusercontent.com/cjreplogle/metabolic-map-hotkey/refs/heads/main/readme.md";
+
+    const REPO_URL =
+      "https://github.com/cjreplogle/metabolic-map-hotkey";
+
+    const REPO_BLOB_URL =
+      `${REPO_URL}/blob/master/`;
+
+    const RAW_REPO_URL =
+      "https://raw.githubusercontent.com/cjreplogle/metabolic-map-hotkey/master/";
+
+    marked.setOptions({
+      gfm: true,
+      breaks: false
+    });
+
+    fetch(README_URL)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(
+            `Failed to load README (${response.status})`
+          );
+        }
+
+        return response.text();
+      })
+
+      .then(markdown => {
+        const html = marked.parse(markdown);
+        const container = document.createElement("div");
+
+        container.innerHTML = html;
+
+        container
+          .querySelectorAll("blockquote")
+          .forEach(blockquote => {
+            const firstParagraph =
+              blockquote.querySelector("p");
+
+            if (!firstParagraph) {
+              return;
+            }
+
+            const html = firstParagraph.innerHTML;
+
+            const match = html.match(
+              /^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*(?:<br\s*\/?>)?/i
+            );
+
+            if (!match) {
+              return;
+            }
+
+            const type =
+              match[1].toLowerCase();
+
+            firstParagraph.innerHTML =
+              html.substring(match[0].length);
+
+            blockquote.classList.add(
+              "markdown-alert",
+              `markdown-alert-${type}`
+            );
+
+            const title =
+              document.createElement("div");
+
+            title.className =
+              "markdown-alert-title";
+
+            const titles = {
+              note: "Note",
+              tip: "Tip",
+              important: "Important",
+              warning: "Warning",
+              caution: "Caution"
+            };
+
+            const icons = {
+              note: "ⓘ",
+              tip: "💡",
+              important: "❗",
+              warning: "⚠️",
+              caution: "🛑"
+            };
+
+            title.textContent =
+              `${icons[type]} ${titles[type]}`;
+
+            blockquote.prepend(title);
+          });
+
+        container
+          .querySelectorAll("a")
+          .forEach(link => {
+            const href =
+              link.getAttribute("href");
+
+            if (!href) {
+              return;
+            }
+
+            if (
+              href.startsWith("#") ||
+              href.startsWith("http://") ||
+              href.startsWith("https://") ||
+              href.startsWith("mailto:")
+            ) {
+              return;
+            }
+
+            if (
+              href === "../../releases" ||
+              href === "../releases" ||
+              href === "releases"
+            ) {
+              link.href =
+                `${REPO_URL}/releases`;
+
+              return;
+            }
+
+            if (
+              href === "../../issues" ||
+              href === "../issues" ||
+              href === "issues"
+            ) {
+              link.href =
+                `${REPO_URL}/issues`;
+
+              return;
+            }
+
+            if (
+              href === "../../discussions" ||
+              href === "../discussions" ||
+              href === "discussions"
+            ) {
+              link.href =
+                `${REPO_URL}/discussions`;
+
+              return;
+            }
+
+            link.href =
+              new URL(
+                href,
+                REPO_BLOB_URL
+              ).href;
+
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+          });
+
+        container
+          .querySelectorAll("img")
+          .forEach(img => {
+            const src =
+              img.getAttribute("src");
+
+            if (!src) {
+              return;
+            }
+
+            if (
+              src.startsWith("http://") ||
+              src.startsWith("https://") ||
+              src.startsWith("data:")
+            ) {
+              return;
+            }
+
+            img.src =
+              new URL(
+                src,
+                RAW_REPO_URL
+              ).href;
+          });
+
+        container
+          .querySelectorAll("a")
+          .forEach(link => {
+            if (
+              link.href.startsWith("http")
+            ) {
+              link.target = "_blank";
+              link.rel = "noopener noreferrer";
+            }
+          });
+
+        container.classList.add("fade-in");
+
+        document
+          .getElementById("content")
+          .replaceChildren(container);
+      })
+
+      .catch(error => {
+        console.error(error);
+
+        document
+          .getElementById("content")
+          .innerHTML = `
+            <div class="error">
+              <strong>Unable to load Janki.</strong>
+              <p>
+                The README could not be loaded from GitHub.
+              </p>
+            </div>
+          `;
+      });
+  </script>
+
+</body>
+</html>
