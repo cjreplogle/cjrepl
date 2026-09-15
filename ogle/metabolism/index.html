@@ -417,6 +417,11 @@
       text-decoration: underline;
     }
 
+    .corner-mark.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
     .loading {
       color: var(--muted);
       text-align: center;
@@ -577,6 +582,15 @@ only views a copy you already have.
       gfm: true,
       breaks: false
     });
+
+    // Fade the corner mark out once scrolled away from the very top.
+    const cornerMark = document.querySelector(".corner-mark");
+    if (cornerMark) {
+      const updateCornerMark = () =>
+        cornerMark.classList.toggle("hidden", window.scrollY > 8);
+      window.addEventListener("scroll", updateCornerMark, { passive: true });
+      updateCornerMark();
+    }
 
     // Static-first, then refresh: render the baked-in README immediately (instant
     // paint, works offline), then fetch the live README in the background and
