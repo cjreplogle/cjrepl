@@ -659,9 +659,22 @@ Anki's source.
     // Fade the corner mark out once scrolled away from the very top.
     const cornerMark = document.querySelector(".corner-mark");
     if (cornerMark) {
+      // Only fade on scroll when the content column actually reaches under the
+      // mark (narrow/mobile widths). On desktop it sits in the margin and never
+      // overlaps the text, so leave it visible.
+      const overlaps = () => {
+        const content = document.getElementById("content");
+        if (!content) return false;
+        return content.getBoundingClientRect().right >
+          cornerMark.getBoundingClientRect().left;
+      };
       const updateCornerMark = () =>
-        cornerMark.classList.toggle("hidden", window.scrollY > 8);
+        cornerMark.classList.toggle(
+          "hidden",
+          overlaps() && window.scrollY > 8
+        );
       window.addEventListener("scroll", updateCornerMark, { passive: true });
+      window.addEventListener("resize", updateCornerMark);
       updateCornerMark();
     }
 
