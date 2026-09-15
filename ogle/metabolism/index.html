@@ -536,11 +536,31 @@ only views a copy you already have.
       breaks: false
     });
 
-    const markdown =
-      document.getElementById("readme-source").textContent;
+    // Static-first, then refresh: render the baked-in README immediately (instant
+    // paint, works offline), then fetch the live README in the background and
+    // re-render only if it changed — so the page is fast AND never stays desynced.
+    const baked =
+      document.getElementById("readme-source")
+        .textContent
+        .replace(/^\s*<!--README:START-->\s*/, "")
+        .replace(/\s*<!--README:END-->\s*$/, "");
 
-    Promise.resolve(markdown)
-      .then(markdown => {
+    render(baked);
+
+    fetch(README_URL)
+      .then(response =>
+        response.ok ? response.text() : Promise.reject()
+      )
+      .then(live => {
+        if (live.trim() !== baked.trim()) {
+          render(live);
+        }
+      })
+      .catch(() => {
+        // Offline or GitHub unreachable — keep the baked copy.
+      });
+
+    function render(markdown) {
         const html = marked.parse(markdown);
         const container = document.createElement("div");
 
@@ -802,7 +822,7 @@ only views a copy you already have.
         document
           .getElementById("content")
           .replaceChildren(container);
-      });
+    }
   </script>
 
 </body>
