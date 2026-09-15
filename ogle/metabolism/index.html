@@ -328,25 +328,35 @@
 
     .section-toggle {
       flex: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       width: 26px;
       height: 26px;
       padding: 0;
       font-size: 20px;
       line-height: 1;
       color: var(--muted);
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: transparent;
+      border: 0;
+      outline: none;
       border-radius: 6px;
       cursor: pointer;
       transition: background 0.15s ease;
     }
 
     .section-toggle:hover {
-      background: var(--border);
+      background: var(--surface);
+    }
+
+    .section-body {
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.3s ease;
     }
 
     .section-body.collapsed {
-      display: none;
+      max-height: 0 !important;
+      opacity: 0;
     }
 
     .loading {
@@ -615,15 +625,35 @@
             h2.after(body);
 
             const setOpen = open => {
-              body.classList.toggle(
-                "collapsed",
-                !open
-              );
               toggle.textContent = open ? "−" : "+";
               toggle.setAttribute(
                 "aria-expanded",
                 open ? "true" : "false"
               );
+
+              if (open) {
+                body.classList.remove("collapsed");
+                body.style.maxHeight =
+                  body.scrollHeight + "px";
+
+                body.addEventListener(
+                  "transitionend",
+                  function te(e) {
+                    if (e.propertyName === "max-height") {
+                      body.style.maxHeight = "";
+                      body.removeEventListener(
+                        "transitionend",
+                        te
+                      );
+                    }
+                  }
+                );
+              } else {
+                body.style.maxHeight =
+                  body.scrollHeight + "px";
+                void body.offsetHeight;
+                body.classList.add("collapsed");
+              }
             };
 
             h2.addEventListener("click", e => {
