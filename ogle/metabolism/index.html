@@ -704,7 +704,10 @@ only views a copy you already have.
             );
             dismiss.textContent = "✕";
 
-            dismiss.addEventListener("click", () => {
+            const dismissAlert = () => {
+              if (blockquote.classList.contains("dismissing")) {
+                return;
+              }
               // Fade + slide out, collapsing the space, then remove.
               blockquote.style.maxHeight =
                 blockquote.scrollHeight + "px";
@@ -717,6 +720,20 @@ only views a copy you already have.
                 () => blockquote.remove(),
                 { once: true }
               );
+            };
+
+            dismiss.addEventListener("click", e => {
+              e.stopPropagation();
+              dismissAlert();
+            });
+
+            // Clicking anywhere on the alert dismisses it too (but not its links).
+            blockquote.style.cursor = "pointer";
+            blockquote.addEventListener("click", e => {
+              if (e.target.closest("a")) {
+                return;
+              }
+              dismissAlert();
             });
 
             blockquote.appendChild(dismiss);
