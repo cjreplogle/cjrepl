@@ -262,10 +262,25 @@
 
     .markdown-alert {
       position: relative;
+      overflow: hidden;
       padding: 8px 16px;
       margin-bottom: 16px;
       border-left: 4px solid;
       border-radius: 4px;
+      transition:
+        max-height 0.28s ease,
+        opacity 0.28s ease,
+        transform 0.28s ease,
+        margin 0.28s ease,
+        padding 0.28s ease;
+    }
+
+    .markdown-alert.dismissing {
+      opacity: 0;
+      transform: translateX(16px);
+      margin-bottom: 0;
+      padding-top: 0;
+      padding-bottom: 0;
     }
 
     .alert-dismiss {
@@ -736,7 +751,18 @@ Anki's source.
             dismiss.textContent = "✕";
 
             dismiss.addEventListener("click", () => {
-              blockquote.remove();
+              // Fade + slide out, collapsing the space, then remove.
+              blockquote.style.maxHeight =
+                blockquote.scrollHeight + "px";
+              void blockquote.offsetHeight;
+              blockquote.classList.add("dismissing");
+              blockquote.style.maxHeight = "0px";
+
+              blockquote.addEventListener(
+                "transitionend",
+                () => blockquote.remove(),
+                { once: true }
+              );
             });
 
             blockquote.appendChild(dismiss);
