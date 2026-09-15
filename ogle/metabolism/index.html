@@ -318,6 +318,37 @@
       vertical-align: middle;
     }
 
+    h2.section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .section-toggle {
+      flex: none;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      font-size: 20px;
+      line-height: 1;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .section-toggle:hover {
+      background: var(--border);
+    }
+
+    .section-body.collapsed {
+      display: none;
+    }
+
     .loading {
       color: var(--muted);
       text-align: center;
@@ -549,6 +580,63 @@
               link.target = "_blank";
               link.rel = "noopener noreferrer";
             }
+          });
+
+        // Make each ## section collapsible via a +/− toggle on the right.
+        container
+          .querySelectorAll("h2")
+          .forEach(h2 => {
+            const body =
+              document.createElement("div");
+
+            body.className = "section-body";
+
+            let el = h2.nextElementSibling;
+
+            while (el && el.tagName !== "H2") {
+              const next = el.nextElementSibling;
+              body.appendChild(el);
+              el = next;
+            }
+
+            const toggle =
+              document.createElement("button");
+
+            toggle.type = "button";
+            toggle.className = "section-toggle";
+            toggle.setAttribute(
+              "aria-expanded",
+              "true"
+            );
+            toggle.textContent = "−";
+
+            h2.classList.add("section-header");
+            h2.appendChild(toggle);
+            h2.after(body);
+
+            const setOpen = open => {
+              body.classList.toggle(
+                "collapsed",
+                !open
+              );
+              toggle.textContent = open ? "−" : "+";
+              toggle.setAttribute(
+                "aria-expanded",
+                open ? "true" : "false"
+              );
+            };
+
+            h2.addEventListener("click", e => {
+              if (e.target.closest("a")) {
+                return;
+              }
+
+              setOpen(
+                toggle.getAttribute(
+                  "aria-expanded"
+                ) !== "true"
+              );
+            });
           });
 
         container.classList.add("fade-in");
