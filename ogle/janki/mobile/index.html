@@ -538,6 +538,16 @@ taps, no reaching for the answer buttons.
     const RAW_REPO_URL =
       "https://raw.githubusercontent.com/cjreplogle/janki/master/docs/";
 
+    // Route the Janki docs to their cjre.pl subpages instead of the GitHub .md.
+    const DOC_PAGES = {
+      "docs/practice-questions.md": "https://cjre.pl/ogle/janki/practice/",
+      "docs/mobile-cards.md":       "https://cjre.pl/ogle/janki/mobile/",
+      "docs/load-todays-lectures.md": "https://cjre.pl/ogle/janki/load/",
+      "practice-questions.md":      "https://cjre.pl/ogle/janki/practice/",
+      "mobile-cards.md":            "https://cjre.pl/ogle/janki/mobile/",
+      "load-todays-lectures.md":    "https://cjre.pl/ogle/janki/load/",
+    };
+
     marked.setOptions({
       gfm: true,
       breaks: false
@@ -715,6 +725,13 @@ taps, no reaching for the answer buttons.
               href.startsWith("https://") ||
               href.startsWith("mailto:")
             ) {
+              return;
+            }
+
+            const mappedDoc =
+              DOC_PAGES[href] || DOC_PAGES[href.replace(/^\.\//, "")];
+            if (mappedDoc) {
+              link.href = mappedDoc;
               return;
             }
 
