@@ -581,8 +581,8 @@ taps, no reaching for the answer buttons.
     const baked =
       document.getElementById("readme-source")
         .textContent
-        .replace(/^\s*<!--README:START-->
-<!--README:END-->\s*$/, "");
+        .replace(/^\s*<!--README:START-->\s*/, "")
+        .replace(/\s*<!--README:END-->\s*$/, "");
 
     render(baked);
 
