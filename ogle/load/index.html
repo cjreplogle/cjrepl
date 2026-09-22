@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Janki</title>
+  <title>Load today's lectures</title>
   <script src="../marked.min.js"></script>
 
   <style>
@@ -473,210 +473,117 @@
   <!-- README markdown baked in at deploy time (see ogle/prerender-docs.mjs) so
        the page renders instantly with no runtime fetch to GitHub. -->
   <script type="text/markdown" id="readme-source"><!--README:START-->
-# Janki
+# Load Today's Lectures
 
-A macOS-focused [Anki](https://github.com/ankitects/anki) add-on that reskins the reviewer with native frosted-glass
-transparency, throws in some focused study tool add-ons (for if you lose focus easily like me!), integrates a practice question/review system, and provides a card scheduler that works with your calendar!
+*Unsuspend the Anki cards for today's lectures, offline, in one click.*
 
-<p align="center">
-  <img src="docs/media/reviewer.jpg" alt="Frosted-glass reviewer" width="360">
-</p>
+It matches your schedule to your cards and **unsuspends** the ones for today's
+lectures. Everything runs **locally** — nothing is uploaded, and a calendar is
+optional. Adds **Tools → Load today's lectures** (in the full Janki add-on or the
+standalone `load-todays-lectures.ankiaddon`).
 
->[!WARNING]
-> **Most of the visual/native features are macOS-only.** Older versions of MacOS and Windows lack certain functionalities.
->
-> Some features within this add-on are still rather experimental. Please use at your own risk. 
+---
 
-## Install
+## 1. Make/download a tag map
 
-Runs as an Anki plugin on **normal, stock Anki** — no custom build or separate app.
-There are two builds — pick one (each link always downloads the latest release):
+A **tag map** says which tag(s) belong to each lecture. This can be read as a 
+`.txt`, `.json`, and `.xlsx`. Easiest form to make is a `.txt` and file: 
+separate lectures with a line of `====`, put the lecture name between two
+rules, then list its tags (lines starting with `#`, `tag:`, or `deck:`). 
+`#AK…` tags match on their **last segment** (the concept), so they 
+keep working across deck versions.
 
-- **[⬇ Download `janki.ankiaddon`](https://github.com/cjreplogle/janki/releases/latest/download/janki.ankiaddon)**
-  — the full frosted-glass experience. Adds a small, self-healing, reversible
-  **patch layer** to Anki that enables the transparency (details below). I use this.
-- **[⬇ Download `load-todays-lectures.ankiaddon`](https://github.com/cjreplogle/janki/releases/latest/download/load-todays-lectures.ankiaddon)**
-  — a bare-bones version of the add-on that simply has the
-  [Load today's lectures](docs/load-todays-lectures.md) import functionality.
-  Designed for if you don't care for any of the other features.
+```text
+========================================
+<lecture_name>
+========================================
+<lecture_tag1>
+<lecture_tag2>
+<lecture_tag3>
+```
 
-1. **Install Anki** (if you haven't yet) from [apps.ankiweb.net](https://apps.ankiweb.net).
-2. **[Download `janki.ankiaddon`](https://github.com/cjreplogle/janki/releases/latest/download/janki.ankiaddon)** (always the latest release).
-3. **Double-click it** (Anki opens and installs it), or in Anki:
-   **Tools → Add-ons → Install from file…** → pick the `.ankiaddon`.
-4. **Restart Anki.** On first launch Janki applies a small one-time patch to Anki
-   so the frosted glass can work, then asks you to **quit and reopen once**. Do
-   that, and the glass is on. From then on, just open Anki normally.
+<!-- ![A tag map in a text editor](images/tag-map.png) -->
 
-> [!NOTE]
-> **Why the one-time patch + restart?** True transparency needs a setting applied
-> before Anki starts drawing — something an add-on alone can't do. Janki modifies
-> two of Anki's own files to enable it (backups are kept), and **re-applies
-> automatically after any Anki update**, prompting a quick restart when it does.
+---
 
+## 2. First run
 
+**Tools → Load today's lectures** → click **Choose file…** and pick your map.
+It's saved for next time.
 
-**From source (devs):** copy the files into
-`~/Library/Application Support/Anki2/addons21/janki/`.
+![Tools → Load today's lectures](images/menu.png)
 
-### Updating
-After the first install, Janki updates itself — no more manual downloads. It
-checks this repo's Releases about once a day and, when a newer version is out,
-offers a one-click **Update now** (it grabs the matching build, installs it, and
-keeps your settings). You can also trigger it anytime with **Tools → Janki: Check
-for updates…**, or turn the auto-check off via the `auto_update_check` config.
+![First run — choose your tag map](images/first-run.png)
 
-### Uninstall
-Because the glass involves a small patch to Anki's own files, remove it the clean
-way: **Tools → Janki: Settings… → General → "Restore stock Anki (remove glass
-patch)"**, restart, then delete the add-on from **Tools → Add-ons**. That restores
-Anki's original files (repairing its signature) and clears everything Janki added,
-so nothing is left behind.
+---
 
-> To change or disable any feature: **Tools → Janki: Settings…**
+## 3. Pick and apply
 
+The **Lectures** window opens.
 
-## Features
+**With a calendar** — today's events are pre-matched; use **◀ Prev / Today /
+Next ▶** to change day, **Use** to include a row, and the **Matched lecture**
+dropdown to fix a wrong guess (`~` = fuzzy auto-guess).
 
-- **Frosted-glass reviewer** — native macOS vibrancy/blur; transparent cards,
-  serif card font, OLED full-screen mode.
+![Lectures window with a calendar](images/lectures-calendar.png)
 
-  <table><tr>
-    <td width="50%"><img src="docs/media/reviewer2.jpg" alt="Reviewer glass" width="100%"></td>
-    <td width="50%"><img src="docs/media/reviewer3.jpg" alt="Reviewer glass, another card" width="100%"></td>
-  </tr></table>
-- **Focus Mode** (`Tab+F`) — hides toolbar/answer bar and centers the card.
-  Only has the card contents on screen.
-- **Lockdown Mode** (`backtick/~+delete`) — locks Janki into fullscreen to keep
-  you from getting distracted. Escape by holding space/the entry bind for 10s.
-  Tiered into three modes depending on your preferences.
-- **OLED Optimization** — when in fullscreen, uses a true black backdrop. Useful
-  for increasing contrast and readability on Mac displays.
-- **Caption Mode** — Trying to multitask but still see your anki cards? Press **Tab + \\**
-  to change the Anki notecard view to be in "caption" form. **Tab+Arrow Keys**
-  adjusts their screen position. Remains visible in this view even when other
-  things are in fullscreen. (Note: also integrated to work & adjust with remote buttons)
+**Without a calendar** — every lecture is listed; just tick what you want. Use
+**➕ Import calendar…** (an `.ics` file *or* URL) to switch to day mode.
 
-  <p align="center">
-    <video src="https://github.com/cjreplogle/janki/raw/master/docs/media/caption-mode.mp4" autoplay loop muted playsinline controls width="560"></video>
-  </p>
-- **Global hotkeys** — hold **Tab** as a modifier to drive the reviewer even
-  when Anki is not focused. (i.e. Tab+Z → again, overrides being unfocused)
-- **Improved Animations** — typing animation plays on card reveal to prevent
-  any recall based on the "shape" of the text rather than content.
+![Lectures window, manual mode](images/lectures-manual.png)
 
-  <p align="center">
-    <video src="https://github.com/cjreplogle/janki/raw/master/docs/media/scroll-animations.mp4" autoplay loop muted playsinline controls width="560"></video>
-  </p>
-- **Pomodoro** — review-time work intervals, an in-window break screen
-  (hold **Space** to skip), and a calm "break due" blue edge tint.
-  Toggle the whole system on/off in settings.
-- **Card timer** — a thin bar fills over N seconds; when it runs out a red
-  edge-glow flares (a "time to move on" nudge). A green flare marks a card
-  finished for the day. Intensity and timing are adjustable.
-- **Always in front** — always places the Anki app in front of other windows, 
-  even when Anki is not focused so you can always see what you are studying.
-- **Quick Zoom** — for whatever god forsaken reason Anki does not have **Cmd**+**+**
-  or **Cmd**+**-** hotkeys to zoom card contents so that exists now
-- **AMBOSS integrations** — frosts the AMBOSS side panel and hover tooltip; hides term
-  underlines unless in fullscreen.
-- **[Practice questions](docs/practice-questions.md)** — pull multiple-choice questions
-  related to the card you're reviewing (**`Tab + Q`**), or load whole question banks into
-  Anki as a real, syncable Practice deck. Banks are local `.qb` files; grading is by answer
-  choice (correct → suspend, wrong → retry, skip → bury) with a per-bank Score. Runtime is
-  100% local.
+Also: **+** on a row opens its tags to enable/disable individual ones; **Apply**
+unsuspends; **Re-suspend day** undoes the shown day. The amber ⚠ and the **Exact
+matches only** checkbox are explained under Settings.
 
-  <p align="center">
-    <img src="docs/media/practice.jpg" alt="Practice question" width="480">
-  </p>
-  - **Build a bank from a PowerPoint of question screenshots (`.pptx`, macOS).** Many
-    question banks are just slide decks where each question and its answer is a pasted
-    screenshot, not selectable text. Janki reads the text *out of the slide images* with
-    macOS's built-in Vision text recognition — **fully offline, nothing uploaded** — and
-    assembles a real MCQ bank. It handles two-column and shared-figure/vignette slides,
-    figures (carried onto the card), several answer-key formats, and imports anything it
-    can't confidently parse as flagged ⚠ *incomplete* cards for review. You can also build
-    a bank from a plain **Word doc** (`.docx`).
-  - **Intersperse practice into normal review.** Optionally drop relevant practice
-    questions into your ordinary review sessions — a quick inline check every N cards, and/or
-    a benchmark set right before a pomodoro break — matched to the concept tags of the cards
-    you've just been studying. Enable it under **Settings ▸ Practice ▸ Intersperse**.
-  - **Manage banks** — import/reorder by drag, rename, export, merge several into one, or
-    drop one bank onto another to nest it as a subbank.
+---
 
-  **→ [Practice system + how to import a document as a question bank](docs/practice-questions.md).**
-- **[Mobile cards](docs/mobile-cards.md)** *(experimental, off by default)* — AnkiMobile/AnkiDroid can't run
-  add-ons, so this can stamp an OLED-dark background, a serif font, and the text-reveal
-  animation into your note types (scoped to mobile) so the look rides your normal sync
-  to the phone/iPad. It rewrites every note type's templates, so it's opt-in: set
-  `"mobile_cards": true` in the add-on config to reveal **Tools → Janki: Mobile cards**
-  (Apply / Remove — one-click reversible).
-  **→ [Mobile cards setup + recommended AnkiMobile settings](docs/mobile-cards.md).**
+## Settings
 
-  <p align="center">
-    <video src="https://github.com/cjreplogle/janki/raw/master/docs/media/mobile-cards.mp4" autoplay loop muted playsinline controls width="240"></video>
-    <video src="https://github.com/cjreplogle/janki/raw/master/docs/media/mobile-practice.mp4" autoplay loop muted playsinline controls width="240"></video>
-  </p>
-- **[Load today's lectures](docs/load-todays-lectures.md)** (optional) — reads a local `.ics`
-  calendar (URL/file) and a local `.txt`/`.xlsx` lecture→tag map, finds your
-  classes for the day, and adaptively unsuspends relevant tagged cards
-  (AJ/#AK/Hutch decks tested). A calendar is optional — without one you pick
-  lectures manually. **→ [How to use it: Load Today's Lectures tutorial](docs/load-todays-lectures.md).**
+**Tools → Janki: Settings… → Lectures** (standalone: **… → Settings…**).
 
-  <p align="center">
-    <img src="docs/media/load-todays-lectures.jpg" alt="Load today's lectures" width="375">
-  </p>
+- **Base file** + extra **`.txt/.json`** lists (merged on top of the base).
+- **Calendar** — optional `.ics` file or URL.
+- **Run automatically on launch** — once/day, silently loads today (needs a
+  calendar).
+- **Exact matches only** — a checkbox by the amber ⚠ in the Lectures window. By
+  default an `#AK` concept with no exact tag in your collection is matched
+  loosely (`tag:*concept*`); tick this to use exact tags only.
 
-  *This feature expects your own calendar export and tag map; set their paths on
-  the Lectures → Sources tab (or just run **Tools → Load today's lectures** and
-  pick a tag map when prompted). Nothing is uploaded — the calendar is read
-  locally (a URL source is optional and fetched only if you enter one).*
+![Settings → Lectures: Sources](images/settings.png)
 
-## Suggested Add-Ons
+**Tools → Janki: Settings… → Behavior** (standalone: **… → Settings…**).
+- Lots of other controls to the search algorithm parameters here. Avoid touching
+  unless you know what you are doing.
 
-These extra installs help tie together some theming:
-* [Anki Redesign](https://ankiweb.net/shared/info/2119814566) (Some menu animations)
-* [AMBOSS](https://www.amboss.com/us/anki) (Card underlines can explain terms, another integrated question bank)
+---
 
-## Support
-*If I sent this to you for testing. Just text ((513)-502-9361) or email me if there are any issues/features you think will be helpful to other people!* 
+### `.json` format
 
-Janki is an independent, unofficial project. It is **not affiliated with, endorsed
-by, or sponsored by** AnKing, AMBOSS, Anki / Ankitects, or any medical school.
-"AnKing," "AMBOSS," and "Anki" are trademarks of their respective owners and are
-used here only nominatively — to describe compatibility with those products. No
-AnKing or AMBOSS content is bundled or redistributed; the add-on only operates on
-your own local collection.
+Object (lecture → tag(s)) or a list of `{name, tags}` objects — same tag syntax
+as `.txt`:
 
-As Janki has functionalities that patch the original code of Anki to improve visuals 
-and stamp cards for mobile effects. Certain functionalities, such as Lockdown Mode, 
-may also ask for system level permissions to work properly. MacOS makes this a requirement
-for programs which automatically closing apps / disabling Wi-Fi on the device. There 
-may be bugs, issues, or inaccuracies I have not yet identified.
+```json
+{ "<lecture>": ["<tag>"] }
+```
 
-## License
-
-Licensed under the **GNU Affero General Public License v3.0** (see [LICENSE](LICENSE)).
-Janki extends [Anki](https://github.com/ankitects/anki), which is also AGPL-3.0; the
-self-heal patches Anki's own files locally at runtime and does not redistribute
-Anki's source.
-
-[cjre.pl/ogle](https://cjre.pl/ogle/plain)
+*Your schedule and collection stay on your machine; the network is only touched
+if you give it an `http(s)` calendar URL.*
 
 <!--README:END--></script>
 
   <script>
     const README_URL =
-      "https://raw.githubusercontent.com/cjreplogle/janki/master/README.md";
+      "https://raw.githubusercontent.com/cjreplogle/janki/master/docs/load-todays-lectures.md";
 
     const REPO_URL =
       "https://github.com/cjreplogle/janki";
 
     const REPO_BLOB_URL =
-      `${REPO_URL}/blob/master/`;
+      `${REPO_URL}/blob/master/docs/`;
 
     const RAW_REPO_URL =
-      "https://raw.githubusercontent.com/cjreplogle/janki/master/";
+      "https://raw.githubusercontent.com/cjreplogle/janki/master/docs/";
 
     marked.setOptions({
       gfm: true,
@@ -711,8 +618,8 @@ Anki's source.
     const baked =
       document.getElementById("readme-source")
         .textContent
-        .replace(/^\s*<!--README:START-->\s*/, "")
-        .replace(/\s*<!--README:END-->\s*$/, "");
+        .replace(/^\s*<!--README:START-->
+<!--README:END-->\s*$/, "");
 
     render(baked);
 

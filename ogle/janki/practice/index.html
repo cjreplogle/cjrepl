@@ -4,8 +4,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Janki</title>
-  <script src="../marked.min.js"></script>
+  <title>Janki — Practice questions</title>
+  <script src="../../marked.min.js"></script>
 
   <style>
     :root {
@@ -473,210 +473,296 @@
   <!-- README markdown baked in at deploy time (see ogle/prerender-docs.mjs) so
        the page renders instantly with no runtime fetch to GitHub. -->
   <script type="text/markdown" id="readme-source"><!--README:START-->
-# Janki
+# Practice questions — question banks & building one from a Word doc
 
-A macOS-focused [Anki](https://github.com/ankitects/anki) add-on that reskins the reviewer with native frosted-glass
-transparency, throws in some focused study tool add-ons (for if you lose focus easily like me!), integrates a practice question/review system, and provides a card scheduler that works with your calendar!
+*Janki can pull multiple-choice practice questions that relate to the card
+you're reviewing, and can also load whole question banks into Anki as a real,
+syncable "Practice" deck. Everything at runtime is **100% local** — no network,
+no AI (although we can use it to help match questions to cards, more on that later).
+Banks are plain files (`.qb`) which can consist of up to hundreds of practice
+questions for your usage.
 
-<p align="center">
-  <img src="docs/media/reviewer.jpg" alt="Frosted-glass reviewer" width="360">
-</p>
+---
 
->[!WARNING]
-> **Most of the visual/native features are macOS-only.** Older versions of MacOS and Windows lack certain functionalities.
->
-> Some features within this add-on are still rather experimental. Please use at your own risk. 
+## What a "bank" is
 
-## Install
+A question bank is a `.qb` file — just a renamed zip containing the questions
+(and any images). Once imported it's extracted into
+`user_files/qbanks/<id>/` (which survives add-on updates) and tracked in a
+registry. Each question has a stem, choices, the correct answer, and an optional
+explanation/rationale.
 
-Runs as an Anki plugin on **normal, stock Anki** — no custom build or separate app.
-There are two builds — pick one (each link always downloads the latest release):
+You use a bank in two ways:
 
-- **[⬇ Download `janki.ankiaddon`](https://github.com/cjreplogle/janki/releases/latest/download/janki.ankiaddon)**
-  — the full frosted-glass experience. Adds a small, self-healing, reversible
-  **patch layer** to Anki that enables the transparency (details below). I use this.
-- **[⬇ Download `load-todays-lectures.ankiaddon`](https://github.com/cjreplogle/janki/releases/latest/download/load-todays-lectures.ankiaddon)**
-  — a bare-bones version of the add-on that simply has the
-  [Load today's lectures](docs/load-todays-lectures.md) import functionality.
-  Designed for if you don't care for any of the other features.
+1. **Related questions during review** — press **`Tab + Q`** on a card to be
+   asked the next practice question related to it. Janki matches questions to the
+   card using the same concept tags your cards already carry (`#AK` / AnKing,
+   AJ, Hutch, …); an untagged bank falls back to plain text-overlap with the
+   card's content.
+2. **A Practice deck** — load banks into Anki as a normal deck (one subdeck per
+   bank, further split by lecture). Click **Practice** in the top toolbar to see
+   your banks where the deck list normally is. New cards appear in **exact
+   slide/source order** — even across the per-lecture subdecks — because Janki
+   pins each card's position to its order in the document and sets the bank's deck
+   options to gather new cards by ascending position (options group *"Janki
+   Practice (slide order)"*). (This governs the first pass through new cards;
+   after that, normal spaced-repetition scheduling takes over.)
+3. **Automatically interspersed into your review sessions** — Janki can drop
+   relevant practice questions into your *normal* review (not just the Practice
+   deck), matched to the concepts of the cards you've just been studying. See
+   **[Interspersing practice into review](#interspersing-practice-into-review)**
+   below.
 
-1. **Install Anki** (if you haven't yet) from [apps.ankiweb.net](https://apps.ankiweb.net).
-2. **[Download `janki.ankiaddon`](https://github.com/cjreplogle/janki/releases/latest/download/janki.ankiaddon)** (always the latest release).
-3. **Double-click it** (Anki opens and installs it), or in Anki:
-   **Tools → Add-ons → Install from file…** → pick the `.ankiaddon`.
-4. **Restart Anki.** On first launch Janki applies a small one-time patch to Anki
-   so the frosted glass can work, then asks you to **quit and reopen once**. Do
-   that, and the glass is on. From then on, just open Anki normally.
+---
 
-> [!NOTE]
-> **Why the one-time patch + restart?** True transparency needs a setting applied
-> before Anki starts drawing — something an add-on alone can't do. Janki modifies
-> two of Anki's own files to enable it (backups are kept), and **re-applies
-> automatically after any Anki update**, prompting a quick restart when it does.
+## Importing a bank
 
+Open **Tools → Janki: Settings → Practice → Question Bank**. From there:
 
+- **Import question bank (.qb)…** — pick a `.qb` (or `.zip`) someone shared with
+  you. It's validated, extracted, and registered.
+- **Load Question Banks to Anki** (bottom of the page) — turns your imported
+  banks into a real **Practice** deck (a subdeck per bank, split by lecture) so
+  they sync like any other deck and can be reviewed normally.
 
-**From source (devs):** copy the files into
-`~/Library/Application Support/Anki2/addons21/janki/`.
+Installed banks are listed at the bottom with a checkbox (enable/disable for
+matching), a **+** button to preview the questions, and **Remove**.
 
-### Updating
-After the first install, Janki updates itself — no more manual downloads. It
-checks this repo's Releases about once a day and, when a newer version is out,
-offers a one-click **Update now** (it grabs the matching build, installs it, and
-keeps your settings). You can also trigger it anytime with **Tools → Janki: Check
-for updates…**, or turn the auto-check off via the `auto_update_check` config.
+---
 
-### Uninstall
-Because the glass involves a small patch to Anki's own files, remove it the clean
-way: **Tools → Janki: Settings… → General → "Restore stock Anki (remove glass
-patch)"**, restart, then delete the add-on from **Tools → Add-ons**. That restores
-Anki's original files (repairing its signature) and clears everything Janki added,
-so nothing is left behind.
+## Building a bank from a Word document (`.docx`)
 
-> To change or disable any feature: **Tools → Janki: Settings…**
+This is the easiest way to author your own bank: write the questions in a plain
+Word doc in the format below, and Janki parses it into a `.qb` and imports it in
+one step.
 
+### 1. Format the `.docx`
 
-## Features
+Use these line prefixes (case-insensitive). Blank lines are ignored, and long
+stems / choices / rationales may wrap across several lines.
 
-- **Frosted-glass reviewer** — native macOS vibrancy/blur; transparent cards,
-  serif card font, OLED full-screen mode.
+```
+Lecture: Cardiac Physiology
+Objective: Describe the phases of the cardiac cycle
 
-  <table><tr>
-    <td width="50%"><img src="docs/media/reviewer2.jpg" alt="Reviewer glass" width="100%"></td>
-    <td width="50%"><img src="docs/media/reviewer3.jpg" alt="Reviewer glass, another card" width="100%"></td>
-  </tr></table>
-- **Focus Mode** (`Tab+F`) — hides toolbar/answer bar and centers the card.
-  Only has the card contents on screen.
-- **Lockdown Mode** (`backtick/~+delete`) — locks Janki into fullscreen to keep
-  you from getting distracted. Escape by holding space/the entry bind for 10s.
-  Tiered into three modes depending on your preferences.
-- **OLED Optimization** — when in fullscreen, uses a true black backdrop. Useful
-  for increasing contrast and readability on Mac displays.
-- **Caption Mode** — Trying to multitask but still see your anki cards? Press **Tab + \\**
-  to change the Anki notecard view to be in "caption" form. **Tab+Arrow Keys**
-  adjusts their screen position. Remains visible in this view even when other
-  things are in fullscreen. (Note: also integrated to work & adjust with remote buttons)
+1. Which phase immediately follows isovolumetric contraction?
+A) Rapid ejection
+B) Isovolumetric relaxation
+C) Rapid filling
+D) Atrial systole
+Answer: A
+Rationale: Once ventricular pressure exceeds aortic pressure, the aortic
+valve opens and blood is ejected — the rapid ejection phase.
+Professor's Quote: "Pressure beats volume — the valve only cares about pressure."
 
-  <p align="center">
-    <video src="https://github.com/cjreplogle/janki/raw/master/docs/media/caption-mode.mp4" autoplay loop muted playsinline controls width="560"></video>
-  </p>
-- **Global hotkeys** — hold **Tab** as a modifier to drive the reviewer even
-  when Anki is not focused. (i.e. Tab+Z → again, overrides being unfocused)
-- **Improved Animations** — typing animation plays on card reveal to prevent
-  any recall based on the "shape" of the text rather than content.
+2. The first heart sound (S1) corresponds to closure of which valves?
+A) Aortic and pulmonic
+B) Mitral and tricuspid
+C) Mitral and aortic
+D) Tricuspid and pulmonic
+Answer: B
+Rationale: S1 is the AV valves (mitral + tricuspid) closing at the start of
+systole.
+```
 
-  <p align="center">
-    <video src="https://github.com/cjreplogle/janki/raw/master/docs/media/scroll-animations.mp4" autoplay loop muted playsinline controls width="560"></video>
-  </p>
-- **Pomodoro** — review-time work intervals, an in-window break screen
-  (hold **Space** to skip), and a calm "break due" blue edge tint.
-  Toggle the whole system on/off in settings.
-- **Card timer** — a thin bar fills over N seconds; when it runs out a red
-  edge-glow flares (a "time to move on" nudge). A green flare marks a card
-  finished for the day. Intensity and timing are adjustable.
-- **Always in front** — always places the Anki app in front of other windows, 
-  even when Anki is not focused so you can always see what you are studying.
-- **Quick Zoom** — for whatever god forsaken reason Anki does not have **Cmd**+**+**
-  or **Cmd**+**-** hotkeys to zoom card contents so that exists now
-- **AMBOSS integrations** — frosts the AMBOSS side panel and hover tooltip; hides term
-  underlines unless in fullscreen.
-- **[Practice questions](docs/practice-questions.md)** — pull multiple-choice questions
-  related to the card you're reviewing (**`Tab + Q`**), or load whole question banks into
-  Anki as a real, syncable Practice deck. Banks are local `.qb` files; grading is by answer
-  choice (correct → suspend, wrong → retry, skip → bury) with a per-bank Score. Runtime is
-  100% local.
+Rules:
 
-  <p align="center">
-    <img src="docs/media/practice.jpg" alt="Practice question" width="480">
-  </p>
-  - **Build a bank from a PowerPoint of question screenshots (`.pptx`, macOS).** Many
-    question banks are just slide decks where each question and its answer is a pasted
-    screenshot, not selectable text. Janki reads the text *out of the slide images* with
-    macOS's built-in Vision text recognition — **fully offline, nothing uploaded** — and
-    assembles a real MCQ bank. It handles two-column and shared-figure/vignette slides,
-    figures (carried onto the card), several answer-key formats, and imports anything it
-    can't confidently parse as flagged ⚠ *incomplete* cards for review. You can also build
-    a bank from a plain **Word doc** (`.docx`).
-  - **Intersperse practice into normal review.** Optionally drop relevant practice
-    questions into your ordinary review sessions — a quick inline check every N cards, and/or
-    a benchmark set right before a pomodoro break — matched to the concept tags of the cards
-    you've just been studying. Enable it under **Settings ▸ Practice ▸ Intersperse**.
-  - **Manage banks** — import/reorder by drag, rename, export, merge several into one, or
-    drop one bank onto another to nest it as a subbank.
+- **`Lecture:`** starts a section. It becomes the question's lecture (used as the
+  subdeck when you convert to a Practice deck, and as a matching hint). Repeat it
+  whenever the topic changes. Optional but recommended.
+- **`Objective:`** — optional learning objective for the questions that follow.
+- **`1.`, `2.`, …** — a number followed by a period and a space starts a new
+  question; the rest of the line is the stem.
+- **`A)` … `E)`** — the answer choices (`A)`/`A.` both work, up to five).
+- **`Answer:`** — the letter of the correct choice (`A`–`E`).
+- **`Rationale:`** — optional explanation shown on the answer side.
+- **`Professor's Quote:`** — optional; appended to the explanation.
+- **Images** pasted into the doc are attached to the question they sit under and
+  travel with the bank.
 
-  **→ [Practice system + how to import a document as a question bank](docs/practice-questions.md).**
-- **[Mobile cards](docs/mobile-cards.md)** *(experimental, off by default)* — AnkiMobile/AnkiDroid can't run
-  add-ons, so this can stamp an OLED-dark background, a serif font, and the text-reveal
-  animation into your note types (scoped to mobile) so the look rides your normal sync
-  to the phone/iPad. It rewrites every note type's templates, so it's opt-in: set
-  `"mobile_cards": true` in the add-on config to reveal **Tools → Janki: Mobile cards**
-  (Apply / Remove — one-click reversible).
-  **→ [Mobile cards setup + recommended AnkiMobile settings](docs/mobile-cards.md).**
+### 2. Import it
 
-  <p align="center">
-    <video src="https://github.com/cjreplogle/janki/raw/master/docs/media/mobile-cards.mp4" autoplay loop muted playsinline controls width="240"></video>
-    <video src="https://github.com/cjreplogle/janki/raw/master/docs/media/mobile-practice.mp4" autoplay loop muted playsinline controls width="240"></video>
-  </p>
-- **[Load today's lectures](docs/load-todays-lectures.md)** (optional) — reads a local `.ics`
-  calendar (URL/file) and a local `.txt`/`.xlsx` lecture→tag map, finds your
-  classes for the day, and adaptively unsuspends relevant tagged cards
-  (AJ/#AK/Hutch decks tested). A calendar is optional — without one you pick
-  lectures manually. **→ [How to use it: Load Today's Lectures tutorial](docs/load-todays-lectures.md).**
+**Settings → Practice → Question Bank → Build .qb from .docx…**, pick the
+file. Janki reports how many questions and lectures it found (and how many have
+images), then **Create & import** builds the `.qb` next to your `.docx` and
+imports it. Lecture headers are also used to auto-assign school-deck tags where
+they match.
 
-  <p align="center">
-    <img src="docs/media/load-todays-lectures.jpg" alt="Load today's lectures" width="375">
-  </p>
+If it reports *"No questions found"*, the doc isn't in the expected format —
+check the `1.` / `A)` / `Answer:` prefixes above.
 
-  *This feature expects your own calendar export and tag map; set their paths on
-  the Lectures → Sources tab (or just run **Tools → Load today's lectures** and
-  pick a tag map when prompted). Nothing is uploaded — the calendar is read
-  locally (a URL source is optional and fetched only if you enter one).*
+---
 
-## Suggested Add-Ons
+## Building a bank from a PowerPoint (`.pptx`) of question screenshots
 
-These extra installs help tie together some theming:
-* [Anki Redesign](https://ankiweb.net/shared/info/2119814566) (Some menu animations)
-* [AMBOSS](https://www.amboss.com/us/anki) (Card underlines can explain terms, another integrated question bank)
+Some question banks live as **slide decks where each question (and its answer)
+is a pasted screenshot**, not selectable text. Janki can still turn these into a
+real MCQ bank: it reads the text *out of the slide images* using macOS's
+built-in text recognition (the Vision framework) — **fully offline, no download,
+no account, nothing uploaded.**
 
-## Support
-*If I sent this to you for testing. Just text ((513)-502-9361) or email me if there are any issues/features you think will be helpful to other people!* 
+**Settings → Practice → Question Bank → Build .qb from .pptx (OCR)…**, pick the
+file. Janki extracts each slide image, recognizes the text, assembles the
+multiple-choice questions, and reports how many it read cleanly before building
+and importing the `.qb`. From there it behaves like any other bank (same binary
+grading, Score, Practice deck).
 
-Janki is an independent, unofficial project. It is **not affiliated with, endorsed
-by, or sponsored by** AnKing, AMBOSS, Anki / Ankitects, or any medical school.
-"AnKing," "AMBOSS," and "Anki" are trademarks of their respective owners and are
-used here only nominatively — to describe compatibility with those products. No
-AnKing or AMBOSS content is bundled or redistributed; the add-on only operates on
-your own local collection.
+For this to work the slides should read roughly like:
 
-As Janki has functionalities that patch the original code of Anki to improve visuals 
-and stamp cards for mobile effects. Certain functionalities, such as Lockdown Mode, 
-may also ask for system level permissions to work properly. MacOS makes this a requirement
-for programs which automatically closing apps / disabling Wi-Fi on the device. There 
-may be bugs, issues, or inaccuracies I have not yet identified.
+```
+3. Which phase immediately follows isovolumetric contraction?
+(A) Rapid ejection
+(B) Isovolumetric relaxation
+(C) Rapid filling
+(D) Atrial systole
+```
 
-## License
+…with the answer on a **later** slide, keyed by the same question number:
 
-Licensed under the **GNU Affero General Public License v3.0** (see [LICENSE](LICENSE)).
-Janki extends [Anki](https://github.com/ankitects/anki), which is also AGPL-3.0; the
-self-heal patches Anki's own files locally at runtime and does not redistribute
-Anki's source.
+```
+3. The answer is A. Once ventricular pressure exceeds aortic pressure…
+```
 
-[cjre.pl/ogle](https://cjre.pl/ogle/plain)
+Questions are matched to their answers **by number** (numbers may restart per
+section — that's fine), so it doesn't matter whether answers are interleaved
+after each question or batched at the end.
+
+Good to know:
+
+- **First run needs Xcode Command Line Tools** (for the ~30-line recognition
+  helper Janki compiles once and caches). If they're missing, Janki tells you to
+  run `xcode-select --install` and try again. macOS only.
+- **OCR is not perfect.** A clean deck yields most of its questions; some may be
+  skipped if the recognizer garbles the choices or can't find the answer letter.
+  Janki **never guesses an answer** — a question with no confidently-matched
+  answer is dropped rather than imported wrong. Skim the bank's **+** preview
+  afterwards and fix any stragglers.
+- **Import incomplete questions for diagnosis (optional).** If some questions were
+  *detected* but couldn't be fully parsed (no answer matched, choices/stem
+  missing), the build dialog offers an extra **"Import … + N incomplete"** button.
+  Those come in as flagged **⚠ incomplete** cards that show their original slide
+  image plus whatever text was read, so you can see exactly what tripped up the
+  parse. They're marked in the **+** preview, are never surfaced as related
+  questions during review, and can be fixed or removed. (Because they have no
+  confirmed answer, they won't grade as "correct" — they're a diagnostic aid.)
+- **Figures are carried over.** If a question has a graph/table/photo — either as
+  a separate image on the slide, or baked into the question screenshot (detected
+  when the stem mentions a "graph"/"table"/"curve"/"figure") — that image travels
+  with the bank and shows on the card beneath the recognized text.
+- **Two-question and shared-figure slides are handled.** Side-by-side questions
+  (two columns on one slide) are read a column at a time, and a shared figure
+  panel ("Questions 13-15") is attached to each question in that range even
+  though they live on later slides. If a question's number is garbled/dropped by
+  OCR (e.g. a coloured number label), it's filled in sequence within the section
+  so its answer still binds.
+- **Section titles become lecture tags.** Banks organised under native-text title
+  slides (e.g. "Cell Death and Injury") tag each question with that topic, so the
+  Practice deck splits into per-topic subdecks. Question numbers may restart per
+  section — that's handled.
+
+---
+
+## Interspersing practice into review
+
+Instead of setting practice questions aside in their own deck, Janki can weave
+them into your ordinary review sessions — so you practice higher-level questions
+on the concepts you're *currently* studying, and can benchmark yourself right
+before a break.
+
+Turn it on in **Settings → Practice → Intersperse**. Everything is off until you
+enable it, and it only ever surfaces questions from your **enabled** banks.
+
+**How relevance works.** As you review, Janki tracks the concept tags (`#AK` /
+AnKing, AJ, Hutch, …) of the cards you've recently answered. When it's time to
+intersperse, it pulls the questions that best match those concepts — the same tag
+matcher used by `Tab + Q`.
+
+**Two triggers, two modes:**
+
+- **After every N cards → seamless inline.** A matched question simply appears as
+  your next "card" in the same deck flow, then your real cards resume — no leaving
+  the deck. It's a real Practice card, so it looks and grades exactly like the
+  Practice deck: pick an answer, see it tint green/red with the explanation, and
+  **Continue**. Get it right and it retires (and counts toward the bank's Score);
+  get it wrong or skip and it comes back later in the session.
+- **Before each pomodoro break → mini practice set.** Right before the break
+  screen, Janki gathers a short set of matched questions and lets you run through
+  them as a quick benchmark, then the break begins. (Requires Pomodoro enabled
+  under **Focus → Pomodoro**.)
+
+**Settings:**
+
+- **Every N cards** — how often the inline trigger fires.
+- **Questions per round** — the target range (min–max) to pull each time.
+- **If nothing matches** — either **Skip this round** (default; stay uninterrupted
+  when there's nothing relevant) or **Text-similarity fallback** (surface loosely
+  related questions using text overlap, the same fallback `Tab + Q` uses).
+
+Interspersing never touches your real deck's scheduling: inline questions are
+graded by Janki directly (right → retire, wrong → resurface), and the pre-break
+set runs in a temporary filtered deck that's torn down afterward.
+
+---
+
+## Optional: AI-assisted tagging (offline round-trip)
+
+A freshly-parsed bank matches by text similarity. To make matching sharper, you
+can tag questions with your concept tags — done as a manual copy-paste, so no
+data ever leaves your machine automatically:
+
+1. **Copy AI tag-matching prompt…** — copies a prompt (with your questions +
+   tag vocabulary) to the clipboard.
+2. Paste it into your own Claude/ChatGPT, and save its JSON reply to a file.
+3. **Apply AI tag results (.json)…** — applies those tags back onto the banks.
+
+This is entirely optional. Banks work without it, but it can be really helpful
+for integrating these questions seamlessly with your cards.
+
+---
+
+## How grading & Score work
+
+Practice cards are graded **only by your answer choice**, not by the usual
+Again/Hard/Good/Easy:
+
+- **Correct** → graded Easy and **suspended** (retired from the queue), with a
+  soft green flare.
+- **Incorrect** → graded Hard (comes back for another try).
+- **Skip** (advance without picking) → **buried** for the session, no judgement.
+
+Practice questions work fundamentally different from traditional card reviews
+because we are not trying to just associate definitions. It is testing your
+understanding. You either make the connection or you don't. When you get a card
+right, we get it out of your way, since the exercise is complete. If it's wrong,
+it acts equivalent in spacing to a 'Hard' card review. You will see it again
+another time, but not as quickly as simply not knowing a card to avoid just
+remembering the answer.
+
+The **Score** shown for each bank is the share of the cards you've *attempted*
+that you've *cleared*: **suspended ÷ attempted**, from each card's current state.
+Resetting a card returns it to "new" and drops it back out — and skipped/buried
+cards don't count either way.
+
+> On **AnkiMobile**, practice cards still show the right/wrong color and the
+> explanation, but the app doesn't allow grading from card JavaScript — so grade
+> with AnkiMobile's own buttons. See **[Mobile cards](mobile-cards.md)**.
+> This unfortunately does screw with grading. Please keep this in mind if you are
+> doing lots of these practice bank problems on mobile.
 
 <!--README:END--></script>
 
   <script>
     const README_URL =
-      "https://raw.githubusercontent.com/cjreplogle/janki/master/README.md";
+      "https://raw.githubusercontent.com/cjreplogle/janki/master/docs/practice-questions.md";
 
     const REPO_URL =
       "https://github.com/cjreplogle/janki";
 
     const REPO_BLOB_URL =
-      `${REPO_URL}/blob/master/`;
+      `${REPO_URL}/blob/master/docs/`;
 
     const RAW_REPO_URL =
-      "https://raw.githubusercontent.com/cjreplogle/janki/master/";
+      "https://raw.githubusercontent.com/cjreplogle/janki/master/docs/";
 
     marked.setOptions({
       gfm: true,
@@ -711,8 +797,8 @@ Anki's source.
     const baked =
       document.getElementById("readme-source")
         .textContent
-        .replace(/^\s*<!--README:START-->\s*/, "")
-        .replace(/\s*<!--README:END-->\s*$/, "");
+        .replace(/^\s*<!--README:START-->
+<!--README:END-->\s*$/, "");
 
     render(baked);
 

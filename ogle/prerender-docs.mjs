@@ -19,6 +19,18 @@ const PAGES = [
     file: new URL("./janki/index.html", import.meta.url),
     raw: "https://raw.githubusercontent.com/cjreplogle/janki/master/README.md",
   },
+  {
+    file: new URL("./janki/mobile/index.html", import.meta.url),
+    raw: "https://raw.githubusercontent.com/cjreplogle/janki/master/docs/mobile-cards.md",
+  },
+  {
+    file: new URL("./janki/practice/index.html", import.meta.url),
+    raw: "https://raw.githubusercontent.com/cjreplogle/janki/master/docs/practice-questions.md",
+  },
+  {
+    file: new URL("./load/index.html", import.meta.url),
+    raw: "https://raw.githubusercontent.com/cjreplogle/janki/master/docs/load-todays-lectures.md",
+  },
 ];
 
 const START = "<!--README:START-->";
