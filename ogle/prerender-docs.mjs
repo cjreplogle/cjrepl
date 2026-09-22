@@ -28,7 +28,7 @@ const PAGES = [
     raw: "https://raw.githubusercontent.com/cjreplogle/janki/master/docs/practice-questions.md",
   },
   {
-    file: new URL("./load/index.html", import.meta.url),
+    file: new URL("./janki/load/index.html", import.meta.url),
     raw: "https://raw.githubusercontent.com/cjreplogle/janki/master/docs/load-todays-lectures.md",
   },
 ];
