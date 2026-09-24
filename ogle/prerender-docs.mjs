@@ -31,6 +31,10 @@ const PAGES = [
     file: new URL("./janki/load/index.html", import.meta.url),
     raw: "https://raw.githubusercontent.com/cjreplogle/janki/master/docs/load-todays-lectures.md",
   },
+  {
+    file: new URL("./janki/rephrase/index.html", import.meta.url),
+    raw: "https://raw.githubusercontent.com/cjreplogle/janki/master/docs/rephrase.md",
+  },
 ];
 
 const START = "<!--README:START-->";
