@@ -129,6 +129,33 @@
       opacity: 0;
     }
 
+    /* Mock Anki cloze on the tagline's "Anki": blank [...] → revealed answer, in
+       Janki's cloze blue. */
+    .cloze-mock {
+      color: #6db3ff !important;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .cloze-reveal {
+      display: inline-block;
+      animation: clozeReveal 0.45s ease-out;
+    }
+
+    @keyframes clozeReveal {
+      from {
+        opacity: 0;
+        filter: blur(3px);
+        transform: translateY(2px);
+      }
+
+      to {
+        opacity: 1;
+        filter: blur(0);
+        transform: translateY(0);
+      }
+    }
+
     @keyframes caretBlink {
       50% {
         opacity: 0;
@@ -1138,6 +1165,27 @@ Anki's source.
         }
 
         const n = nodes[ni];
+
+        // The "Anki" link plays a mock cloze: a blue [...] blank, a beat, then the
+        // answer revealed in place (Janki's cloze colour + text-reveal fade).
+        const link = n.node.parentElement && n.node.parentElement.closest("a");
+
+        if (ci === 0 && link && n.text.trim() === "Anki") {
+          link.classList.add("cloze-mock");
+          n.node.textContent = "[...]";
+          ci = n.text.length;
+
+          setTimeout(() => {
+            const span = document.createElement("span");
+            span.className = "cloze-reveal";
+            span.textContent = n.text;
+            n.node.textContent = "";
+            link.appendChild(span);
+            setTimeout(step, 320);
+          }, 650);
+          return;
+        }
+
         ci += 1;
         n.node.textContent = n.text.slice(0, ci);
 
