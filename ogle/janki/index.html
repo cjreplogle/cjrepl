@@ -1150,6 +1150,7 @@ Anki's source.
 
       let ni = 0;
       let ci = 0;
+      let pendingCloze = null;   // reveal fn for the mock cloze, run after the line
 
       function step() {
         while (ni < nodes.length && ci >= nodes[ni].text.length) {
@@ -1158,16 +1159,21 @@ Anki's source.
         }
 
         if (ni >= nodes.length) {
-          setTimeout(() => caret.classList.add("done"), 1200);
-          setTimeout(() => caret.remove(), 1700);
           para.style.minHeight = "";
+          // Line finished → reveal the pending cloze answer, then retire the caret.
+          const reveal = pendingCloze;
+          pendingCloze = null;
+          setTimeout(() => { if (reveal) reveal(); }, 450);
+          setTimeout(() => caret.classList.add("done"), 1400);
+          setTimeout(() => caret.remove(), 1900);
           return;
         }
 
         const n = nodes[ni];
 
-        // The "Anki" link plays a mock cloze: a blue [...] blank, a beat, then the
-        // answer revealed in place (Janki's cloze colour + text-reveal fade).
+        // The "Anki" link plays a mock cloze: a blue [...] blank while the line types
+        // on, then the answer is revealed in place once the line finishes (Janki's
+        // cloze colour + text-reveal fade).
         const link = n.node.parentElement && n.node.parentElement.closest("a");
 
         if (ci === 0 && link && n.text.trim() === "Anki") {
@@ -1175,14 +1181,14 @@ Anki's source.
           n.node.textContent = "[...]";
           ci = n.text.length;
 
-          setTimeout(() => {
+          pendingCloze = () => {
             const span = document.createElement("span");
             span.className = "cloze-reveal";
             span.textContent = n.text;
             n.node.textContent = "";
             link.appendChild(span);
-            setTimeout(step, 320);
-          }, 650);
+          };
+          setTimeout(step, 90);
           return;
         }
 
