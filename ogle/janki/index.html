@@ -112,23 +112,6 @@
       }
     }
 
-    /* Typewriter caret for the tagline under the title. */
-    .type-caret {
-      display: inline-block;
-      width: 2px;
-      height: 1em;
-      margin-left: 2px;
-      vertical-align: -0.12em;
-      background: currentColor;
-      opacity: 0.75;
-      animation: caretBlink 1s steps(1) infinite;
-      transition: opacity 0.4s ease;
-    }
-
-    .type-caret.done {
-      opacity: 0;
-    }
-
     /* Mock Anki cloze on the tagline's "Anki": blank [...] → revealed answer, in
        Janki's cloze blue. */
     .cloze-mock {
@@ -153,12 +136,6 @@
         opacity: 1;
         filter: blur(0);
         transform: translateY(0);
-      }
-    }
-
-    @keyframes caretBlink {
-      50% {
-        opacity: 0;
       }
     }
 
@@ -1151,11 +1128,6 @@ Anki's source.
 
       nodes.forEach(n => { n.node.textContent = ""; });
 
-      const caret = document.createElement("span");
-      caret.className = "type-caret";
-      caret.setAttribute("aria-hidden", "true");
-      target.appendChild(caret);
-
       let ni = 0;
       let ci = 0;
       let pendingCloze = null;   // reveal fn for the mock cloze, run after the line
@@ -1168,12 +1140,10 @@ Anki's source.
 
         if (ni >= nodes.length) {
           para.style.minHeight = "";
-          // Line finished → reveal the pending cloze answer, then retire the caret.
+          // Line finished → reveal the pending cloze answer.
           const reveal = pendingCloze;
           pendingCloze = null;
           setTimeout(() => { if (reveal) reveal(); }, 450);
-          setTimeout(() => caret.classList.add("done"), 1400);
-          setTimeout(() => caret.remove(), 1900);
           return;
         }
 
