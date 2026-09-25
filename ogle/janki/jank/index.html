@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Janki — Mobile cards</title>
+  <title>Janki — .jank bundles</title>
   <script src="../../marked.min.js"></script>
 
   <style>
@@ -473,61 +473,55 @@
   <!-- README markdown baked in at deploy time (see ogle/prerender-docs.mjs) so
        the page renders instantly with no runtime fetch to GitHub. -->
   <script type="text/markdown" id="readme-source"><!--README:START-->
-# Mobile cards — stamp Janki's look onto AnkiMobile / AnkiDroid
+# .jank bundles — one file per content drop
 
-*AnkiMobile and AnkiDroid can't run add-ons, so Janki bakes its look
-(OLED-dark background, serif font, and the text-reveal animation) directly into
-your note types. Because the styling lives in the note templates, it rides your
-normal sync to the phone/iPad — no add-on needed on the device.*
+A `.jank` packs everything for a drop into a single download, so students import
+**one file** instead of several.
 
----
+## Importing
 
-## 1. Apply it (on desktop)
+**Tools → Janki: Settings → General → Import .jank…** — or drag the `.jank` onto the
+General tab. Janki imports, in order:
 
-1. Set `"mobile_cards": true` in the add-on config (or it's already on if you
-   enabled it), which reveals the menu entry.
-2. **Tools → Janki: Settings → Appearace → Apply UI theming to mobile cards**
-   — this rewrites every note type's styling. Your originals are saved locally
-   first; **Revert mobile theming** restores them as they were originally.
-4. **Sync.** The new look reaches your devices on their next sync.
+| File | What happens |
+|---|---|
+| `.apkg` decks | Imported with Anki's own importer (no dialogs). New notes are added; existing notes update only if the bundle's copy is newer. **Your review history, scheduling and deck options are never touched.** |
+| `.qb` question banks | Installed; a bank with the same id is **replaced** (so a new drop is an update). |
+| `.json` lecture tag maps | Saved to `user_files/tagmaps/` and used by **Load today's lectures** (a same-named map from an earlier drop is replaced). |
+| `.rp` rephrasings | Merged into your rephrasings (last — they point at the notes the decks bring in). |
 
-Font and the tap-feedback ripple are configurable under
-**Settings → Appearance** (Mobile card font / Tap feedback).
+A summary shows what came in, plus the bundle's name, version and notes. After a drop
+with new banks, use **Load Question Banks to Anki**; with new rephrasings, **Enable /
+update on mobile** and sync.
 
----
+## Building
 
-## 2. Recommended AnkiMobile settings (on the phone)
+**Settings → General → Build .jank…** opens the packager:
 
-For the intended full-screen, distraction-free card that matches the desktop
-Focus look, change two things in AnkiMobile:
+- Tick what to include **from your Janki**: installed question banks (re-packed as
+  `.qb`), your lecture tag maps, and all stored rephrasings (one `.rp`).
+- **Add files from disk** (or drag them in) for decks (`.apkg`) or anything else.
+- Give it a name, version and notes (shown on import), then **Export .jank…**.
 
-### Disable the Top Bar & Bottom Bar
-**Settings → Review** → turn **off** *Top Bar* and *Bottom Bar*. This drops the
-toolbar/answer-bar chrome so the OLED-dark card fills the screen.
+A `.jank` is just a renamed `.tar.gz`, so you can also make one by hand:
 
-### Grade by tap position
-**Settings → Review → Taps.** Before the answer is shown, every zone is set to
-**Show Answer** (tap anywhere to flip). Once the answer is shown, the zones map
-to grades by position — so you rate a card by *where* you tap:
+```
+tar -czf block2-week3.jank manifest.json *.apkg *.qb *.json *.rp
+```
 
-<img src="images/mobile-taps.png" alt="Settings → Review → Taps" width="150">
+`manifest.json` is optional: `{"name": "...", "version": "...", "notes": "..."}`.
 
-- **Before answer (all zones):** Show Answer
-- **When answer shown:** Top Left = Again · Top Right = Easy · Mid Left = Hard ·
-  Mid Right = Good · Bottom Left = Again · Bottom Right = Easy · centers = Off
+## Safety
 
-This pairs with the tap-feedback ripple so the whole review flow is one-handed
-taps, no reaching for the answer buttons.
-
-> Everything here is reversible: **Tools → Janki: Mobile cards → Remove** on
-> desktop restores your original note styling, and the AnkiMobile settings are
-> just toggles you can flip back.
+Bundles are unpacked into a private temporary folder first. Absolute paths, `../` path
+tricks, links, macOS `__MACOSX` junk and unsupported file types are skipped, duplicate
+names are made unique, and there's a 4 GB size cap. Nothing is uploaded anywhere.
 
 <!--README:END--></script>
 
   <script>
     const README_URL =
-      "https://raw.githubusercontent.com/cjreplogle/janki/master/docs/mobile-cards.md";
+      "https://raw.githubusercontent.com/cjreplogle/janki/master/docs/jank.md";
 
     const REPO_URL =
       "https://github.com/cjreplogle/janki";
