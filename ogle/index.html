@@ -167,7 +167,7 @@
       overflow: hidden;
     }
     .paper-entry { cursor: pointer; margin-bottom: 6px; margin-top: 10px; }
-    .paper-title { padding-left: 1.6em; position: relative; }
+    .paper-title { padding-left: 1.6rem; position: relative; }
     .paper-title::before { content: ''; position: absolute; left: 0; display: inline-block; }
     .paper-entry.focused-paper .paper-title::before { content: '> '; animation: bounce-x 0.8s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite; }
     .paper-title { font-size: 0.85rem; opacity: 0.5; transition: opacity 0.2s ease; }
@@ -180,7 +180,16 @@
     }
     .paper-citation > div { overflow: hidden; }
     .paper-entry.open .paper-citation { grid-template-rows: 1fr; }
-    .paper-citation p { font-size: 0.8rem; opacity: 0.5; line-height: 1.6; margin: 4px 0 8px; padding-left: 1.6em; }
+    .paper-citation p { font-size: 0.8rem; opacity: 0.5; line-height: 1.6; margin: 4px 0 8px; padding-left: 1.6rem; }
+    .research-subtabs { padding-left: 1.6rem; margin: 2px 0 10px; display: flex; gap: 1.2em; }
+    .rsub { cursor: pointer; font-family: Georgia, serif; font-size: 1rem; opacity: 0.4; transition: opacity 0.2s ease; }
+    .rsub:hover { opacity: 0.7; }
+    .rsub.active { opacity: 1; text-decoration: underline; text-underline-offset: 4px; }
+    #abstracts-list p { font-size: 0.78rem; opacity: 0.5; line-height: 1.55; margin: 4px 0 8px; padding-left: 3em; text-indent: -1.4em; }
+    .subtab { display: block; color: #fff; text-decoration: none; font-size: 1rem; opacity: 0.75; margin: 3px 0 3px 1.8em; transition: transform 0.2s ease, opacity 0.2s ease; }
+    .subtab:hover { transform: translateX(6px); opacity: 1; }
+    .subtab .selector { width: 1.6em; }
+    @media (hover: hover) { .subtab:hover .selector::before { content: '> '; display: inline-block; } }
     .tab-hint {
       font-size: 0.75em;
       opacity: 0;
@@ -194,7 +203,7 @@
     }
     .selector {
       display: inline-block;
-      width: 1.6em;
+      width: 1.6rem;
     }
     @keyframes bounce-x {
       0%, 100% { transform: translateX(0); }
@@ -287,10 +296,18 @@
   </div>
   <p style="opacity:0.3;margin:16px 0 12px;line-height:1">—</p>
   <div class="tabs">
-    <button class="tab-btn" onclick="switchTab('papers', this)"><span class="selector"> </span>Papers</button>
-    <div id="papers" class="tab-content"><div id="papers-list"></div></div>
+    <button class="tab-btn" onclick="switchTab('papers', this)"><span class="selector"> </span>Research</button>
+    <div id="papers" class="tab-content"><div>
+      <div class="research-subtabs"><span class="rsub active" onclick="showResearch('papers', this)">Papers</span><span class="rsub" onclick="showResearch('abstracts', this)">Presented Abstracts</span></div>
+      <div id="papers-list"></div>
+      <div id="abstracts-list" style="display:none"></div>
+    </div></div>
     <button class="tab-btn" onclick="switchTab('projects', this)"><span class="selector"> </span>Projects</button>
-    <div id="projects" class="tab-content"><div><p style="margin:10px 0 6px;padding-left:1.6em;font-size:0.85rem;opacity:0.5">Coming soon.</p></div></div>
+    <div id="projects" class="tab-content"><div>
+      <a class="subtab" href="janki/"><span class="selector"> </span>Janki</a>
+      <a class="subtab" href="metabolism/"><span class="selector"> </span>Metabolic Map Viewer</a>
+      <p style="margin:12px 0 6px;padding-left:1.6em;font-size:0.8rem;opacity:0.4">Need to get around to compiling all the other cool stuff I've done here. One of these days...</p>
+    </div></div>
     <button class="tab-btn" onclick="switchTab('forfun', this)"><span class="selector"> </span>For Fun</button>
     <div id="forfun" class="tab-content">
       <div>
@@ -1080,6 +1097,29 @@
           </div></div>
         </div>`).join('');
     })();
+
+    const ABSTRACTS = [
+      '<strong>Replogle, C.J.</strong>, Diehl, B., Barnes, J., McBride-Gagyi, S. (March 2026). &ldquo;In toto Mesh-Based Surface Segmentation of the Knee Joint for Quantitative MicroCT Analysis&rdquo; [Poster], Denman Undergraduate Research Forum, Columbus, OH.',
+      'Barnes, J., <strong>Replogle, C.J.</strong>, Diop, K., Liu, Y., Klausner, J., Smith, A., Marshall, J., Walter, B., Schilaty, N., Bates, N., McBride-Gagyi, S., Purmessur, D. (December 2025). &ldquo;Lower Limb Joint Degeneration Following Intervertebral Disc Injury and Force-Based Manipulation in a Mouse Model&rdquo; [Poster], Orthopedic Research Society 2026 Annual Meeting, Charlotte, NC.',
+      'Smallwood, R., Dort, T., <strong>Replogle, C.J.</strong>, Barnes, J., Sprangel, K., Willows, J., Blaszkiewicz, M., Peters, S., Greco, N., Townsend, K., McBride-Gagyi, S. &ldquo;Effects of Estradiol (17-&alpha;) on Osteoarthritis and Bone Development in Genetically Heterogeneous Het3 Male Mice.&rdquo; [Poster] Orthopedic Research Society Annual Meeting; February 10th, 2025.',
+      '<strong>Replogle, C.J.</strong>, Smallwood, R., Dort, T., Sprangel, K., Willows, J., Peters, S., Greco, N., Townsend, K., McBride-Gagyi, S. &ldquo;Effects of Estradiol (17-&alpha;) on Osteoarthritis and Bone Development in Genetically Heterogenous Het3 Male Mice&rdquo; [Poster] Engineering in Healthcare: Industry and Research Symposium; January 25th, 2025; Columbus, OH.',
+      '<strong>Replogle, C.J.</strong>, Ghorai, S.K., Gangavaram, A., Whitlock, P.W. &ldquo;Fabrication of Patient Specific Bioinductive 3D Printed Scaffold for Osteochondral Defect Repair&rdquo; [Poster] Cincinnati Children&rsquo;s Hospital Medical Center Summer Undergraduate Research Fellowship Capstone Poster Session; July 31st, 2024; Cincinnati, OH.',
+      'Hasan, S., Fleckenstein, C., <strong>Replogle, C.</strong>, Roberts, A., DeBernardis, D., Kurcz, B. &ldquo;Anatomic Total Shoulder Arthroplasty Using a Short Humeral Stem and a Non-Augmented Minimally Cemented All-Polyethylene Glenoid: Minimum 2-Years Outcome and Predictors of Clinical Failure.&rdquo; [Abstract] 15th International Congress on Shoulder and Elbow Surgery; September 5&ndash;8th, 2023; Rome, Italy.',
+      '<strong>Replogle, C.J.</strong>, Ghorai, S.K., Henkel, W., Whitlock, P.W. &ldquo;Biofabrication of Osteochondral Scaffolds Containing Embedded Decellularized Matrix-PLA Microspheres.&rdquo; [Poster] Cincinnati Children&rsquo;s Hospital Medical Center Summer Undergraduate Research Fellowship Capstone Poster Session; August 2nd, 2023; Cincinnati, OH.',
+      '<strong>Replogle, C.J.</strong>, Fleckenstein, C., Hasan, S.S. &ldquo;Early Outcome Following Anatomic Total Shoulder Replacement Using Short Stem Humeral and Minimally Cemented Glenoid Components.&rdquo; [Talk and Poster] Summit Country Day School Science Research Institute Colloquium; February 28th, 2022; Cincinnati, OH.',
+    ];
+
+    (function renderAbstracts() {
+      const list = document.getElementById('abstracts-list');
+      list.innerHTML = ABSTRACTS.map((a, i) => `<p>[${i + 1}] ${a}</p>`).join('');
+    })();
+
+    function showResearch(which, el) {
+      document.querySelectorAll('.research-subtabs .rsub').forEach(s => s.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('papers-list').style.display = which === 'papers' ? '' : 'none';
+      document.getElementById('abstracts-list').style.display = which === 'abstracts' ? '' : 'none';
+    }
   </script>
 
   <script>
