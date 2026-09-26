@@ -136,13 +136,12 @@
        stays at the top and the tagline is centred in the remaining space. */
     body.card-mode .splash {
       min-height: 100vh;
-      min-height: 100lvh;
+      min-height: 100dvh;
     }
-    /* While the card is up, hide the rest of the page so nothing peeks at the
-       bottom regardless of the mobile viewport quirks. */
+    /* While the card is up, hide the rest of the page so nothing peeks. */
     body.card-mode .splash ~ * { display: none !important; }
-    /* Center the tagline in the actual viewport (not the space under the title,
-       which left it slightly low); the "Janki" title stays at the top. */
+    /* Center the tagline in the actual visible viewport; the title stays at top.
+       On dismiss it's animated from here up to its normal position (see JS). */
     body.card-mode .tagline {
       position: fixed;
       top: 50%;
@@ -546,7 +545,7 @@
 
     @media (max-width: 600px) {
       body {
-        padding: 20px 16px;
+        padding: 8px 16px;
         font-size: 15px;
       }
 
@@ -1217,6 +1216,7 @@ Anki's source.
           .find(el => /feature-rich/i.test(el.textContent));
         if (tag) {
           tag.classList.add("tagline");
+          window.__tagEl = tag;
           const splash = document.createElement("div");
           splash.className = "splash";
           const first = h1 || tag;
@@ -1274,9 +1274,25 @@ Anki's source.
       function dismiss() {
         if (!document.body.classList.contains("card-mode")) return;
         window.__cardDismissed = true;
+        const tag = window.__tagEl;
+        const first = tag ? tag.getBoundingClientRect().top : 0;   // centered position
         document.body.classList.remove("card-mode");
         hint.remove();
         revealTitle();
+        // FLIP: the tagline just jumped from centered (fixed) to its normal spot;
+        // invert that and animate back to 0 so it slides up smoothly.
+        if (tag) {
+          const last = tag.getBoundingClientRect().top;
+          const dy = first - last;
+          if (dy) {
+            tag.style.transition = "none";
+            tag.style.transform = "translateY(" + dy + "px)";
+            void tag.offsetHeight;   // force reflow
+            tag.style.transition = "transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)";
+            tag.style.transform = "translateY(0)";
+            setTimeout(() => { tag.style.transition = ""; tag.style.transform = ""; }, 560);
+          }
+        }
       }
 
       // Grade the card by where you tap (like janki): the screen splits into four
@@ -1291,8 +1307,7 @@ Anki's source.
         // Wash the whole screen in the grade colour — faint in the centre, glowing
         // toward every border — so it reads as the card flashing the grade.
         f.style.background =
-          "radial-gradient(ellipse at center, " + c + "1f 0%, " + c + "5c 58%, " + c + "b8 100%)";
-        f.style.boxShadow = "inset 0 0 26vmin 3vmin " + c;
+          "radial-gradient(ellipse at center, " + c + "17 0%, " + c + "4d 50%, " + c + "99 100%)";
         document.body.appendChild(f);
         setTimeout(() => f.remove(), 650);
       }
