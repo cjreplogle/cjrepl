@@ -1157,12 +1157,18 @@
       if (which === 'abstracts') fitAbstracts();
     }
 
-    // Size the abstracts scroll box so it runs to the bottom of the viewport.
+    // Size the abstracts scroll box so it runs down to just above the fixed footer
+    // (the "last updated / plain / theme" bar), without clipping it.
     function fitAbstracts() {
       const list = document.getElementById('abstracts-list');
       if (!list || list.style.display === 'none') return;
       const top = list.getBoundingClientRect().top;
-      list.style.maxHeight = Math.max(120, window.innerHeight - top - 16) + 'px';
+      let bottomLimit = window.innerHeight;
+      const footer = document.getElementById('last-updated');
+      if (footer && footer.parentElement) {
+        bottomLimit = footer.parentElement.getBoundingClientRect().top;
+      }
+      list.style.maxHeight = Math.max(120, bottomLimit - top - 12) + 'px';
     }
     window.addEventListener('resize', () => {
       const l = document.getElementById('abstracts-list');
