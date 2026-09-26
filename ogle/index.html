@@ -790,7 +790,7 @@
     // Pick one photo at random and load only that one
     (function() {
       const photos = ['me2.jpg','me4.jpg','me5.jpg','me6.jpg'];
-      const pick = _animDone ? photos[Math.floor(Math.random() * photos.length)] : 'me1.jpg';
+      const pick = _animDone ? photos[Math.floor(Math.random() * photos.length)] : 'me.jpg';
       document.querySelector('.profile-photo').src = pick;
     })();
 
@@ -828,7 +828,7 @@
 
       if (seg.mobBr) {
         segIndex++; charIndex = 0;
-        if (segIndex === 13) { localStorage.setItem('animDone','1'); revealTab(0); setTimeout(() => revealTab(1), 250); setTimeout(() => revealTab(2), 500); setTimeout(() => revealTab(3), 750); }
+        if (segIndex === segments.length) { localStorage.setItem('animDone','1'); revealTab(0); setTimeout(() => revealTab(1), 250); setTimeout(() => revealTab(2), 500); setTimeout(() => revealTab(3), 750); }
         setTimeout(type, 0); return;
       }
 
@@ -836,7 +836,7 @@
         charIndex++;
       } else {
         segIndex++; charIndex = 0;
-        if (segIndex === 13) { localStorage.setItem('animDone','1'); revealTab(0); setTimeout(() => revealTab(1), 250); setTimeout(() => revealTab(2), 500); setTimeout(() => revealTab(3), 750); }
+        if (segIndex === segments.length) { localStorage.setItem('animDone','1'); revealTab(0); setTimeout(() => revealTab(1), 250); setTimeout(() => revealTab(2), 500); setTimeout(() => revealTab(3), 750); }
         if (segIndex >= segments.length) {
           el.innerHTML = buildHTML();
           if (!('ontouchstart' in window)) { el.contentEditable = 'true'; el.focus(); }
