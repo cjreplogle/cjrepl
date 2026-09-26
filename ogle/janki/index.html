@@ -126,8 +126,16 @@
 
     /* First-load "card" intro (mobile): center the splash like an Anki card,
        tap to grade (color flare) or scroll — then the page behaves normally. */
-    .splash { transition: margin-top 0.55s cubic-bezier(0.4, 0, 0.2, 1); }
-    body.card-mode .splash { margin-top: 38vh; }
+    .splash {
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: min-height 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    /* Card intro: the tagline fills the viewport (so the rest of the page sits
+       below the fold) and is vertically centred; dismissing animates it back. */
+    body.card-mode .splash { min-height: 100vh; }
     @media (prefers-reduced-motion: reduce) {
       .splash { transition: none; }
     }
