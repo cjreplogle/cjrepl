@@ -1198,15 +1198,14 @@ Anki's source.
         }
       }
 
-      let done = false;
-      try { done = !!sessionStorage.getItem("jankiCardDone"); } catch (e) {}
       const isMobile = window.matchMedia("(max-width: 768px)").matches;
-      if (done || !isMobile) return;
+      if (!isMobile) return;   // TESTING: shows on every refresh (no session gate yet)
 
       // Body class persists across the live re-render, so only bind handlers once.
       if (window.__cardBound) { document.body.classList.add("card-mode"); return; }
       window.__cardBound = true;
       document.body.classList.add("card-mode");
+      const shownAt = Date.now();
 
       const hint = document.createElement("div");
       hint.className = "card-hint";
@@ -1217,7 +1216,6 @@ Anki's source.
         if (!document.body.classList.contains("card-mode")) return;
         document.body.classList.remove("card-mode");
         hint.remove();
-        try { sessionStorage.setItem("jankiCardDone", "1"); } catch (e) {}
       }
 
       function flare() {
@@ -1233,8 +1231,12 @@ Anki's source.
         flare();
         setTimeout(dismiss, 230);
       });
+      // Ignore the scroll/resize the browser fires on load (URL-bar collapse);
+      // only a real downward scroll after a short grace period dismisses it.
       window.addEventListener("scroll", () => {
-        if (document.body.classList.contains("card-mode")) dismiss();
+        if (!document.body.classList.contains("card-mode")) return;
+        if (Date.now() - shownAt < 600) return;
+        if (window.scrollY > 12) dismiss();
       }, { passive: true });
     }
 
