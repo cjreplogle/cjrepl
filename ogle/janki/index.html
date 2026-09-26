@@ -1199,11 +1199,27 @@ Anki's source.
       }
 
       const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+      // TEMP: on-screen diagnostics when the URL has ?debug
+      if (/[?&]debug/.test(location.search)) {
+        let dbg = document.getElementById("carddbg");
+        if (!dbg) { dbg = document.createElement("div"); dbg.id = "carddbg"; document.body.appendChild(dbg); }
+        dbg.style.cssText = "position:fixed;top:0;left:0;z-index:99999;background:#000;color:#0f0;font:12px/1.3 monospace;padding:4px;white-space:pre;max-width:100vw";
+        dbg.textContent =
+          "w=" + window.innerWidth + " mobile=" + isMobile +
+          " splash=" + !!container.querySelector(".splash") +
+          " bound=" + !!window.__cardBound + " y=" + Math.round(window.scrollY);
+      }
+
       if (!isMobile) return;   // TESTING: shows on every refresh (no session gate yet)
 
       // Body class persists across the live re-render, so only bind handlers once.
       if (window.__cardBound) { document.body.classList.add("card-mode"); return; }
       window.__cardBound = true;
+      // Don't let the browser restore a prior scroll position (would sit past the
+      // card and let the load-time scroll dismiss it immediately).
+      try { if ("scrollRestoration" in history) history.scrollRestoration = "manual"; } catch (e) {}
+      window.scrollTo(0, 0);
       document.body.classList.add("card-mode");
       const shownAt = Date.now();
 
@@ -1295,6 +1311,12 @@ Anki's source.
       para.style.whiteSpace = "nowrap";
       window.__taglineEl = para;
       fitTagline(para);
+      // Re-fit after layout settles and once Lora is actually loaded — otherwise
+      // the width is measured with the fallback font and comes out wrong/smaller.
+      requestAnimationFrame(() => { if (window.__taglineEl === para) fitTagline(para); });
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => { if (window.__taglineEl === para) fitTagline(para); });
+      }
 
       const reduce = window.matchMedia &&
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
