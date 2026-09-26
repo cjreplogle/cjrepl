@@ -1101,6 +1101,27 @@ Anki's source.
         typeTagline(container);
     }
 
+    // Scale the tagline so its single line nearly fills the content width.
+    function fitTagline(para) {
+      if (!para || !para.parentElement) return;
+      para.style.whiteSpace = "nowrap";
+      para.style.fontSize = "";                       // reset to base before measuring
+      const avail = para.parentElement.clientWidth;
+      const base = parseFloat(getComputedStyle(para).fontSize) || 16;
+      const natural = para.scrollWidth;
+      if (natural > 0 && avail > 0) {
+        para.style.fontSize = (base * avail * 0.98 / natural) + "px";
+      }
+    }
+
+    (function () {
+      let rt;
+      window.addEventListener("resize", () => {
+        clearTimeout(rt);
+        rt = setTimeout(() => { if (window.__taglineEl) fitTagline(window.__taglineEl); }, 120);
+      });
+    })();
+
     // Type out the tagline under the title ("A feature-rich Anki client…") once per
     // visit. Keeps its inline markup (italics, the Anki link): each text node is
     // emptied and refilled character by character. The paragraph's height is pinned
@@ -1112,6 +1133,13 @@ Anki's source.
       if (!target) {
         return;
       }
+
+      const para = target.closest("p") || target;
+
+      // Size the tagline up to (just under) the content width, on one line.
+      para.style.whiteSpace = "nowrap";
+      window.__taglineEl = para;
+      fitTagline(para);
 
       const reduce = window.matchMedia &&
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1128,7 +1156,6 @@ Anki's source.
       window.__taglineGen = (window.__taglineGen || 0) + 1;
       const gen = window.__taglineGen;
 
-      const para = target.closest("p") || target;
       para.style.minHeight = para.offsetHeight + "px";
 
       const walker = document.createTreeWalker(target, NodeFilter.SHOW_TEXT);
