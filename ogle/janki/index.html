@@ -114,8 +114,15 @@
 
     /* Mock Anki cloze on the tagline's "Anki": blank [...] → revealed answer, in
        Janki's cloze blue. */
-    .cloze-mock {
+    /* Keep the tagline's "Anki" (and its [...] cloze blank/reveal) blue in every
+       state — static first paint, mid-animation, and after the reveal. */
+    p[align="center"] strong a,
+    .cloze-mock,
+    .cloze-reveal {
       color: #6db3ff !important;
+    }
+
+    .cloze-mock {
       font-weight: 700;
       text-decoration: none;
     }
@@ -502,8 +509,7 @@
   <script type="text/markdown" id="readme-source"><!--README:START-->
 # Janki
 
-<p align="center"><strong><i>A feature-rich <a href=https://github.com/ankitects/anki>Anki</a> client for MacOS, designed to expand
-Anki's core functionalities and simplify student workflows.</i></strong>
+<p align="center"><strong><i>A feature-rich <a href=https://github.com/ankitects/anki>Anki</a> client for MacOS designed around you.</i></strong>
 </p>
 
 <p align="center">
