@@ -1110,11 +1110,17 @@ Anki's source.
       const reduce = window.matchMedia &&
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-      if (window.__taglineTyped || reduce) {
+      if (reduce) {
         return;
       }
 
-      window.__taglineTyped = true;
+      // This runs on every render() — the instant baked paint and again after
+      // the live README refresh, which rebuilds the DOM. Bump a generation token
+      // so any in-flight animation from a superseded render aborts and only the
+      // current, on-screen tagline types (otherwise the refresh render would
+      // replace the animated line with static text).
+      window.__taglineGen = (window.__taglineGen || 0) + 1;
+      const gen = window.__taglineGen;
 
       const para = target.closest("p") || target;
       para.style.minHeight = para.offsetHeight + "px";
@@ -1133,6 +1139,7 @@ Anki's source.
       let pendingCloze = null;   // reveal fn for the mock cloze, run after the line
 
       function step() {
+        if (gen !== window.__taglineGen) return;   // a newer render superseded us
         while (ni < nodes.length && ci >= nodes[ni].text.length) {
           ni += 1;
           ci = 0;
