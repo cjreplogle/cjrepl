@@ -162,6 +162,12 @@
     @media (prefers-reduced-motion: reduce) {
       .splash { transition: none; }
     }
+    /* Legal / support fine print (everything after the #legal marker) — smaller. */
+    #legal ~ * {
+      font-size: 0.85em;
+      opacity: 0.8;
+    }
+    #legal ~ h2 { font-size: 1.1em; }
     .card-hint {
       position: fixed;
       left: 0;
@@ -582,7 +588,8 @@
   <script type="text/markdown" id="readme-source"><!--README:START-->
 # Janki
 
-<p align="center" style="font-weight: 400;">A feature-rich <a href=https://github.com/ankitects/anki>Anki</a> client for MacOS designed around you.</p>
+<p align="center" style="font-weight: 400;">A feature-rich <a href=https://github.com/ankitects/anki>Anki</a> client for MacOS designed around you.
+</p>
 
 <p align="center">
   <img src="docs/media/reviewer.jpg" alt="Frosted-glass reviewer" width="360">
@@ -593,8 +600,8 @@
 
 ## Install
 
-Runs as an Anki plugin and patcher on **normal, stock Anki** — no custom build or separate app.
-There are two builds — pick one (each link always downloads the latest release):
+Runs as a plugin on top of Anki. No separate app.
+Two builds — pick one (each link always downloads the latest release):
 
 - **[⬇ Download `janki.ankiaddon`](https://github.com/cjreplogle/janki/releases/latest/download/janki.ankiaddon)**
   — the full frosted-glass experience. Adds a small, self-healing, reversible
@@ -605,10 +612,9 @@ There are two builds — pick one (each link always downloads the latest release
   Designed for if you don't care for any of the other features.
 
 1. **Install Anki** (if you haven't yet) from [apps.ankiweb.net](https://apps.ankiweb.net).
-2. **[Download `janki.ankiaddon`](https://github.com/cjreplogle/janki/releases/latest/download/janki.ankiaddon)** (always the latest release).
-3. **Double-click it** (Anki opens and installs it), or in Anki:
-   **Tools → Add-ons → Install from file…** → pick the `.ankiaddon`.
-4. **Restart Anki.** On first launch Janki applies a small one-time patch to Anki
+2. **Double-click the downloaded `.ankiaddon`** (Anki opens and installs it), or in Anki:
+   **Tools → Add-ons → Install from file…** → pick the file.
+3. **Restart Anki.** On first launch Janki applies a small one-time patch to Anki
    so the frosted glass can work, then asks you to **quit and reopen once**. Do
    that, and the glass is on. From then on, just open Anki normally.
 
@@ -737,24 +743,39 @@ so nothing is left behind.
 
 These extra installs help tie together some theming:
 * [Anki Redesign](https://ankiweb.net/shared/info/2119814566) (Some menu animations)
-* [AMBOSS](https://www.amboss.com/us/anki) (Card underlines can explain terms, another integrated question bank)
 
 ## Support
-*If I sent this to you for testing. Just text me @ (513)-502-9361 if there are any issues/features
-you think will be helpful to other people!* 
+
+>[!NOTE]
+>*If I sent this to you for testing, just text me @ `(513)-502-9361` in the case there are 
+>any issues/features you think will be helpful to other people!* **Thank you for being an 
+>early user!** 
+
+<div id="legal"></div>
 
 Janki is an independent, unofficial project. It is **not affiliated with, endorsed
 by, or sponsored by** AnKing, AMBOSS, Anki / Ankitects, or any medical school.
 "AnKing," "AMBOSS," and "Anki" are trademarks of their respective owners and are
 used here only nominatively — to describe compatibility with those products. No
 AnKing or AMBOSS content is bundled or redistributed; the add-on only operates on
-your own local collection.
+your local collection.
 
-As Janki has functionalities that patch the original code of Anki to improve visuals 
-and stamp cards for mobile effects. Certain functionalities, such as Lockdown Mode, 
-may also ask for system level permissions to work properly. MacOS makes this a requirement
-for programs which automatically closing apps / disabling Wi-Fi on the device. There 
-may be bugs, issues, or inaccuracies I have not yet identified.
+Claude Opus 4.8-5.5 was used in the co-programming of this application. No features are 
+intentionally taken from other add-ons. The intention is that this centralizes and 
+streamlines use of a variety of tools in existance. If any other creators have any issue 
+with features within this app, please email me at `creplogle20@gmail.com`. I am happy to 
+accommodate any inquiries and/or get rid of things if you feel this infringes on something 
+else you have made. *Janki will never have any mandatory paid features. If you paid for any 
+part of this software, you have been scammed.*
+
+Janki has functionalities that patch the original code of Anki to improve visuals 
+and stamp cards with javascript code for mobile effects. Certain functionalities, such as
+Lockdown Mode, may also ask for system level permissions to work properly. MacOS makes this
+a requirement for programs which automatically closing apps / disabling Wi-Fi on the 
+device. There may be bugs, issues, or inaccuracies I have not yet identified. In using this 
+application therefore, I cannot be liable for any unintentional damages to user Anki data 
+or glitches. Please only upload content to non-local LLMs which you have obtained
+permission.
 
 ## License
 
