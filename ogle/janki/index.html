@@ -7,6 +7,10 @@
   <title>Janki</title>
   <script src="../marked.min.js"></script>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+
   <style>
     :root {
       color-scheme: light dark;
@@ -75,12 +79,10 @@
       background: var(--bg);
       color: var(--text);
       font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Helvetica,
-        Arial,
-        sans-serif;
+        "Lora",
+        Georgia,
+        "Times New Roman",
+        serif;
       font-size: 16px;
       line-height: 1.5;
     }
@@ -1158,6 +1160,11 @@ Anki's source.
         clearTimeout(rt);
         rt = setTimeout(() => { if (window.__taglineEl) fitTagline(window.__taglineEl); }, 120);
       });
+      // Re-fit once the Lora webfont swaps in, so the width isn't measured with
+      // the fallback font.
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => { if (window.__taglineEl) fitTagline(window.__taglineEl); });
+      }
     })();
 
     // Type out the tagline under the title ("A feature-rich Anki client…") once per
