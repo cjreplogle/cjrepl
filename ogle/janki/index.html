@@ -509,7 +509,7 @@
   <script type="text/markdown" id="readme-source"><!--README:START-->
 # Janki
 
-<p align="center" style="font-weight: 300;">A feature-rich <a href=https://github.com/ankitects/anki>Anki</a> client for MacOS designed around you.</p>
+<p align="center" style="font-weight: 400;">A feature-rich <a href=https://github.com/ankitects/anki>Anki</a> client for MacOS designed around you.</p>
 
 <p align="center">
   <img src="docs/media/reviewer.jpg" alt="Frosted-glass reviewer" width="360">
@@ -1140,8 +1140,15 @@ Anki's source.
       const range = document.createRange();
       range.selectNodeContents(para);
       const textW = range.getBoundingClientRect().width;
-      if (textW > 0 && avail > 0) {
-        para.style.fontSize = (base * avail * 0.82 / textW) + "px";
+      if (!(textW > 0 && avail > 0)) return;
+      const MIN = 22;   // don't shrink below this — wrap instead (narrow screens)
+      const fit = base * avail * 0.82 / textW;
+      if (fit >= MIN) {
+        para.style.whiteSpace = "nowrap";
+        para.style.fontSize = fit + "px";
+      } else {
+        para.style.whiteSpace = "normal";   // let it wrap at a readable size
+        para.style.fontSize = MIN + "px";
       }
     }
 
