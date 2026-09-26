@@ -126,14 +126,10 @@
 
     /* First-load "card" intro (mobile): center the splash like an Anki card,
        tap to grade (color flare) or scroll — then the page behaves normally. */
-    body.card-mode .splash {
-      min-height: 100svh;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      margin: 0;
-      transition: min-height 0.5s ease;
+    .splash { transition: margin-top 0.55s cubic-bezier(0.4, 0, 0.2, 1); }
+    body.card-mode .splash { margin-top: 38vh; }
+    @media (prefers-reduced-motion: reduce) {
+      .splash { transition: none; }
     }
     .card-hint {
       position: fixed;
@@ -1185,18 +1181,16 @@ Anki's source.
     // the left (Again/Hard/Good/Easy) — or a scroll dismisses it. After that the
     // page behaves exactly like normal. Shown once per session.
     function setupCardMode(container) {
-      // Wrap the title + tagline into a .splash block so it can be centered.
+      // Wrap just the tagline into a .splash block so it can be pushed toward the
+      // centre; the "Janki" title stays in its normal top position.
       if (!container.querySelector(".splash")) {
-        const h1 = container.querySelector("h1");
         const tag = [...container.querySelectorAll('p[align="center"]')]
           .find(el => /feature-rich/i.test(el.textContent));
-        if (h1 && tag) {
+        if (tag) {
           const splash = document.createElement("div");
           splash.className = "splash";
-          h1.parentNode.insertBefore(splash, h1);
-          const stop = tag.nextSibling;
-          let n = splash.nextSibling;
-          while (n && n !== stop) { const next = n.nextSibling; splash.appendChild(n); n = next; }
+          tag.parentNode.insertBefore(splash, tag);
+          splash.appendChild(tag);
         }
       }
 
@@ -1243,19 +1237,35 @@ Anki's source.
         setTimeout(() => f.remove(), 650);
       }
 
-      // click (not pointerdown) so a scroll gesture doesn't fire the tap flare.
-      window.addEventListener("click", () => {
+      // Tap detection via pointer events (window "click" is unreliable for taps on
+      // plain elements in iOS Safari). A short press with little movement = a tap.
+      let downX = 0, downY = 0, downT = 0;
+      window.addEventListener("pointerdown", e => {
+        downX = e.clientX; downY = e.clientY; downT = Date.now();
+      }, { passive: true });
+      window.addEventListener("pointerup", e => {
         if (!document.body.classList.contains("card-mode")) return;
-        flare();
-        setTimeout(dismiss, 230);
-      });
+        const moved = Math.abs(e.clientX - downX) + Math.abs(e.clientY - downY);
+        if (moved < 14 && Date.now() - downT < 500) {
+          flare();
+          revealCloze();
+          setTimeout(dismiss, 260);   // let the flare + reveal play, then slide up
+        }
+      }, { passive: true });
       // Ignore the scroll/resize the browser fires on load (URL-bar collapse);
       // only a real downward scroll after a short grace period dismisses it.
       window.addEventListener("scroll", () => {
         if (!document.body.classList.contains("card-mode")) return;
         if (Date.now() - shownAt < 600) return;
-        if (window.scrollY > 12) dismiss();
+        if (window.scrollY > 12) { revealCloze(); dismiss(); }
       }, { passive: true });
+    }
+
+    // Reveal the tagline's [...] cloze answer (called on the card tap/dismiss).
+    // If the line hasn't finished typing yet, ask it to reveal as soon as it does.
+    function revealCloze() {
+      if (window.__clozeReveal) { window.__clozeReveal(); window.__clozeReveal = null; }
+      else { window.__clozeWantReveal = true; }
     }
 
     // Scale the tagline so its single line nearly fills the content width.
@@ -1359,10 +1369,18 @@ Anki's source.
 
         if (ni >= nodes.length) {
           para.style.minHeight = "";
-          // Line finished → reveal the pending cloze answer.
           const reveal = pendingCloze;
           pendingCloze = null;
-          setTimeout(() => { if (reveal) reveal(); }, 450);
+          if (reveal) {
+            // In the mobile card intro, hold the answer until the card is tapped
+            // (act like a real cloze). Otherwise reveal automatically.
+            if (document.body.classList.contains("card-mode") && !window.__clozeWantReveal) {
+              window.__clozeReveal = reveal;
+            } else {
+              window.__clozeWantReveal = false;
+              setTimeout(reveal, 450);
+            }
+          }
           return;
         }
 
