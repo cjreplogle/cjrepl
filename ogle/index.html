@@ -185,6 +185,7 @@
     .rsub { cursor: pointer; font-family: Georgia, serif; font-size: 1rem; opacity: 0.4; transition: opacity 0.2s ease; }
     .rsub:hover { opacity: 0.7; }
     .rsub.active { opacity: 1; text-decoration: underline; text-underline-offset: 4px; }
+    a.rsub.cvlink { color: inherit; text-decoration: none; }
     #abstracts-list { max-height: 58vh; overflow-y: auto; overflow-x: hidden; touch-action: pan-y; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
     #abstracts-list p { font-size: 0.78rem; opacity: 0.5; line-height: 1.55; margin: 4px 0 8px; padding-left: 3em; text-indent: -1.4em; }
     .subtab { display: block; color: #fff; text-decoration: none; font-size: 1rem; opacity: 0.75; margin: 3px 0 3px 1.8em; transition: transform 0.2s ease, opacity 0.2s ease; }
@@ -301,7 +302,7 @@
   <div class="tabs">
     <button class="tab-btn" onclick="switchTab('papers', this)"><span class="selector"> </span>Research</button>
     <div id="papers" class="tab-content"><div>
-      <div class="research-subtabs"><span class="rsub active" onclick="showResearch('papers', this)">Papers</span><span class="rsub" onclick="showResearch('abstracts', this)">Presented Abstracts</span></div>
+      <div class="research-subtabs"><span class="rsub active" onclick="showResearch('papers', this)">Papers</span><span class="rsub" onclick="showResearch('abstracts', this)">Presented Abstracts</span><a class="rsub cvlink" href="plain/CJReplogle_CV.pdf" target="_blank" rel="noopener">[CV]</a></div>
       <div id="papers-list"></div>
       <div id="abstracts-list" style="display:none"></div>
     </div></div>
@@ -1153,7 +1154,20 @@
       el.classList.add('active');
       document.getElementById('papers-list').style.display = which === 'papers' ? '' : 'none';
       document.getElementById('abstracts-list').style.display = which === 'abstracts' ? '' : 'none';
+      if (which === 'abstracts') fitAbstracts();
     }
+
+    // Size the abstracts scroll box so it runs to the bottom of the viewport.
+    function fitAbstracts() {
+      const list = document.getElementById('abstracts-list');
+      if (!list || list.style.display === 'none') return;
+      const top = list.getBoundingClientRect().top;
+      list.style.maxHeight = Math.max(120, window.innerHeight - top - 16) + 'px';
+    }
+    window.addEventListener('resize', () => {
+      const l = document.getElementById('abstracts-list');
+      if (l && l.style.display !== 'none') fitAbstracts();
+    });
   </script>
 
   <script>
