@@ -1259,9 +1259,11 @@ Anki's source.
         const c = GRADE_COLORS[col];
         const f = document.createElement("div");
         f.className = "grade-flare";
-        // Glow inward from the screen borders in the grade colour (like the janki
-        // reviewer), not a spot at the finger.
-        f.style.boxShadow = "inset 0 0 24vmin 4vmin " + c;
+        // Wash the whole screen in the grade colour — faint in the centre, glowing
+        // toward every border — so it reads as the card flashing the grade.
+        f.style.background =
+          "radial-gradient(ellipse at center, " + c + "1f 0%, " + c + "5c 58%, " + c + "b8 100%)";
+        f.style.boxShadow = "inset 0 0 26vmin 3vmin " + c;
         document.body.appendChild(f);
         setTimeout(() => f.remove(), 650);
       }
