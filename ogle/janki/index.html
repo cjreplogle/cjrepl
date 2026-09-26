@@ -130,12 +130,18 @@
       min-height: 0;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       transition: min-height 0.55s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    /* Card intro: the tagline fills the viewport (so the rest of the page sits
-       below the fold) and is vertically centred; dismissing animates it back. */
+    /* Card intro: fill the viewport (page content sits below the fold); the title
+       stays at the top and the tagline is centred in the remaining space. */
     body.card-mode .splash { min-height: 100vh; }
+    body.card-mode .splash .tagline { margin-top: auto; margin-bottom: auto; }
+    /* Prominent, responsive tagline size (bigger on mobile), robust across the
+       card/typewriter timing. */
+    .tagline {
+      font-size: clamp(1.45rem, 5.2vw, 2.15rem) !important;
+      line-height: 1.35;
+    }
     @media (prefers-reduced-motion: reduce) {
       .splash { transition: none; }
     }
@@ -1186,16 +1192,21 @@ Anki's source.
     // the left (Again/Hard/Good/Easy) — or a scroll dismisses it. After that the
     // page behaves exactly like normal. Shown once per session.
     function setupCardMode(container) {
-      // Wrap just the tagline into a .splash block so it can be pushed toward the
-      // centre; the "Janki" title stays in its normal top position.
+      // Wrap the title + tagline into a .splash block. The title stays pinned to the
+      // top of the block; the tagline is auto-centred in the space below it.
       if (!container.querySelector(".splash")) {
+        const h1 = container.querySelector("h1");
         const tag = [...container.querySelectorAll('p[align="center"]')]
           .find(el => /feature-rich/i.test(el.textContent));
         if (tag) {
+          tag.classList.add("tagline");
           const splash = document.createElement("div");
           splash.className = "splash";
-          tag.parentNode.insertBefore(splash, tag);
-          splash.appendChild(tag);
+          const first = h1 || tag;
+          first.parentNode.insertBefore(splash, first);
+          const stop = tag.nextSibling;
+          let n = splash.nextSibling;
+          while (n && n !== stop) { const next = n.nextSibling; splash.appendChild(n); n = next; }
         }
       }
 
@@ -1239,14 +1250,14 @@ Anki's source.
       // columns — Again / Hard / Good / Easy — and a soft glow in that grade's
       // colour bursts from the tap point.
       const GRADE_COLORS = ["#ff5c5c", "#ffa63d", "#35d073", "#4d9dff"];
-      function flare(x, y) {
+      function flare(x) {
         const col = Math.min(3, Math.floor((x / window.innerWidth) * 4));
         const c = GRADE_COLORS[col];
         const f = document.createElement("div");
         f.className = "grade-flare";
-        f.style.background =
-          "radial-gradient(circle at " + x + "px " + y + "px, " +
-          c + " 0%, " + c + "22 38%, transparent 62%)";
+        // Glow inward from the screen borders in the grade colour (like the janki
+        // reviewer), not a spot at the finger.
+        f.style.boxShadow = "inset 0 0 24vmin 4vmin " + c;
         document.body.appendChild(f);
         setTimeout(() => f.remove(), 650);
       }
@@ -1261,7 +1272,7 @@ Anki's source.
         if (!document.body.classList.contains("card-mode")) return;
         const moved = Math.abs(e.clientX - downX) + Math.abs(e.clientY - downY);
         if (moved < 14 && Date.now() - downT < 500) {
-          flare(e.clientX, e.clientY);
+          flare(e.clientX);
           revealCloze();
           setTimeout(dismiss, 260);   // let the flare + reveal play, then slide up
         }
@@ -1332,17 +1343,7 @@ Anki's source.
       }
 
       const para = target.closest("p") || target;
-
-      // Size the tagline up to (just under) the content width, on one line.
-      para.style.whiteSpace = "nowrap";
-      window.__taglineEl = para;
-      fitTagline(para);
-      // Re-fit after layout settles and once Lora is actually loaded — otherwise
-      // the width is measured with the fallback font and comes out wrong/smaller.
-      requestAnimationFrame(() => { if (window.__taglineEl === para) fitTagline(para); });
-      if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(() => { if (window.__taglineEl === para) fitTagline(para); });
-      }
+      // (Tagline size is handled by the .tagline CSS clamp — no JS fitting.)
 
       const reduce = window.matchMedia &&
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
