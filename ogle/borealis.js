@@ -126,6 +126,6 @@ window.addEventListener('resize', () => {
   borH = Math.ceil(borCanvas.height / borCH);
 });
 
-if (!localStorage.getItem('backdrop') || localStorage.getItem('backdrop') === 'borealis')
+if (localStorage.getItem('backdrop') === 'borealis')
   window.startBorealis();
 })();

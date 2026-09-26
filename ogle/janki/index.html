@@ -779,6 +779,34 @@ Anki's source.
 
         container.innerHTML = html;
 
+        // The README embeds several autoplay+loop videos streamed from GitHub.
+        // Left as-is they all download and decode at once (100s of MB of memory),
+        // even while off-screen or in collapsed sections. Instead: don't preload,
+        // and only play the video that's actually visible — pause the rest so at
+        // most one decodes at a time.
+        (function lazyVideos() {
+          const vids = container.querySelectorAll("video");
+          if (!vids.length) return;
+          if (window.__vidIO) window.__vidIO.disconnect();
+          vids.forEach(v => {
+            v.removeAttribute("autoplay");
+            v.preload = "none";
+            v.muted = true;
+          });
+          window.__vidIO = new IntersectionObserver(entries => {
+            entries.forEach(e => {
+              const v = e.target;
+              if (e.isIntersecting) {
+                const p = v.play();
+                if (p && p.catch) p.catch(() => {});
+              } else {
+                v.pause();
+              }
+            });
+          }, { threshold: 0.25 });
+          vids.forEach(v => window.__vidIO.observe(v));
+        })();
+
         container
           .querySelectorAll("blockquote")
           .forEach(blockquote => {
