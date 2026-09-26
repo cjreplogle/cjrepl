@@ -124,6 +124,53 @@
       color: #6db3ff !important;
     }
 
+    /* First-load "card" intro (mobile): center the splash like an Anki card,
+       tap to grade (color flare) or scroll — then the page behaves normally. */
+    body.card-mode .splash {
+      min-height: 100svh;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      margin: 0;
+      transition: min-height 0.5s ease;
+    }
+    .card-hint {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 26px;
+      text-align: center;
+      font-size: 0.8rem;
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: 40;
+      animation: hintPulse 2s ease-in-out infinite;
+    }
+    @keyframes hintPulse { 50% { opacity: 0.14; } }
+    .grade-flare {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      pointer-events: none;
+      background: linear-gradient(to right,
+        #ff5c5c 0%, #ff5c5c 12%,
+        #ffa63d 38%,
+        #35d073 62%,
+        #4d9dff 88%, #4d9dff 100%);
+      opacity: 0;
+      animation: gradeFlare 0.6s ease-out forwards;
+    }
+    @keyframes gradeFlare {
+      0% { opacity: 0; }
+      22% { opacity: 0.55; }
+      100% { opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .grade-flare { animation-duration: 0.25s; }
+      body.card-mode .splash { transition: none; }
+    }
+
     .cloze-mock {
       font-weight: normal;
       text-decoration: none;
@@ -1128,6 +1175,67 @@ Anki's source.
           .replaceChildren(container);
 
         typeTagline(container);
+        setupCardMode(container);
+    }
+
+    // First load on a phone: present the splash (title + tagline) centered like an
+    // Anki card. Tapping grades it — a red→orange→green→blue flare sweeps in from
+    // the left (Again/Hard/Good/Easy) — or a scroll dismisses it. After that the
+    // page behaves exactly like normal. Shown once per session.
+    function setupCardMode(container) {
+      // Wrap the title + tagline into a .splash block so it can be centered.
+      if (!container.querySelector(".splash")) {
+        const h1 = container.querySelector("h1");
+        const tag = [...container.querySelectorAll('p[align="center"]')]
+          .find(el => /feature-rich/i.test(el.textContent));
+        if (h1 && tag) {
+          const splash = document.createElement("div");
+          splash.className = "splash";
+          h1.parentNode.insertBefore(splash, h1);
+          const stop = tag.nextSibling;
+          let n = splash.nextSibling;
+          while (n && n !== stop) { const next = n.nextSibling; splash.appendChild(n); n = next; }
+        }
+      }
+
+      let done = false;
+      try { done = !!sessionStorage.getItem("jankiCardDone"); } catch (e) {}
+      const isMobile = window.matchMedia("(max-width: 768px)").matches;
+      if (done || !isMobile) return;
+
+      // Body class persists across the live re-render, so only bind handlers once.
+      if (window.__cardBound) { document.body.classList.add("card-mode"); return; }
+      window.__cardBound = true;
+      document.body.classList.add("card-mode");
+
+      const hint = document.createElement("div");
+      hint.className = "card-hint";
+      hint.textContent = "tap to grade · or scroll";
+      document.body.appendChild(hint);
+
+      function dismiss() {
+        if (!document.body.classList.contains("card-mode")) return;
+        document.body.classList.remove("card-mode");
+        hint.remove();
+        try { sessionStorage.setItem("jankiCardDone", "1"); } catch (e) {}
+      }
+
+      function flare() {
+        const f = document.createElement("div");
+        f.className = "grade-flare";
+        document.body.appendChild(f);
+        setTimeout(() => f.remove(), 650);
+      }
+
+      // click (not pointerdown) so a scroll gesture doesn't fire the tap flare.
+      window.addEventListener("click", () => {
+        if (!document.body.classList.contains("card-mode")) return;
+        flare();
+        setTimeout(dismiss, 230);
+      });
+      window.addEventListener("scroll", () => {
+        if (document.body.classList.contains("card-mode")) dismiss();
+      }, { passive: true });
     }
 
     // Scale the tagline so its single line nearly fills the content width.
