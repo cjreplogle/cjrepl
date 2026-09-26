@@ -157,13 +157,10 @@
       inset: 0;
       z-index: 60;
       pointer-events: none;
-      background: linear-gradient(to right,
-        #ff5c5c 0%, #ff5c5c 12%,
-        #ffa63d 38%,
-        #35d073 62%,
-        #4d9dff 88%, #4d9dff 100%);
       opacity: 0;
       animation: gradeFlare 0.6s ease-out forwards;
+      /* background (a radial glow in the grade colour, from the tap point) is set
+         inline per tap; emulates the janki reviewer's grade glow. */
     }
     @keyframes gradeFlare {
       0% { opacity: 0; }
@@ -1238,9 +1235,18 @@ Anki's source.
         hint.remove();
       }
 
-      function flare() {
+      // Grade the card by where you tap (like janki): the screen splits into four
+      // columns — Again / Hard / Good / Easy — and a soft glow in that grade's
+      // colour bursts from the tap point.
+      const GRADE_COLORS = ["#ff5c5c", "#ffa63d", "#35d073", "#4d9dff"];
+      function flare(x, y) {
+        const col = Math.min(3, Math.floor((x / window.innerWidth) * 4));
+        const c = GRADE_COLORS[col];
         const f = document.createElement("div");
         f.className = "grade-flare";
+        f.style.background =
+          "radial-gradient(circle at " + x + "px " + y + "px, " +
+          c + " 0%, " + c + "22 38%, transparent 62%)";
         document.body.appendChild(f);
         setTimeout(() => f.remove(), 650);
       }
@@ -1255,7 +1261,7 @@ Anki's source.
         if (!document.body.classList.contains("card-mode")) return;
         const moved = Math.abs(e.clientX - downX) + Math.abs(e.clientY - downY);
         if (moved < 14 && Date.now() - downT < 500) {
-          flare();
+          flare(e.clientX, e.clientY);
           revealCloze();
           setTimeout(dismiss, 260);   // let the flare + reveal play, then slide up
         }
