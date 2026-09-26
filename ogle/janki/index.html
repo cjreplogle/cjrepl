@@ -1229,6 +1229,17 @@ Anki's source.
 
       const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
+      // Turn the "Janki" title into a cloze [...] too, until the card is graded.
+      // (Runs each render — incl. the live refresh — while the card is still up.)
+      if (isMobile && !window.__cardDismissed) {
+        const h1c = container.querySelector("h1");
+        if (h1c && !h1c.querySelector(".cloze-mock")) {
+          window.__titleEl = h1c;
+          window.__titleOrig = h1c.innerHTML;
+          h1c.innerHTML = '<span class="cloze-mock">[...]</span>';
+        }
+      }
+
       // TEMP: on-screen diagnostics when the URL has ?debug
       if (/[?&]debug/.test(location.search)) {
         let dbg = document.getElementById("carddbg");
@@ -1243,7 +1254,10 @@ Anki's source.
       if (!isMobile) return;   // TESTING: shows on every refresh (no session gate yet)
 
       // Body class persists across the live re-render, so only bind handlers once.
-      if (window.__cardBound) { document.body.classList.add("card-mode"); return; }
+      if (window.__cardBound) {
+        if (!window.__cardDismissed) document.body.classList.add("card-mode");
+        return;
+      }
       window.__cardBound = true;
       // Don't let the browser restore a prior scroll position (would sit past the
       // card and let the load-time scroll dismiss it immediately).
@@ -1259,8 +1273,10 @@ Anki's source.
 
       function dismiss() {
         if (!document.body.classList.contains("card-mode")) return;
+        window.__cardDismissed = true;
         document.body.classList.remove("card-mode");
         hint.remove();
+        revealTitle();
       }
 
       // Grade the card by where you tap (like janki): the screen splits into four
@@ -1293,6 +1309,7 @@ Anki's source.
         if (moved < 14 && Date.now() - downT < 500) {
           flare(e.clientX);
           revealCloze();
+          revealTitle();
           setTimeout(dismiss, 260);   // let the flare + reveal play, then slide up
         }
       }, { passive: true });
@@ -1310,6 +1327,15 @@ Anki's source.
     function revealCloze() {
       if (window.__clozeReveal) { window.__clozeReveal(); window.__clozeReveal = null; }
       else { window.__clozeWantReveal = true; }
+    }
+
+    // Restore the "Janki" title from its [...] cloze.
+    function revealTitle() {
+      if (window.__titleEl && window.__titleOrig != null) {
+        window.__titleEl.innerHTML = window.__titleOrig;
+        window.__titleEl = null;
+        window.__titleOrig = null;
+      }
     }
 
     // Scale the tagline so its single line nearly fills the content width.
