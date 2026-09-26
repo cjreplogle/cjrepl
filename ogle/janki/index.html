@@ -1342,6 +1342,8 @@ Anki's source.
       }, { passive: true });
       window.addEventListener("pointerup", e => {
         if (!document.body.classList.contains("card-mode")) return;
+        // Let the corner mark navigate to the site instead of grading the card.
+        if (e.target.closest && e.target.closest(".corner-mark")) return;
         const moved = Math.abs(e.clientX - downX) + Math.abs(e.clientY - downY);
         if (moved < 14 && Date.now() - downT < 500) {
           flare(e.clientX);
