@@ -116,7 +116,7 @@
        Janki's cloze blue. */
     /* Keep the tagline's "Anki" (and its [...] cloze blank/reveal) blue in every
        state — static first paint, mid-animation, and after the reveal. */
-    p[align="center"] strong a,
+    p[align="center"] a,
     .cloze-mock,
     .cloze-reveal {
       color: #6db3ff !important;
@@ -1131,14 +1131,15 @@ Anki's source.
     // Scale the tagline so its single line nearly fills the content width.
     function fitTagline(para) {
       if (!para || !para.parentElement) return;
-      // Measure the inline text (the <strong>), not the block <p> — the block is
-      // full-width, so its scrollWidth is the container width, not the text width.
-      const inner = para.querySelector("strong") || para;
+      // Measure the actual text width via a Range (not the block <p>, whose width
+      // is the full container), so it works regardless of inline wrapper tags.
       para.style.whiteSpace = "nowrap";
       para.style.fontSize = "";                       // reset to base before measuring
       const avail = para.clientWidth;
       const base = parseFloat(getComputedStyle(para).fontSize) || 16;
-      const textW = inner.getBoundingClientRect().width;
+      const range = document.createRange();
+      range.selectNodeContents(para);
+      const textW = range.getBoundingClientRect().width;
       if (textW > 0 && avail > 0) {
         para.style.fontSize = (base * avail * 0.98 / textW) + "px";
       }
@@ -1157,7 +1158,7 @@ Anki's source.
     // emptied and refilled character by character. The paragraph's height is pinned
     // first so the content below doesn't jump while it types.
     function typeTagline(root) {
-      const target = [...root.querySelectorAll('p[align="center"] strong')]
+      const target = [...root.querySelectorAll('p[align="center"]')]
         .find(el => /feature-rich/i.test(el.textContent));
 
       if (!target) {
@@ -1166,9 +1167,7 @@ Anki's source.
 
       const para = target.closest("p") || target;
 
-      // Size the tagline up to (just under) the content width, on one line,
-      // and drop the <strong>'s bold weight.
-      target.style.fontWeight = "normal";
+      // Size the tagline up to (just under) the content width, on one line.
       para.style.whiteSpace = "nowrap";
       window.__taglineEl = para;
       fitTagline(para);
