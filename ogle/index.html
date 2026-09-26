@@ -191,6 +191,8 @@
     .subtab:hover { transform: translateX(6px); opacity: 1; }
     .subtab .selector { width: 1.6em; }
     @media (hover: hover) { .subtab:hover .selector::before { content: '> '; display: inline-block; } }
+    .subtab.focused-sub { opacity: 1; }
+    .subtab.focused-sub .selector::before { content: '> '; display: inline-block; animation: bounce-x 0.8s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite; }
     .tab-hint {
       font-size: 0.75em;
       opacity: 0;
@@ -496,6 +498,16 @@
     }
 
     let paperFocus = -1, paperEnterTimer = null;
+    let projectFocus = -1;
+
+    function setProjectFocus(idx) {
+      const subs = document.querySelectorAll('#projects .subtab');
+      subs.forEach((a, i) => a.classList.toggle('focused-sub', i === idx));
+      projectFocus = idx;
+      const projectsBtn = document.querySelectorAll('.tabs > .tab-btn')[1];
+      if (idx >= 0) projectsBtn.classList.remove('focused');
+      else projectsBtn.classList.add('focused');
+    }
 
     function setPaperFocus(idx) {
       const entries = document.querySelectorAll('.paper-entry');
@@ -517,6 +529,7 @@
       const forfunIdx = 2;
       const subTabOrder = ['mb-content', 'tb-content', 'lj-content']; // subtab ids in order
       const papersOpen = document.getElementById('papers').classList.contains('active');
+      const projectsOpen = document.getElementById('projects').classList.contains('active');
       const forfunOpen = document.getElementById('forfun').classList.contains('active');
       const anyOpen = tabIds.slice(0, mainTabCount).some(id =>
         document.getElementById(id).classList.contains('active'));
@@ -530,6 +543,11 @@
           const entries = document.querySelectorAll('.paper-entry');
           if (paperFocus < entries.length - 1) { setPaperFocus(paperFocus + 1); return; }
           if (paperFocus >= 0) setPaperFocus(-1);
+        }
+        if (projectsOpen) {
+          const subs = document.querySelectorAll('#projects .subtab');
+          if (projectFocus < subs.length - 1) { setProjectFocus(projectFocus + 1); return; }
+          if (projectFocus >= 0) setProjectFocus(-1);
         }
         // iterate forfun subtabs
         if (forfunOpen) {
@@ -572,6 +590,8 @@
       } else {
         if (papersOpen && paperFocus > 0) { setPaperFocus(paperFocus - 1); return; }
         if (papersOpen && paperFocus === 0) { setPaperFocus(-1); return; }
+        if (projectsOpen && projectFocus > 0) { setProjectFocus(projectFocus - 1); return; }
+        if (projectsOpen && projectFocus === 0) { setProjectFocus(-1); return; }
 
         // navigate back through subtabs
         if (forfunOpen && subFocus >= 0) {
@@ -696,6 +716,7 @@
           !(e.key === 'Enter' && focusedTab >= 0)) return;
 
       const papersOpen = document.getElementById('papers').classList.contains('active');
+      const projectsOpen = document.getElementById('projects').classList.contains('active');
 
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -719,6 +740,11 @@
               if (entries[paperFocus]) entries[paperFocus].classList.toggle('open');
             }, 220);
           }
+          return;
+        }
+        if (projectsOpen && projectFocus >= 0) {
+          const subs = document.querySelectorAll('#projects .subtab');
+          if (subs[projectFocus]) window.location.href = subs[projectFocus].href;
           return;
         }
         if (focusedTab >= 0) {
