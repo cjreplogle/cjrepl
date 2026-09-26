@@ -123,7 +123,7 @@
     }
 
     .cloze-mock {
-      font-weight: 700;
+      font-weight: normal;
       text-decoration: none;
     }
 
@@ -1132,13 +1132,16 @@ Anki's source.
     // Scale the tagline so its single line nearly fills the content width.
     function fitTagline(para) {
       if (!para || !para.parentElement) return;
+      // Measure the inline text (the <strong>), not the block <p> — the block is
+      // full-width, so its scrollWidth is the container width, not the text width.
+      const inner = para.querySelector("strong") || para;
       para.style.whiteSpace = "nowrap";
       para.style.fontSize = "";                       // reset to base before measuring
-      const avail = para.parentElement.clientWidth;
+      const avail = para.clientWidth;
       const base = parseFloat(getComputedStyle(para).fontSize) || 16;
-      const natural = para.scrollWidth;
-      if (natural > 0 && avail > 0) {
-        para.style.fontSize = (base * avail * 0.98 / natural) + "px";
+      const textW = inner.getBoundingClientRect().width;
+      if (textW > 0 && avail > 0) {
+        para.style.fontSize = (base * avail * 0.98 / textW) + "px";
       }
     }
 
@@ -1164,7 +1167,9 @@ Anki's source.
 
       const para = target.closest("p") || target;
 
-      // Size the tagline up to (just under) the content width, on one line.
+      // Size the tagline up to (just under) the content width, on one line,
+      // and drop the <strong>'s bold weight.
+      target.style.fontWeight = "normal";
       para.style.whiteSpace = "nowrap";
       window.__taglineEl = para;
       fitTagline(para);
