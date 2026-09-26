@@ -1174,8 +1174,10 @@ Anki's source.
           .getElementById("content")
           .replaceChildren(container);
 
-        typeTagline(container);
+        // Card wrapping must run before the typewriter empties the tagline text
+        // (otherwise the "feature-rich" lookup finds nothing to wrap).
         setupCardMode(container);
+        typeTagline(container);
     }
 
     // First load on a phone: present the splash (title + tagline) centered like an
