@@ -134,7 +134,11 @@
     }
     /* Card intro: fill the viewport (page content sits below the fold); the title
        stays at the top and the tagline is centred in the remaining space. */
-    body.card-mode .splash { min-height: 100vh; }
+    body.card-mode .splash {
+      min-height: 100vh;    /* fallback */
+      min-height: 100lvh;   /* large viewport: covers past the mobile URL bar so
+                               no page content peeks in at the bottom */
+    }
     body.card-mode .splash .tagline { margin-top: auto; margin-bottom: auto; }
     /* Prominent, responsive tagline size (bigger on mobile), robust across the
        card/typewriter timing. */
