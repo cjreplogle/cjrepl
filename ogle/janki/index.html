@@ -1939,6 +1939,17 @@ Anki's source.
         "Rephrase": "Card Rephrasing",
         "Practice questions": "Import Question Banks",
       };
+      // Shortcuts the README only mentions inside the description; shown next to
+      // the name like the ones it puts in parentheses (Focus / Lockdown).
+      const KEYS = {
+        "Rephrase": ["Tab+R"],
+        "Practice questions": ["Tab+Q"],
+        "Caption Mode": ["Tab+\\"],
+        "Global hotkeys & remote": ["Cmd+Opt+A"],
+        "Quick Zoom": ["Cmd+", "Cmd−"],
+      };
+      const keyTag = keys => '<span class="feat-key">(' +
+        keys.map(k => `<code>${k}</code>`).join(" / ") + ")</span>";
       const h2 = [...root.querySelectorAll("h2")].find(h => /^\s*features\s*$/i.test(h.textContent));
       let list = h2 && h2.nextElementSibling;
       while (list && list.tagName !== "UL" && list.tagName !== "H2") list = list.nextElementSibling;
@@ -1950,7 +1961,12 @@ Anki's source.
         const group = document.createElement("li");
         const sub = document.createElement("ul");
         sub.className = "feat-sub";
-        qol.forEach(li => sub.appendChild(li));
+        qol.forEach(li => {
+          const name = li.querySelector("strong");
+          const keys = name && KEYS[name.textContent.trim()];
+          if (keys) name.insertAdjacentHTML("afterend", " " + keyTag(keys));
+          sub.appendChild(li);
+        });
         group.innerHTML = "<strong>Various Quality-of-Life Features</strong>";
         group.appendChild(sub);
         list.appendChild(group);
@@ -1976,7 +1992,8 @@ Anki's source.
         head.className = "feat-head";
         head.setAttribute("aria-expanded", "false");
         head.innerHTML = `<span class="feat-name">${RENAME[m[1].trim()] || m[1]}</span>` +
-          (m[2] ? `<span class="feat-key">${m[2]}</span>` : "") +
+          (m[2] ? `<span class="feat-key">${m[2]}</span>`
+            : KEYS[m[1].trim()] ? keyTag(KEYS[m[1].trim()]) : "") +
           '<span class="feat-chev">+</span>';
         head.addEventListener("click", () => {
           const open = !li.classList.contains("open");
