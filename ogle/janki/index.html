@@ -1124,6 +1124,45 @@
       color: var(--mk-zero);
       font-size: 0.7em;
     }
+    /* Guided tour: a coach bar under the window + a highlight on the target. */
+    .anki-mock .mk-tour {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 12px;
+      margin-top: 8px;
+      padding: 10px 12px;
+      font-size: 0.85rem;
+      line-height: 1.45;
+      color: var(--mk-text);
+      background: var(--mk-dlg);
+      border: 1px solid var(--mk-edge);
+      border-radius: 10px;
+      animation: mkTourIn 0.3s ease;
+    }
+    .anki-mock .mk-tour[hidden] { display: none; }
+    .mk-tour-n { margin-right: 4px; font-size: 0.8em; opacity: 0.55; }
+    .mk-tour-cz { color: var(--mk-cloze); font-weight: 700; }
+    .mk-tour-btns { display: flex; gap: 8px; margin-left: auto; }
+    .mk-tour-btns button {
+      padding: 4px 12px;
+      font: inherit;
+      font-size: 0.85em;
+      color: inherit;
+      background: none;
+      border: 1px solid var(--mk-edge);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .mk-tour-btns .next { color: #fff; background: var(--mk-cloze); border-color: transparent; }
+    .mk-win .mk-tour-hl {
+      outline: 0.18em solid var(--mk-cloze);
+      outline-offset: 0.3em;
+      border-radius: 0.4em;
+    }
+    .mk-tour-replay { cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+    @keyframes mkTourIn { from { opacity: 0; transform: translateY(-4px); } }
     .mk-caption {
       margin-top: 8px;
       font-size: 0.8rem;
@@ -2091,6 +2130,12 @@ Anki's source.
           orig: "normal cardiac pacemaker: {{sinoatrial (SA) node}}" },
         { q: 1, t: "Thiamine (vitamin B1) deficiency can cause {{Wernicke}} encephalopathy" },
         { q: 2, t: "Hemoglobin's O<sub>2</sub> affinity falls as {{2,3-BPG}} rises<br>(right shift of the dissociation curve)" },
+        { q: 0, t: "Class IC antiarrhythmics such as {{flecainide}} are contraindicated after a myocardial infarction" },
+        { q: 1, t: "In heart failure with reduced ejection fraction, {{β-blockers}} such as carvedilol lower mortality",
+          orig: "HFrEF — mortality benefit: {{β-blockers}} (carvedilol, metoprolol succinate)" },
+        { q: 2, t: "The most common cause of death in the first 24 hours after an MI is a {{ventricular arrhythmia}}" },
+        { q: 0, t: "A holosystolic murmur at the apex radiating to the axilla suggests {{mitral regurgitation}}" },
+        { q: 1, t: "{{Thiazide}} diuretics can cause hypercalcemia, while loop diuretics cause hypocalcemia" },
       ];
       const PRACTICE = [
         { q: 0, mcq: true, ans: 1,
@@ -2101,6 +2146,14 @@ Anki's source.
           t: "A deficiency of which vitamin most directly impairs synthesis of functional clotting factors II, VII, IX and X?",
           opts: ["Vitamin C", "Vitamin D", "Vitamin K", "Vitamin B12", "Vitamin A"],
           exp: "Vitamin K is the cofactor for γ-glutamyl carboxylase, which adds the carboxyl groups that let factors II, VII, IX and X (and proteins C and S) bind calcium. Without it those factors are made but don't work, so the PT rises — the same mechanism warfarin exploits." },
+        { q: 0, mcq: true, ans: 1,
+          t: "Four days after an anterior MI, a 64-year-old man develops a new holosystolic murmur and acute pulmonary edema. What is the most likely cause?",
+          opts: ["Ventricular free wall rupture", "Papillary muscle rupture", "Dressler syndrome", "Left ventricular aneurysm", "Fibrinous pericarditis"],
+          exp: "Papillary muscle rupture (usually the posteromedial muscle) typically occurs 2–7 days after an MI and causes acute mitral regurgitation — a new holosystolic murmur with sudden pulmonary edema. Free wall rupture presents as tamponade; Dressler syndrome and aneurysm come weeks later; fibrinous pericarditis (1–3 days) gives a friction rub, not a regurgitant murmur." },
+        { q: 0, mcq: true, ans: 2,
+          t: "Which drug class reduces mortality in heart failure with reduced ejection fraction?",
+          opts: ["Loop diuretics", "Digoxin", "β-blockers (e.g., carvedilol)", "Non-dihydropyridine calcium channel blockers", "Hydralazine alone"],
+          exp: "β-blockers (carvedilol, metoprolol succinate, bisoprolol) lower mortality in HFrEF, alongside ACE inhibitors/ARBs/ARNIs, mineralocorticoid antagonists and SGLT2 inhibitors. Loop diuretics relieve congestion without a survival benefit, digoxin cuts hospitalizations but not deaths, non-DHP calcium channel blockers worsen HFrEF, and hydralazine helps only when paired with a nitrate." },
       ];
       const decks = [
         { exp: "+", name: "Ranki", c: [528, 267, 228], cards: RANKI },
@@ -2135,7 +2188,7 @@ Anki's source.
             "<small>Click to return to your decks.</small></p></div>" +
           '<div class="mk-edge"></div>' +
         "</div>" +
-        '<div class="mk-caption">Try it — open <b>Ranki</b> (click to reveal, then click left → right to grade: Again · Hard · Good · Easy), answer a <b>Practice</b> question, or <b>Load Lectures</b> for a mock day.</div>';
+        '<div class="mk-caption">Try it — open <b>Ranki</b> (click to reveal, then click left → right to grade: Again · Hard · Good · Easy), answer a <b>Practice</b> question, or <b>Load Lectures</b> for a mock day. · <span class="mk-tour-replay">Take the tour</span></div>';
 
       const win = mock.querySelector(".mk-win");
       const $ = sel => win.querySelector(sel);
@@ -2149,6 +2202,7 @@ Anki's source.
       let deck = null, idx = 0, revealed = false, showOrig = false, busy = false, result = null;
       let studied = 0;   // cards graded in this demo — feeds the Stats "Today" panel
       const card = () => deck.cards[idx % deck.cards.length];
+      let tourEvent = () => {};   // guided tour hook (set up below)
 
       function renderDecks() {
         const count = (v, cls) => `<span class="${v ? cls : "z"}">${v}</span>`;
@@ -2210,6 +2264,7 @@ Anki's source.
       function reveal() {
         const c = card();
         revealed = true;
+        tourEvent("reveal");
         if (c.mcq) {
           cardEl.querySelector(`[data-opt="${c.ans}"]`).classList.add("blue");
           practiceBack();
@@ -2239,6 +2294,7 @@ Anki's source.
         busy = true;
         const c = card();
         studied += 1;
+        tourEvent(deck === practice ? "pgrade" : "grade");
         if (!quiet) flare(GRADES[g]);
         deck.c[c.q] = Math.max(0, deck.c[c.q] - 1);
         if (g === 0) deck.c[1] += 1;   // Again → back into learning
@@ -2321,15 +2377,15 @@ Anki's source.
         const go = t.closest("[data-go]");
         if (go) {
           const to = go.dataset.go;
-          if (to === "practice") open(practice);
-          else if (to === "stats") { renderStats(); setView("stats"); }
+          if (to === "practice") { open(practice); tourEvent("practice"); }
+          else if (to === "stats") { renderStats(); setView("stats"); tourEvent("stats"); }
           else setView("decks");
           return;
         }
         if (t.closest(".mk-bar")) return;
         if (t.closest("[data-lec]")) { openLectures(); return; }
         const row = t.closest("[data-deck]");
-        if (row) { open(decks[+row.dataset.deck]); return; }
+        if (row) { open(decks[+row.dataset.deck]); tourEvent("open"); return; }
         if (win.dataset.view === "done") { setView("decks"); return; }
         if (win.dataset.view !== "review") return;
         if (t.closest(".mk-chip")) { toggleOriginal(); return; }
@@ -2352,7 +2408,7 @@ Anki's source.
           return;
         }
         if (!$(".mk-lec").hidden) {
-          if (e.key === "Escape") { $(".mk-lec").hidden = true; e.preventDefault(); }
+          if (e.key === "Escape") { $(".mk-lec").hidden = true; tourEvent("lecdone"); e.preventDefault(); }
           return;
         }
         if (win.dataset.view === "done" && (e.key === " " || e.key === "Enter")) {
@@ -2385,27 +2441,34 @@ Anki's source.
       // --- Load Lectures ------------------------------------------------------
       // Placeholder calendar (day offset → events) matched against a placeholder
       // lecture → tag list; `fuzzy` rows are the "~" auto-guesses.
+      // A made-up (but realistic) cardiovascular block.
       const LECTURES = {
-        "Topic A": [120, "Ranki::TopicA"],
-        "Topic B": [80, "Ranki::TopicB"],
-        "Topic C": [150, "Ranki::TopicC"],
-        "Topic D": [60, "Ranki::TopicD"],
-        "Topic E": [100, "Ranki::TopicE"],
+        "Cardiac Electrophysiology": [96, "Ranki::Cardio::Physiology::Electrophysiology"],
+        "Antiarrhythmic Drugs": [74, "Ranki::Cardio::Pharm::Antiarrhythmics"],
+        "Heart Failure": [132, "Ranki::Cardio::Pathology::HeartFailure"],
+        "Ischemic Heart Disease": [118, "Ranki::Cardio::Pathology::IschemicHeartDisease"],
+        "Valvular Heart Disease": [88, "Ranki::Cardio::Pathology::Valves"],
+        "Antihypertensives": [104, "Ranki::Cardio::Pharm::Antihypertensives"],
+        "Congenital Heart Disease": [67, "Ranki::Cardio::Embryology::Congenital"],
+        "Lipid-Lowering Drugs": [52, "Ranki::Cardio::Pharm::Lipids"],
       };
       const SCHEDULE = {
         "-1": [
-          { ev: "Sample Lecture 1", lec: "Topic D" },
-          { ev: "Sample Lecture 2", lec: "Topic E", fuzzy: true },
+          { ev: "CV Block — Cardiac Electrophysiology", lec: "Cardiac Electrophysiology" },
+          { ev: "Embryology: Heart Tube & Septation", lec: "Congenital Heart Disease", fuzzy: true },
+          { ev: "Anatomy Lab — Mediastinum", lec: "" },
         ],
         "0": [
-          { ev: "Sample Lecture A", lec: "Topic A" },
-          { ev: "Sample Lecture B", lec: "Topic B", fuzzy: true },
-          { ev: "Sample Lecture C", lec: "Topic C" },
-          { ev: "Break", lec: "" },
+          { ev: "CV Block — Heart Failure", lec: "Heart Failure" },
+          { ev: "Pharm: Antiarrhythmics I (Na⁺ & K⁺ Channel Blockers)", lec: "Antiarrhythmic Drugs", fuzzy: true },
+          { ev: "Lunch", lec: "" },
+          { ev: "Pathology: Myocardial Infarction", lec: "Ischemic Heart Disease", fuzzy: true },
+          { ev: "Clinical Skills — Cardiac Exam", lec: "" },
         ],
         "1": [
-          { ev: "Sample Lecture X", lec: "Topic E" },
-          { ev: "Sample Event", lec: "" },
+          { ev: "CV Block — Valvular Heart Disease", lec: "Valvular Heart Disease" },
+          { ev: "Pharm: Drugs for Hypertension", lec: "Antihypertensives", fuzzy: true },
+          { ev: "Small Group: Lipid Management", lec: "Lipid-Lowering Drugs", fuzzy: true },
         ],
       };
       const lec = $(".mk-lec");
@@ -2491,6 +2554,7 @@ Anki's source.
         lec.hidden = true;
         renderDecks();
         if (act !== "close") $('[data-deck="0"]').classList.add("mk-bump");
+        tourEvent("lecdone");
       }
 
       lec.addEventListener("change", e => {
@@ -2624,6 +2688,99 @@ Anki's source.
         lecDay = 0;
         renderLec();
         lec.hidden = false;
+        tourEvent("lectures");
+      }
+
+      // --- Guided tour ---------------------------------------------------------
+      // Runs once, the first time the demo scrolls into view (replay from the
+      // caption). A coach bar sits under the window so it never covers the UI;
+      // each step highlights its target and advances when you actually do it.
+      const onRanki = () => {
+        if (win.dataset.view !== "review" || deck !== decks[0]) open(decks[0]);
+      };
+      const touch = window.matchMedia("(hover: none)").matches;
+      const Click = touch ? "Tap" : "Click", click = touch ? "tap" : "click";
+      const TOUR = [
+        { sel: '[data-deck="0"]', prep: () => setView("decks"), on: "open",
+          text: `<b>Decks.</b> This is a working Janki window. ${Click} <b>Ranki</b> to start studying.` },
+        { sel: ".mk-card", prep: onRanki, on: "reveal",
+          text: `Each <span class="mk-tour-cz">[...]</span> is a cloze hiding an answer. ${Click} the card${touch ? "" : " (or press Space)"} to reveal it.` },
+        { sel: ".mk-answer", prep: () => { onRanki(); if (!revealed) reveal(); }, on: "grade",
+          text: `Grade by where you ${click}: left edge <b style="color:#ff5c5c">Again</b> → right edge ` +
+                `<b style="color:#4d9dff">Easy</b>. The window flashes that grade’s color.` },
+        { sel: '.mk-bar [data-go="practice"]', on: "pgrade",
+          text: "<b>Practice.</b> Question banks imported straight from lecture slides. Open it and answer a question." },
+        { sel: "[data-lec]", prep: () => setView("decks"), on: "lecdone",
+          text: "<b>Load Lectures.</b> Reads your class calendar and unsuspends just today’s lecture cards. Open it, then <b>Apply</b>." },
+        { sel: '.mk-bar [data-go="stats"]', on: "stats", last: true,
+          text: "<b>Stats.</b> Open it to see what you just studied. That’s the tour!" },
+      ];
+      let tourStep = -1;
+      const tourBar = document.createElement("div");
+      tourBar.className = "mk-tour";
+      tourBar.hidden = true;
+      win.after(tourBar);
+      const caption = mock.querySelector(".mk-caption");
+
+      const clearHl = () =>
+        win.querySelectorAll(".mk-tour-hl").forEach(el => el.classList.remove("mk-tour-hl"));
+
+      function showStep(i) {
+        tourStep = i;
+        const s = TOUR[i];
+        clearHl();
+        if (s.prep) s.prep();
+        const el = win.querySelector(s.sel);
+        if (el) el.classList.add("mk-tour-hl");
+        tourBar.innerHTML =
+          `<div class="mk-tour-text"><span class="mk-tour-n">${i + 1}/${TOUR.length}</span> ${s.text}</div>` +
+          '<div class="mk-tour-btns"><button data-tour="skip">Skip tour</button>' +
+          `<button class="next" data-tour="next">${s.last ? "Done" : "Next →"}</button></div>`;
+        tourBar.hidden = false;
+        caption.hidden = true;
+      }
+
+      function endTour(finished) {
+        tourStep = -1;
+        clearHl();
+        tourBar.hidden = true;
+        caption.hidden = false;
+        try { localStorage.setItem("jankiTourDone", "1"); } catch (e) {}
+        if (finished) toast("That’s the tour — explore freely!");
+      }
+
+      function nextStep() {
+        if (tourStep < 0) return;
+        if (tourStep >= TOUR.length - 1) endTour(true);
+        else showStep(tourStep + 1);
+      }
+
+      tourEvent = name => {
+        if (tourStep < 0 || TOUR[tourStep].on !== name) return;
+        const at = tourStep;
+        setTimeout(() => { if (tourStep === at) nextStep(); },
+          name === "grade" || name === "pgrade" ? 450 : 250);
+      };
+
+      tourBar.addEventListener("click", e => {
+        const b = e.target.closest("[data-tour]");
+        if (!b) return;
+        if (b.dataset.tour === "skip") endTour(false);
+        else nextStep();
+      });
+      mock.addEventListener("click", e => {
+        if (e.target.closest(".mk-tour-replay")) showStep(0);
+      });
+
+      let toured = false;
+      try { toured = !!localStorage.getItem("jankiTourDone"); } catch (e) {}
+      if (!toured && "IntersectionObserver" in window) {
+        const io = new IntersectionObserver(entries => {
+          if (!entries.some(en => en.isIntersecting)) return;
+          io.disconnect();
+          setTimeout(() => { if (tourStep < 0) showStep(0); }, 500);
+        }, { threshold: 0.6 });
+        io.observe(win);
       }
 
       renderDecks();
