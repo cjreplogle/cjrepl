@@ -770,7 +770,9 @@
       { mobBr: true },
       { text: "I'm currently a first-year medical student @ " },
       { text: "University of Cincinnati", link: "https://med.uc.edu" },
-      { text: ". " }
+      { text: ". " },
+      { br: true },
+      { text: "This website should compile a lot of the interesting things I've done." }
     ];
 
     const el = document.getElementById('typed');
@@ -788,7 +790,7 @@
           if (i === segIndex) break;
           continue;
         }
-        if (seg.mobBr) { chars.push({ mobBr: true }); if (i === segIndex) break; continue; }
+        if (seg.mobBr || seg.br) { chars.push({ mobBr: true, br: !!seg.br }); if (i === segIndex) break; continue; }
         const text = i < segIndex ? seg.text : seg.text.slice(0, charIndex);
         for (const ch of text) chars.push({ ch, bold: seg.bold || false, link: seg.link || null, sub: i >= 4 });
         if (i === segIndex) break;
@@ -797,7 +799,7 @@
       let html = '', j = 0;
       while (j < chars.length) {
         const c = chars[j];
-        if (c.mobBr) { html += '<br class="mob-br">'; j++; }
+        if (c.mobBr) { html += c.br ? '<br>' : '<br class="mob-br">'; j++; }
         else if (c.bold) {
           let s = ''; while (j < chars.length && chars[j].bold) s += chars[j++].ch;
           html += `<strong>${s}</strong>`;
@@ -861,7 +863,7 @@
         return;
       }
 
-      if (seg.mobBr) {
+      if (seg.mobBr || seg.br) {
         segIndex++; charIndex = 0;
         if (segIndex === segments.length) { localStorage.setItem('animDone','1'); revealTab(0); setTimeout(() => revealTab(1), 250); setTimeout(() => revealTab(2), 500); setTimeout(() => revealTab(3), 750); }
         setTimeout(type, 0); return;
