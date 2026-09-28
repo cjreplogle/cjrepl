@@ -965,6 +965,14 @@
       animation: mkToast 2.6s ease forwards;
       pointer-events: none;
     }
+    .mk-toast.mk-toast-big {
+      bottom: 42%;
+      padding: 0.7em 1.4em;
+      font-size: 1.7em;
+      font-weight: 600;
+      border-radius: 0.5em;
+      animation-duration: 3.5s;
+    }
     @keyframes mkToast {
       0% { opacity: 0; transform: translateY(0.6em); }
       10%, 80% { opacity: 1; transform: none; }
@@ -2751,13 +2759,13 @@ Anki's source.
         lec.dataset.total = total;
       }
 
-      function toast(text) {
+      function toast(text, big = false) {
         win.querySelectorAll(".mk-toast").forEach(old => old.remove());   // newest wins
         const t = document.createElement("div");
-        t.className = "mk-toast";
+        t.className = "mk-toast" + (big ? " mk-toast-big" : "");
         t.textContent = text;
         win.appendChild(t);
-        setTimeout(() => t.remove(), 2700);
+        setTimeout(() => t.remove(), big ? 3600 : 2700);
       }
 
       // Unsuspending adds the day's cards to Ranki's New count.
@@ -3005,7 +3013,7 @@ Anki's source.
         caption.hidden = false;
         win.focus({ preventScroll: true });
         try { localStorage.setItem("jankiTourDone", "1"); } catch (e) {}
-        if (finished) toast("That’s the tour — explore freely!");
+        if (finished) toast("That’s the tour — explore freely!", true);
       }
 
       function nextStep() {
