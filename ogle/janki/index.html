@@ -561,6 +561,10 @@
       --mk-go: #1f7a45;
       --mk-dlg: #ffffff;
       --mk-warn: #9a6700;
+      --mk-g0: #c43b3b; --mk-g0b: #f9e0e0;
+      --mk-g1: #b0650f; --mk-g1b: #faebd8;
+      --mk-g2: #1f8745; --mk-g2b: #dcf1e3;
+      --mk-g3: #2b6cc4; --mk-g3b: #dde9fa;
       container-type: inline-size;
       /* Shrink on short windows so the mock + the preview arrow fit on screen
          (≈430px of title, tagline, caption and arrow around a 1800:1130 window). */
@@ -590,6 +594,10 @@
         --mk-go: #8ff0b0;
         --mk-dlg: #1c1d21;
         --mk-warn: #e3b341;
+        --mk-g0: #ff8585; --mk-g0b: #3d2024;
+        --mk-g1: #f0a45a; --mk-g1b: #3b2b1c;
+        --mk-g2: #5fd081; --mk-g2b: #173220;
+        --mk-g3: #80b3ff; --mk-g3b: #1a2b46;
       }
     }
     .mk-win {
@@ -865,6 +873,8 @@
       text-align: center;
       background: var(--mk-pill);
     }
+    .mk-lec-title { cursor: grab; touch-action: none; }
+    .mk-lec.mk-dragging .mk-lec-title { cursor: grabbing; }
     .mk-lec-title .mk-lights { top: 0.7em; left: 0.8em; gap: 0.45em; }
     .mk-lec-title .mk-lights i { width: 0.9em; height: 0.9em; }
     .mk-lec-body { padding: 0.8em 1em 0.9em; }
@@ -1073,6 +1083,30 @@
       justify-content: center;
     }
     .mk-answer > *:hover { background: var(--mk-hover); }
+    /* Janki's grade buttons: separate tinted pills, interval label above each. */
+    .mk-answer.mk-grades {
+      height: 2.35em;
+      gap: 0.8em;
+      background: none;
+      overflow: visible;
+    }
+    .mk-answer > .mk-g { position: relative; border-radius: 0.55em; }
+    .mk-answer > .mk-g em {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: calc(100% + 0.4em);
+      font-size: 0.88em;
+      font-style: normal;
+      text-align: center;
+      color: inherit;
+    }
+    .mk-answer > .mk-g0 { color: var(--mk-g0); background: var(--mk-g0b); }
+    .mk-answer > .mk-g1 { color: var(--mk-g1); background: var(--mk-g1b); }
+    .mk-answer > .mk-g2 { color: var(--mk-g2); background: var(--mk-g2b); }
+    .mk-answer > .mk-g3 { color: var(--mk-g3); background: var(--mk-g3b); }
+    .mk-answer > .mk-g:hover { filter: brightness(1.18); }
+    .mk-review:has(.mk-grades) .mk-counts { visibility: hidden; }
     .mk-timer {
       position: absolute;
       top: 0.55em;
@@ -1082,7 +1116,41 @@
       transform: rotate(-90deg);
       display: none;
     }
-    .mk-win[data-view="review"] .mk-timer { display: block; }
+    .mk-win.mk-focus[data-view="review"] .mk-timer { display: block; }
+    .mk-win.mk-focus[data-view="review"] .mk-bar,
+    .mk-win.mk-focus[data-view="review"] .mk-answer,
+    .mk-win.mk-focus[data-view="review"] .mk-counts { opacity: 0; pointer-events: none; }
+    /* Related question: a tab on the card's corner. */
+    .mk-rel {
+      position: absolute;
+      top: 5.4em;
+      right: 0;
+      padding: 0.45em 0.8em 0.45em 0.9em;
+      font-size: 0.8em;
+      font-weight: 700;
+      color: var(--mk-practice);
+      background: var(--mk-pill);
+      border: 1px solid var(--mk-edge);
+      border-right: none;
+      border-radius: 0.7em 0 0 0.7em;
+      cursor: pointer;
+    }
+    .mk-rel:hover { background: var(--mk-hover); }
+    .mk-rel[hidden] { display: none; }
+    .mk-focus-btn {
+      position: absolute;
+      top: 0.5em;
+      right: 2.9em;
+      padding: 0.3em 0.7em;
+      font-size: 0.75em;
+      font-weight: 600;
+      color: var(--mk-zero);
+      border: 1px solid var(--mk-edge);
+      border-radius: 1em;
+      cursor: pointer;
+    }
+    .mk-focus-btn:hover { color: var(--mk-text); }
+    .mk-win.mk-focus .mk-focus-btn { color: var(--mk-cloze); border-color: var(--mk-cloze); }
     .mk-timer circle {
       fill: none;
       stroke-width: 2.4;
@@ -2122,20 +2190,48 @@ Anki's source.
       const GRADES = ["#ff5c5c", "#ffa63d", "#35d073", "#4d9dff"];
       const GRADE_NAMES = ["Again", "Hard", "Good", "Easy"];
       const TIMER_SECS = 12;
+      // Next-review intervals shown above the grade buttons, by queue (new / learn / due).
+      const INTERVALS = [["<1m", "<6m", "<10m", "4d"], ["<10m", "15m", "1d", "4d"], ["<15m", "23m", "2d", "7d"]];
 
       // Cards: {{answer}} marks the cloze; `orig` is the un-rephrased wording.
+      // Questions tied to specific cards (the corner "Related question" tab, and
+      // what Janki intersperses into reviews).
+      const REL = {
+        t1dm: { q: 0, mcq: true, ans: 1,
+          t: "A 12-year-old presents with polyuria, weight loss and diabetic ketoacidosis. Autoimmune destruction of which cells is responsible?",
+          opts: ["Pancreatic α cells", "Pancreatic β cells", "Pancreatic δ cells", "Acinar cells", "PP (F) cells"],
+          exp: "Type 1 diabetes is autoimmune destruction of the β cells, which make insulin. Without insulin, lipolysis and ketogenesis run unchecked, producing DKA. α cells make glucagon, δ cells somatostatin, acinar cells digestive enzymes, and PP cells pancreatic polypeptide." },
+        pacer: { q: 0, mcq: true, ans: 2,
+          t: "Which part of the conduction system has the fastest intrinsic firing rate and so sets the heart rate?",
+          opts: ["AV node", "Bundle of His", "SA node", "Purkinje fibers", "Left bundle branch"],
+          exp: "The SA node depolarizes spontaneously fastest (about 60–100/min, via the funny current I<sub>f</sub>), overriding slower pacemakers: the AV node (~40–60/min) and Purkinje fibers (~20–40/min) take over only if it fails. Purkinje fibers conduct fastest — that's speed, not rate." },
+        b1: { q: 0, mcq: true, ans: 2,
+          t: "A man with chronic alcohol use presents with confusion, ophthalmoplegia and ataxia. Which vitamin should be given before glucose?",
+          opts: ["Folate", "Vitamin B12", "Thiamine (B1)", "Niacin (B3)", "Pyridoxine (B6)"],
+          exp: "This is Wernicke encephalopathy from thiamine deficiency. Thiamine is a cofactor for pyruvate dehydrogenase and α-ketoglutarate dehydrogenase; giving glucose first can use up what's left and worsen it, so thiamine goes in first." },
+      };
+
+      // Cards: {{answer}} marks the cloze; `t` is Janki's rephrase, `orig` the
+      // deck's original wording; `rel` is a related question.
       const RANKI = [
-        { q: 0, t: "Insulin is secreted by the {{β cells}} of the pancreatic islets" },
+        { q: 0, t: "Insulin is secreted by the {{β cells}} of the pancreatic islets",
+          orig: "Insulin source: pancreatic {{β cells}} (islets of Langerhans)", rel: REL.t1dm },
         { q: 2, t: "The heart's natural pacemaker is the {{sinoatrial (SA) node}}, found in the right atrium",
-          orig: "normal cardiac pacemaker: {{sinoatrial (SA) node}}" },
-        { q: 1, t: "Thiamine (vitamin B1) deficiency can cause {{Wernicke}} encephalopathy" },
-        { q: 2, t: "Hemoglobin's O<sub>2</sub> affinity falls as {{2,3-BPG}} rises<br>(right shift of the dissociation curve)" },
-        { q: 0, t: "Class IC antiarrhythmics such as {{flecainide}} are contraindicated after a myocardial infarction" },
+          orig: "normal cardiac pacemaker: {{sinoatrial (SA) node}}", rel: REL.pacer },
+        { q: 1, t: "Thiamine (vitamin B1) deficiency can cause {{Wernicke}} encephalopathy",
+          orig: "B1 deficiency → {{Wernicke}} encephalopathy (confusion, ophthalmoplegia, ataxia)", rel: REL.b1 },
+        { q: 2, t: "Hemoglobin's O<sub>2</sub> affinity falls as {{2,3-BPG}} rises<br>(right shift of the dissociation curve)",
+          orig: "↑ {{2,3-BPG}} → ↓ Hb O<sub>2</sub> affinity (right shift)" },
+        { q: 0, t: "Class IC antiarrhythmics such as {{flecainide}} are contraindicated after a myocardial infarction",
+          orig: "Post-MI: avoid class IC ({{flecainide}}) — ↑ mortality (CAST trial)" },
         { q: 1, t: "In heart failure with reduced ejection fraction, {{β-blockers}} such as carvedilol lower mortality",
           orig: "HFrEF — mortality benefit: {{β-blockers}} (carvedilol, metoprolol succinate)" },
-        { q: 2, t: "The most common cause of death in the first 24 hours after an MI is a {{ventricular arrhythmia}}" },
-        { q: 0, t: "A holosystolic murmur at the apex radiating to the axilla suggests {{mitral regurgitation}}" },
-        { q: 1, t: "{{Thiazide}} diuretics can cause hypercalcemia, while loop diuretics cause hypocalcemia" },
+        { q: 2, t: "The most common cause of death in the first 24 hours after an MI is a {{ventricular arrhythmia}}",
+          orig: "#1 cause of death in the first 24 h post-MI: {{ventricular arrhythmia}}" },
+        { q: 0, t: "A holosystolic murmur at the apex radiating to the axilla suggests {{mitral regurgitation}}",
+          orig: "Holosystolic apical murmur → axilla = {{mitral regurgitation}}" },
+        { q: 1, t: "{{Thiazide}} diuretics can cause hypercalcemia, while loop diuretics cause hypocalcemia",
+          orig: "{{Thiazides}} → hyperCa<sup>2+</sup>; loops → hypoCa<sup>2+</sup>" },
       ];
       const PRACTICE = [
         { q: 0, mcq: true, ans: 1,
@@ -2155,6 +2251,10 @@ Anki's source.
           opts: ["Loop diuretics", "Digoxin", "β-blockers (e.g., carvedilol)", "Non-dihydropyridine calcium channel blockers", "Hydralazine alone"],
           exp: "β-blockers (carvedilol, metoprolol succinate, bisoprolol) lower mortality in HFrEF, alongside ACE inhibitors/ARBs/ARNIs, mineralocorticoid antagonists and SGLT2 inhibitors. Loop diuretics relieve congestion without a survival benefit, digoxin cuts hospitalizations but not deaths, non-DHP calcium channel blockers worsen HFrEF, and hydralazine helps only when paired with a nitrate." },
       ];
+      // MI / heart-failure cards reuse the bank's vignettes as their related questions.
+      RANKI[5].rel = PRACTICE[3];
+      RANKI[6].rel = RANKI[7].rel = PRACTICE[2];
+
       const decks = [
         { exp: "+", name: "Ranki", c: [528, 267, 228], cards: RANKI },
       ];
@@ -2181,6 +2281,8 @@ Anki's source.
           '<div class="mk-view mk-review">' +
             '<div class="mk-card"></div>' +
             '<span class="mk-chip" hidden></span>' +
+            '<span class="mk-rel" hidden>Related question</span>' +
+            '<span class="mk-focus-btn">Focus</span>' +
             '<div class="mk-counts"></div>' +
             '<div class="mk-answer"></div>' +
           "</div>" +
@@ -2188,7 +2290,7 @@ Anki's source.
             "<small>Click to return to your decks.</small></p></div>" +
           '<div class="mk-edge"></div>' +
         "</div>" +
-        '<div class="mk-caption">Try it — open <b>Ranki</b> (click to reveal, then click left → right to grade: Again · Hard · Good · Easy), answer a <b>Practice</b> question, or <b>Load Lectures</b> for a mock day. · <span class="mk-tour-replay">Take the tour</span></div>';
+        '<div class="mk-caption"><span class="mk-tour-replay">Take the tour</span></div>';
 
       const win = mock.querySelector(".mk-win");
       const $ = sel => win.querySelector(sel);
@@ -2196,12 +2298,17 @@ Anki's source.
       const chip = $(".mk-chip");
       const timer = $(".mk-timer");
       const edge = $(".mk-edge");
+      const relBtn = $(".mk-rel");
+      const focusBtn = $(".mk-focus-btn");
       timer.style.setProperty("--mk-secs", TIMER_SECS + "s");
 
       // `result` is the practice pick: null (none yet), true (right) or false (wrong).
       let deck = null, idx = 0, revealed = false, showOrig = false, busy = false, result = null;
+      // A related question shown in place of the current card ("corner" = pulled
+      // from the corner tab, "after" = interspersed by Janki after a review).
+      let detour = null, detourKind = "", rankiDone = 0, focusOn = false, tabHeld = false;
       let studied = 0;   // cards graded in this demo — feeds the Stats "Today" panel
-      const card = () => deck.cards[idx % deck.cards.length];
+      const card = () => detour || deck.cards[idx % deck.cards.length];
       let tourEvent = () => {};   // guided tour hook (set up below)
 
       function renderDecks() {
@@ -2253,8 +2360,14 @@ Anki's source.
           : cloze(c.t, false);
         chip.hidden = !c.orig;
         chip.textContent = "↻ Rephrased · show original";
+        relBtn.hidden = !!(detour || c.mcq || !c.rel);
+        if (detour) {
+          chip.hidden = false;
+          chip.textContent = detourKind === "after" ? "↳ Interspersed · related question" : "↳ Related question";
+        }
         $(".mk-counts").innerHTML = ["n", "l", "d"]
           .map((k, i) => `<span class="${k}${i === c.q ? " u" : ""}">${deck.c[i]}</span>`).join(" + ");
+        $(".mk-answer").classList.remove("mk-grades");
         $(".mk-answer").innerHTML = '<span data-show>Show Answer</span>';
         timer.classList.remove("run");
         void timer.getBoundingClientRect();
@@ -2276,8 +2389,12 @@ Anki's source.
             el.classList.add("mk-ans");
           });
         }
-        $(".mk-answer").innerHTML = GRADE_NAMES
-          .map((g, i) => `<span data-grade="${i}" style="color:${GRADES[i]}">${g}</span>`).join("");
+        // Janki's answer bar: four tinted pills, next interval above each.
+        const ivl = INTERVALS[c.q] || INTERVALS[2];
+        const bar = $(".mk-answer");
+        bar.classList.add("mk-grades");
+        bar.innerHTML = GRADE_NAMES
+          .map((g, i) => `<span data-grade="${i}" class="mk-g mk-g${i}"><em>${ivl[i]}</em>${g}</span>`).join("");
       }
 
       function flare(color) {
@@ -2299,7 +2416,39 @@ Anki's source.
         deck.c[c.q] = Math.max(0, deck.c[c.q] - 1);
         if (g === 0) deck.c[1] += 1;   // Again → back into learning
         idx += 1;
+        // Every few reviews Janki intersperses a question related to the card
+        // you just studied.
+        if (deck !== practice && ++rankiDone % 3 === 0 && c.rel) {
+          setTimeout(() => startDetour(c, "after"), 260);
+          return;
+        }
         setTimeout(showCard, 260);
+      }
+
+      function startDetour(src, kind) {
+        detour = src.rel;
+        detourKind = kind;
+        showCard();
+      }
+
+      function endDetour() {
+        detour = null;
+        tourEvent("relend");
+        showCard();   // corner → back to the same card; interspersed → the next one
+      }
+
+      // Focus Mode: only the card on screen, plus the timer ring.
+      function setFocus(on) {
+        if (focusOn === on) return;
+        focusOn = on;
+        win.classList.toggle("mk-focus", on);
+        focusBtn.textContent = on ? "Focus: on" : "Focus";
+        if (on) {
+          timer.classList.remove("run");
+          void timer.getBoundingClientRect();
+          timer.classList.add("run");
+        }
+        tourEvent(on ? "focuson" : "focusoff");
       }
 
       // Practice questions: the pick IS the grade (right → Easy, wrong → Hard, as
@@ -2355,12 +2504,13 @@ Anki's source.
           ex.querySelector(".mk-explain-t").textContent = body.hidden ? "+" : "−";
         };
         link.after(ex);
+        $(".mk-answer").classList.remove("mk-grades");
         $(".mk-answer").innerHTML = '<span class="mk-continue" data-continue>Continue →</span>';
       }
 
       // No pick (Show Answer) counts as a miss. The pick already flashed the card,
       // so Continue moves on without a second flare.
-      const practiceContinue = () => grade(result ? 3 : 1, { quiet: true });
+      const practiceContinue = () => detour ? endDetour() : grade(result ? 3 : 1, { quiet: true });
 
       function toggleOriginal() {
         const c = card();
@@ -2388,7 +2538,9 @@ Anki's source.
         if (row) { open(decks[+row.dataset.deck]); tourEvent("open"); return; }
         if (win.dataset.view === "done") { setView("decks"); return; }
         if (win.dataset.view !== "review") return;
-        if (t.closest(".mk-chip")) { toggleOriginal(); return; }
+        if (t.closest(".mk-rel")) { startDetour(card(), "corner"); tourEvent("related"); return; }
+        if (t.closest(".mk-focus-btn")) { setFocus(!focusOn); return; }
+        if (t.closest(".mk-chip")) { if (!detour) toggleOriginal(); return; }
         if (t.closest("[data-continue]")) { practiceContinue(); return; }
         const gb = t.closest("[data-grade]");
         if (gb) { grade(+gb.dataset.grade); return; }
@@ -2401,7 +2553,21 @@ Anki's source.
         grade(Math.min(3, Math.floor((e.clientX - r.left) / r.width * 4)));
       });
 
+      // Janki's Tab chords while reviewing: Tab+F = Focus Mode, Tab+Q = related question.
+      win.addEventListener("keyup", e => { if (e.key === "Tab") tabHeld = false; });
+      win.addEventListener("blur", () => { tabHeld = false; });
       win.addEventListener("keydown", e => {
+        if (win.dataset.view === "review") {
+          if (e.key === "Tab") { tabHeld = true; e.preventDefault(); return; }
+          const k = e.key.toLowerCase();
+          if (tabHeld && k === "f") { setFocus(!focusOn); e.preventDefault(); return; }
+          if (tabHeld && k === "q" && !detour && !card().mcq && card().rel) {
+            startDetour(card(), "corner");
+            tourEvent("related");
+            e.preventDefault();
+            return;
+          }
+        }
         if (win.dataset.view === "stats" && e.key === "Escape") {
           setView("decks");
           e.preventDefault();
@@ -2684,7 +2850,32 @@ Anki's source.
         $(".mk-stats").scrollTop = 0;
       }
 
+      // Drag the Lectures dialog by its title bar (kept inside the window).
+      let lecDX = 0, lecDY = 0;
+      lec.addEventListener("pointerdown", e => {
+        if (!e.target.closest(".mk-lec-title") || e.target.closest("[data-lecact]")) return;
+        e.preventDefault();
+        const wr = win.getBoundingClientRect(), lr = lec.getBoundingClientRect();
+        const baseL = lr.left - lecDX - wr.left, baseT = lr.top - lecDY - wr.top;
+        const sx = e.clientX - lecDX, sy = e.clientY - lecDY;
+        const move = ev => {
+          lecDX = Math.max(-baseL, Math.min(wr.width - lr.width - baseL, ev.clientX - sx));
+          lecDY = Math.max(-baseT, Math.min(wr.height - 32 - baseT, ev.clientY - sy));
+          lec.style.transform = `translate(${lecDX}px, ${lecDY}px)`;
+        };
+        const up = () => {
+          window.removeEventListener("pointermove", move);
+          window.removeEventListener("pointerup", up);
+          lec.classList.remove("mk-dragging");
+        };
+        window.addEventListener("pointermove", move);
+        window.addEventListener("pointerup", up);
+        lec.classList.add("mk-dragging");
+      });
+
       function openLectures() {
+        lecDX = lecDY = 0;
+        lec.style.transform = "";
         lecDay = 0;
         renderLec();
         lec.hidden = false;
@@ -2698,21 +2889,29 @@ Anki's source.
       const onRanki = () => {
         if (win.dataset.view !== "review" || deck !== decks[0]) open(decks[0]);
       };
+      const withRel = () => {
+        onRanki();
+        if (!detour && !card().rel) { idx = deck.cards.findIndex(x => x.rel); showCard(); }
+      };
       const touch = window.matchMedia("(hover: none)").matches;
       const Click = touch ? "Tap" : "Click", click = touch ? "tap" : "click";
       const TOUR = [
         { sel: '[data-deck="0"]', prep: () => setView("decks"), on: "open",
           text: `<b>Decks.</b> This is a working Janki window. ${Click} <b>Ranki</b> to start studying.` },
         { sel: ".mk-card", prep: onRanki, on: "reveal",
-          text: `Each <span class="mk-tour-cz">[...]</span> is a cloze hiding an answer. ${Click} the card${touch ? "" : " (or press Space)"} to reveal it.` },
+          text: `Each <span class="mk-tour-cz">[...]</span> is a cloze hiding an answer. ${Click} the card${touch ? "" : " (or press Space)"} to reveal it. <b>↻ Rephrased</b> cards can flip back to the deck's original wording.` },
         { sel: ".mk-answer", prep: () => { onRanki(); if (!revealed) reveal(); }, on: "grade",
           text: `Grade by where you ${click}: left edge <b style="color:#ff5c5c">Again</b> → right edge ` +
                 `<b style="color:#4d9dff">Easy</b>. The window flashes that grade’s color.` },
-        { sel: '.mk-bar [data-go="practice"]', on: "pgrade",
+        { sel: ".mk-rel", prep: withRel, on: "relend",
+          text: `<b>Related questions.</b> ${Click} the <b>Related question</b> tab in the corner to pull a practice question tied to this card — Janki also intersperses them into your reviews on its own. Answer it to continue.` },
+        { sel: ".mk-focus-btn", prep: onRanki, on: "focusoff",
+          text: `<b>Focus Mode.</b> ${Click} <b>Focus</b>${touch ? "" : " (or Tab+F)"} to strip away everything but the card and start a timer ring — linger too long and the edges flare red. Then turn it back off.` },
+        { sel: '.mk-bar [data-go="practice"]', prep: () => setFocus(false), on: "pgrade",
           text: "<b>Practice.</b> Question banks imported straight from lecture slides. Open it and answer a question." },
-        { sel: "[data-lec]", prep: () => setView("decks"), on: "lecdone",
+        { sel: "[data-lec]", prep: () => { setFocus(false); setView("decks"); }, on: "lecdone",
           text: "<b>Load Lectures.</b> Reads your class calendar and unsuspends just today’s lecture cards. Open it, then <b>Apply</b>." },
-        { sel: '.mk-bar [data-go="stats"]', on: "stats", last: true,
+        { sel: '.mk-bar [data-go="stats"]', prep: () => setFocus(false), on: "stats", last: true,
           text: "<b>Stats.</b> Open it to see what you just studied. That’s the tour!" },
       ];
       let tourStep = -1;
