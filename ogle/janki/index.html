@@ -736,6 +736,13 @@
       text-align: center;
     }
     .mk-card.mk-in { animation: fadeIn 0.35s ease-out; }
+    /* Focus Mode slides the card down to the vertical center (the separate
+       `translate` property doesn't fight the fadeIn transform). */
+    .mk-card {
+      translate: 0 0;
+      transition: top 0.45s cubic-bezier(0.4, 0, 0.2, 1), translate 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .mk-win.mk-focus .mk-card:not(.mk-mcq) { top: 50%; translate: 0 -50%; }
     .mk-cloze {
       font-weight: 700;
       color: var(--mk-cloze);
@@ -2898,7 +2905,7 @@ Anki's source.
         { sel: ".mk-focus-btn", prep: onRanki, on: "focusoff",
           text: `<b>Focus Mode.</b> ${Click} <b>Focus</b>${touch ? "" : " (or Tab+F)"} to strip away everything but the card and start a timer ring — linger too long and the edges flare red. Then turn it back off.` },
         { sel: '.mk-bar [data-go="practice"]', prep: () => setFocus(false), on: "pgrade",
-          text: "<b>Practice.</b> Question banks imported straight from lecture slides. Open it and answer a question." },
+          text: "<b>Practice.</b> Import and automatically process your own practice question banks from .pptx, .docx, or .qb. Open it and answer a question." },
         { sel: "[data-lec]", prep: () => { setFocus(false); setView("decks"); }, on: "lecdone",
           text: "<b>Load Lectures.</b> Reads your class calendar and unsuspends just today’s lecture cards. Open it, then <b>Apply</b>." },
         { sel: '.mk-bar [data-go="stats"]', prep: () => setFocus(false), on: "stats", last: true,
