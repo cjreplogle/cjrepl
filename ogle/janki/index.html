@@ -554,6 +554,13 @@
       --mk-hover: #0000000d;
       --mk-opt: #ffffff;
       --mk-cloze: #1d6fd6;
+      --mk-fill-right: #e3f4e8;
+      --mk-fill-wrong: #f8e3e3;
+      --mk-exp: #3f444c;
+      --mk-exp-h: #4a6390;
+      --mk-go: #1f7a45;
+      --mk-dlg: #ffffff;
+      --mk-warn: #9a6700;
       container-type: inline-size;
       max-width: 900px;
       margin: 0 auto 24px;
@@ -574,6 +581,13 @@
         --mk-hover: #ffffff0f;
         --mk-opt: #ffffff08;
         --mk-cloze: #5aa0ff;
+        --mk-fill-right: #18271d;
+        --mk-fill-wrong: #2b181b;
+        --mk-exp: #cfd3da;
+        --mk-exp-h: #9fb4d8;
+        --mk-go: #8ff0b0;
+        --mk-dlg: #1c1d21;
+        --mk-warn: #e3b341;
       }
     }
     .mk-win {
@@ -720,29 +734,297 @@
       display: inline-block;
       animation: clozeReveal 0.45s ease-out;
     }
+    /* Practice cards, after Janki's Practice note type: staggered choices, the
+       pick tints solid green/red (correct shown blue on a miss) plus a card-wide
+       wash, then the back folds the other choices away and slides in the
+       explanation; Continue grades. */
     .mk-card.mk-mcq {
       top: 4.3em;
+      bottom: 4.3em;
       width: min(50em, 90%);
       font-size: 1.6em;
       line-height: 1.4;
       text-align: left;
+      overflow-y: auto;
+      scrollbar-width: none;
     }
+    .mk-win { transition: background-color 0.25s ease; }
+    .mk-win.mk-fill-right { background-color: var(--mk-fill-right); }
+    .mk-win.mk-fill-wrong { background-color: var(--mk-fill-wrong); }
     .mk-opts {
       display: flex;
       flex-direction: column;
-      gap: 0.35em;
       margin-top: 0.85em;
     }
     .mk-opt {
-      padding: 0.45em 0.6em;
+      margin: 0.18em 0;
+      padding: 0.4em 0.6em;
+      overflow: hidden;
       background: var(--mk-opt);
       border: 1px solid var(--mk-edge);
-      border-radius: 0.3em;
-      transition: background 0.2s ease, border-color 0.2s ease;
+      border-radius: 0.4em;
+      animation: jpIn 0.2s ease-out backwards;
+      transition: opacity 0.3s ease, max-height 0.35s ease, margin 0.3s ease,
+        padding 0.3s ease, border-width 0.3s ease, background-color 0.25s ease,
+        border-color 0.25s ease, color 0.25s ease;
     }
-    .mk-opt:hover { border-color: var(--mk-zero); }
-    .mk-opt.right { border-color: #35d073; background: #35d07326; }
-    .mk-opt.wrong { border-color: #ff5c5c; background: #ff5c5c26; }
+    .mk-opt:nth-child(1) { animation-delay: 0.06s; }
+    .mk-opt:nth-child(2) { animation-delay: 0.13s; }
+    .mk-opt:nth-child(3) { animation-delay: 0.2s; }
+    .mk-opt:nth-child(4) { animation-delay: 0.27s; }
+    .mk-opt:nth-child(5) { animation-delay: 0.34s; }
+    .mk-opts:not(.locked) .mk-opt:hover { background: var(--mk-hover); }
+    .mk-opt.right { background: #2f7d52; border-color: #3fae72; color: #eafff1; font-weight: 600; }
+    .mk-opt.wrong { background: #a33a3a; border-color: #d05a5a; color: #ffecec; font-weight: 600; }
+    .mk-opt.blue {
+      background: #4a90ff4d;
+      border-color: #4a90ffa6;
+      font-weight: 600;
+    }
+    .mk-opt.gone {
+      opacity: 0;
+      max-height: 0 !important;
+      margin: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      border-width: 0;
+    }
+    .mk-others {
+      margin-top: 0.3em;
+      font-size: 0.7em;
+      text-align: right;
+      color: var(--mk-zero);
+    }
+    .mk-others:hover { color: var(--mk-text); }
+    .mk-explain {
+      margin-top: 1.1em;
+      padding-top: 0.8em;
+      font-size: 0.94em;
+      line-height: 1.5;
+      color: var(--mk-exp);
+      border-top: 1px solid var(--mk-edge);
+      animation: jpSlideUp 0.4s ease-out 0.15s both;
+    }
+    .mk-explain-h {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5em;
+      font-size: 0.78em;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--mk-exp-h);
+    }
+    .mk-explain-body {
+      font-size: 0.86em;
+      font-style: italic;
+    }
+    .mk-answer .mk-continue {
+      flex: 0 1 16em;
+      margin: 0 auto;
+      font-weight: 600;
+      color: var(--mk-go);
+      background: #50c88229;
+      border: 1px solid #50c8828c;
+      border-radius: 0.6em;
+    }
+    .mk-answer .mk-continue:hover { background: #50c88247; }
+    @keyframes jpIn { from { opacity: 0; } }
+
+    /* Load Lectures: a mock of Janki's Lectures dialog over the deck browser. */
+    .mk-actions [data-lec] { cursor: pointer; }
+    .mk-actions [data-lec]:hover { background: var(--mk-hover); }
+    .mk-lec {
+      position: absolute;
+      top: 4.6em;
+      left: 0;
+      right: 0;
+      z-index: 4;
+      width: min(56em, 96%);
+      margin: 0 auto;
+      font-size: 0.8em;
+      line-height: 1.3;
+      color: var(--mk-text);
+      background: var(--mk-dlg);
+      border: 1px solid var(--mk-edge);
+      border-radius: 0.8em;
+      box-shadow: 0 1.5em 4em #00000080;
+      overflow: hidden;
+      animation: fadeIn 0.2s ease-out;
+    }
+    .mk-lec[hidden] { display: none; }
+    .mk-lec-title {
+      position: relative;
+      padding: 0.55em;
+      font-weight: 700;
+      text-align: center;
+      background: var(--mk-pill);
+    }
+    .mk-lec-title .mk-lights { top: 0.7em; left: 0.8em; gap: 0.45em; }
+    .mk-lec-title .mk-lights i { width: 0.9em; height: 0.9em; }
+    .mk-lec-body { padding: 0.8em 1em 0.9em; }
+    .mk-lec-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      margin-bottom: 0.7em;
+    }
+    .mk-lec button {
+      padding: 0.3em 0.9em;
+      font: inherit;
+      color: inherit;
+      background: var(--mk-pill);
+      border: 1px solid var(--mk-edge);
+      border-radius: 0.45em;
+      cursor: pointer;
+    }
+    .mk-lec button:hover:not(:disabled) { background: var(--mk-hover); }
+    .mk-lec button:disabled { opacity: 0.4; cursor: default; }
+    .mk-lec button.primary { border-color: var(--mk-new); }
+    .mk-lec-date { margin-left: 0.5em; font-weight: 700; }
+    .mk-lec-info { margin: 0 0 0.35em; }
+    .mk-lec-warn { margin: 0 0 0.35em; color: var(--mk-warn); }
+    .mk-lec-opts {
+      display: flex;
+      justify-content: space-between;
+      gap: 1em;
+      margin: 0.5em 0 0.6em;
+    }
+    .mk-lec label { display: inline-flex; align-items: center; gap: 0.35em; cursor: pointer; }
+    .mk-lec input { accent-color: var(--mk-new); margin: 0; }
+    .mk-lec-table {
+      height: 14.2em;
+      overflow-y: auto;
+      border: 1px solid var(--mk-edge);
+      border-radius: 0.3em;
+    }
+    .mk-lec-tr {
+      display: grid;
+      grid-template-columns: 3.2em 1fr 15em 4.2em 3.2em;
+      align-items: center;
+      min-height: 2.1em;
+      border-bottom: 1px solid var(--mk-edge);
+    }
+    .mk-lec-tr > * {
+      padding: 0 0.45em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .mk-lec-tr > :first-child,
+    .mk-lec-tr > :last-child { text-align: center; }
+    .mk-lec-th { font-weight: 700; text-align: center; background: var(--mk-pill); }
+    .mk-lec-th > * { overflow: visible; padding: 0 0.2em; }
+    .mk-lec-tr.off { color: var(--mk-zero); }
+    .mk-lec-tr select {
+      width: 100%;
+      padding: 0.2em;
+      font: inherit;
+      color: inherit;
+      background: var(--mk-pill);
+      border: 1px solid var(--mk-edge);
+      border-radius: 0.3em;
+    }
+    .mk-lec-empty { padding: 1.5em; text-align: center; color: var(--mk-zero); }
+    .mk-lec-foot {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      margin-top: 0.8em;
+    }
+    .mk-lec-foot > span { flex: 1; }
+    .mk-toast {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 4.6em;
+      z-index: 5;
+      width: max-content;
+      max-width: 90%;
+      margin: 0 auto;
+      padding: 0.5em 1em;
+      font-size: 0.85em;
+      background: var(--mk-dlg);
+      border: 1px solid var(--mk-edge);
+      border-radius: 0.6em;
+      animation: mkToast 2.6s ease forwards;
+      pointer-events: none;
+    }
+    @keyframes mkToast {
+      0% { opacity: 0; transform: translateY(0.6em); }
+      10%, 80% { opacity: 1; transform: none; }
+      100% { opacity: 0; }
+    }
+    .mk-row.mk-bump .n { animation: mkBump 0.9s ease; }
+
+    /* Stats: Janki shows Anki's graphs in the main window — no range bar, faint
+       translucent panels, Reviews bars in a blue gradient. */
+    .mk-win[data-view="stats"] .mk-stats { display: block; }
+    .mk-stats {
+      top: 5em;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+    .mk-stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1em;
+      width: min(72em, 94%);
+      margin: 0 auto 1.5em;
+    }
+    .mk-panel {
+      padding: 0.9em 1.1em 1em;
+      background: var(--mk-hover);
+      border: 1px solid var(--mk-edge);
+      border-radius: 0.7em;
+      animation: fadeIn 0.4s ease-out backwards;
+    }
+    .mk-panel:nth-child(2) { animation-delay: 0.06s; }
+    .mk-panel:nth-child(3) { animation-delay: 0.12s; }
+    .mk-panel:nth-child(4) { animation-delay: 0.18s; }
+    .mk-panel:nth-child(5) { animation-delay: 0.24s; }
+    .mk-panel h4 {
+      margin: 0 0 0.3em;
+      font-size: 1.15em;
+      text-align: center;
+    }
+    .mk-panel .sub {
+      margin: 0 0 0.7em;
+      font-size: 0.8em;
+      text-align: center;
+      color: var(--mk-zero);
+    }
+    .mk-panel svg { display: block; width: 100%; height: auto; }
+    .mk-panel svg text { fill: var(--mk-zero); font-size: 7px; }
+    .mk-today { font-size: 0.9em; line-height: 1.6; text-align: center; }
+    .mk-counts-wrap { display: flex; align-items: center; gap: 1.2em; }
+    .mk-counts-wrap { justify-content: center; }
+    .mk-counts-wrap svg { width: 11em; flex: none; }
+    /* (reset the page's GitHub-style table rules) */
+    .mk-legend {
+      display: table;
+      width: auto;
+      margin: 0;
+      font-size: 0.85em;
+      border-collapse: collapse;
+    }
+    .mk-legend tr { background: none; border: 0; }
+    .mk-legend td { padding: 0.15em 0.5em; border: 0; }
+    .mk-legend td:nth-child(n+3) { text-align: right; }
+    .mk-legend i {
+      display: inline-block;
+      width: 0.8em;
+      height: 0.8em;
+      border-radius: 0.2em;
+    }
+    .mk-wide { grid-column: 1 / -1; }
+    @container (max-width: 600px) {
+      .mk-stats-grid { grid-template-columns: 1fr; }
+      .mk-lec { top: 4.2em; font-size: 0.95em; width: 97%; }
+      .mk-lec-tr { grid-template-columns: 3em 1fr 11em 3.6em 2.6em; }
+    }
+    @keyframes mkBump { 30% { text-shadow: 0 0 0.8em currentColor; } }
+    @keyframes jpSlideUp { from { opacity: 0; transform: translateY(0.8em); } }
     .mk-chip {
       position: absolute;
       left: 1.1em;
@@ -1567,10 +1849,12 @@ Anki's source.
       const PRACTICE = [
         { q: 0, mcq: true, ans: 1,
           t: "Which organelle is the main site of ATP production by oxidative phosphorylation?",
-          opts: ["Golgi apparatus", "Mitochondrion", "Lysosome", "Rough endoplasmic reticulum", "Peroxisome"] },
+          opts: ["Golgi apparatus", "Mitochondrion", "Lysosome", "Rough endoplasmic reticulum", "Peroxisome"],
+          exp: "Oxidative phosphorylation runs on the inner mitochondrial membrane: the electron transport chain pumps protons out of the matrix, and ATP synthase uses that gradient to make ATP. The Golgi modifies and sorts proteins, lysosomes digest, the rough ER builds secretory and membrane proteins, and peroxisomes break down very-long-chain fatty acids." },
         { q: 0, mcq: true, ans: 2,
           t: "A deficiency of which vitamin most directly impairs synthesis of functional clotting factors II, VII, IX and X?",
-          opts: ["Vitamin C", "Vitamin D", "Vitamin K", "Vitamin B12", "Vitamin A"] },
+          opts: ["Vitamin C", "Vitamin D", "Vitamin K", "Vitamin B12", "Vitamin A"],
+          exp: "Vitamin K is the cofactor for γ-glutamyl carboxylase, which adds the carboxyl groups that let factors II, VII, IX and X (and proteins C and S) bind calcium. Without it those factors are made but don't work, so the PT rises — the same mechanism warfarin exploits." },
       ];
       const decks = [
         { exp: "+", name: "Ranki", c: [528, 267, 228], cards: RANKI },
@@ -1586,13 +1870,15 @@ Anki's source.
         '<div class="mk-win" data-view="decks" tabindex="0" role="application" aria-label="Interactive Janki demo">' +
           '<div class="mk-lights"><i></i><i></i><i></i></div>' +
           '<div class="mk-bar"><span data-go="decks">Decks</span><span>Add</span><span>Browse</span>' +
-            '<span>Stats</span><span class="practice" data-go="practice">Practice</span><span class="sync">Sync</span></div>' +
+            '<span data-go="stats">Stats</span><span class="practice" data-go="practice">Practice</span><span class="sync">Sync</span></div>' +
           '<svg class="mk-timer" viewBox="0 0 24 24" aria-hidden="true"><circle class="track" cx="12" cy="12" r="9"/><circle class="fill" cx="12" cy="12" r="9"/></svg>' +
           '<div class="mk-view mk-decks">' +
             '<div class="mk-table"></div>' +
             '<div class="mk-actions"><span>Get Shared</span><span>Create Deck</span>' +
-              "<span>Import File</span><span>Load Lectures</span></div>" +
+              '<span>Import File</span><span data-lec>Load Lectures</span></div>' +
+            '<div class="mk-lec" hidden></div>' +
           "</div>" +
+          '<div class="mk-view mk-stats"><div class="mk-stats-grid"></div></div>' +
           '<div class="mk-view mk-review">' +
             '<div class="mk-card"></div>' +
             '<span class="mk-chip" hidden></span>' +
@@ -1603,7 +1889,7 @@ Anki's source.
             "<small>Click to return to your decks.</small></p></div>" +
           '<div class="mk-edge"></div>' +
         "</div>" +
-        '<div class="mk-caption">Try it — open <b>Ranki</b> or <b>Practice</b>, click to reveal, then click left → right to grade (Again · Hard · Good · Easy).</div>';
+        '<div class="mk-caption">Try it — open <b>Ranki</b> (click to reveal, then click left → right to grade: Again · Hard · Good · Easy), answer a <b>Practice</b> question, or <b>Load Lectures</b> for a mock day.</div>';
 
       const win = mock.querySelector(".mk-win");
       const $ = sel => win.querySelector(sel);
@@ -1613,7 +1899,9 @@ Anki's source.
       const edge = $(".mk-edge");
       timer.style.setProperty("--mk-secs", TIMER_SECS + "s");
 
-      let deck = null, idx = 0, revealed = false, showOrig = false, busy = false;
+      // `result` is the practice pick: null (none yet), true (right) or false (wrong).
+      let deck = null, idx = 0, revealed = false, showOrig = false, busy = false, result = null;
+      let studied = 0;   // cards graded in this demo — feeds the Stats "Today" panel
       const card = () => deck.cards[idx % deck.cards.length];
 
       function renderDecks() {
@@ -1629,6 +1917,7 @@ Anki's source.
 
       function setView(v) {
         win.dataset.view = v;
+        $(".mk-lec").hidden = true;
         if (v === "review") return;
         timer.classList.remove("run");
         if (v === "decks") renderDecks();
@@ -1654,9 +1943,11 @@ Anki's source.
         revealed = false;
         showOrig = false;
         busy = false;
+        result = null;
+        win.classList.remove("mk-fill-right", "mk-fill-wrong");
         cardEl.className = "mk-card mk-in" + (c.mcq ? " mk-mcq" : "");
         cardEl.innerHTML = c.mcq
-          ? c.t + '<div class="mk-opts">' +
+          ? '<div class="mk-stem">' + c.t + '</div><div class="mk-opts">' +
               c.opts.map((o, i) => `<div class="mk-opt" data-opt="${i}"><b>${"ABCDE"[i]}.</b> ${o}</div>`).join("") +
             "</div>"
           : cloze(c.t, false);
@@ -1674,7 +1965,9 @@ Anki's source.
         const c = card();
         revealed = true;
         if (c.mcq) {
-          cardEl.querySelector(`[data-opt="${c.ans}"]`).classList.add("right");
+          cardEl.querySelector(`[data-opt="${c.ans}"]`).classList.add("blue");
+          practiceBack();
+          return;
         } else {
           cardEl.querySelectorAll(".mk-cloze").forEach((el, i) => {
             const answers = [...(showOrig ? c.orig : c.t).matchAll(/\{\{(.+?)\}\}/g)];
@@ -1699,6 +1992,7 @@ Anki's source.
         if (busy) return;
         busy = true;
         const c = card();
+        studied += 1;
         flare(GRADES[g]);
         deck.c[c.q] = Math.max(0, deck.c[c.q] - 1);
         if (g === 0) deck.c[1] += 1;   // Again → back into learning
@@ -1706,18 +2000,63 @@ Anki's source.
         setTimeout(showCard, 260);
       }
 
-      // Practice questions grade by answer choice: right → Good, wrong → Again.
+      // Practice questions: the pick IS the grade (right → Easy, wrong → Hard, as
+      // Janki's binary grading); it only tints here — the one flare plays when
+      // Continue applies the grade.
       function pick(i) {
         if (busy || revealed) return;
         const c = card();
         revealed = true;
-        const right = i === c.ans;
-        cardEl.querySelector(`[data-opt="${c.ans}"]`).classList.add("right");
-        if (!right) cardEl.querySelector(`[data-opt="${i}"]`).classList.add("wrong");
-        flare(GRADES[right ? 2 : 0]);
-        busy = true;
-        setTimeout(() => { busy = false; grade(right ? 2 : 0); }, 1100);
+        result = i === c.ans;
+        cardEl.querySelector(".mk-opts").classList.add("locked");
+        cardEl.querySelector(`[data-opt="${i}"]`).classList.add(result ? "right" : "wrong");
+        if (!result) cardEl.querySelector(`[data-opt="${c.ans}"]`).classList.add("blue");
+        win.classList.add(result ? "mk-fill-right" : "mk-fill-wrong");
+        setTimeout(practiceBack, 450);
       }
+
+      // The answer side: fold away the choices that don't matter (behind an
+      // "Other answers" toggle), slide in the explanation, and swap the bar for
+      // Continue.
+      function practiceBack() {
+        const c = card();
+        const box = cardEl.querySelector(".mk-opts");
+        box.classList.add("locked");
+        const others = [...box.children].filter(o =>
+          !o.classList.contains("right") && !o.classList.contains("wrong") && !o.classList.contains("blue"));
+        const fold = show => others.forEach(o => {
+          o.style.maxHeight = o.scrollHeight + "px";
+          void o.offsetHeight;
+          o.classList.toggle("gone", !show);
+        });
+        setTimeout(() => fold(false), 220);
+        const link = document.createElement("div");
+        link.className = "mk-others";
+        link.textContent = "Other answers";
+        link.onclick = e => {
+          e.stopPropagation();
+          const show = link.textContent === "Other answers";
+          fold(show);
+          link.textContent = show ? "Hide other answers" : "Other answers";
+        };
+        box.after(link);
+        const ex = document.createElement("div");
+        ex.className = "mk-explain";
+        ex.innerHTML =
+          '<div class="mk-explain-h"><span>Explanation / Rationale</span><span class="mk-explain-t">−</span></div>' +
+          '<div class="mk-explain-body">' + c.exp + "</div>";
+        ex.querySelector(".mk-explain-h").onclick = e => {
+          e.stopPropagation();
+          const body = ex.querySelector(".mk-explain-body");
+          body.hidden = !body.hidden;
+          ex.querySelector(".mk-explain-t").textContent = body.hidden ? "+" : "−";
+        };
+        link.after(ex);
+        $(".mk-answer").innerHTML = '<span class="mk-continue" data-continue>Continue →</span>';
+      }
+
+      // No pick (Show Answer) counts as a miss.
+      const practiceContinue = () => grade(result ? 3 : 1);
 
       function toggleOriginal() {
         const c = card();
@@ -1732,31 +2071,53 @@ Anki's source.
       win.addEventListener("click", e => {
         const t = e.target;
         const go = t.closest("[data-go]");
-        if (go) { go.dataset.go === "practice" ? open(practice) : setView("decks"); return; }
+        if (go) {
+          const to = go.dataset.go;
+          if (to === "practice") open(practice);
+          else if (to === "stats") { renderStats(); setView("stats"); }
+          else setView("decks");
+          return;
+        }
         if (t.closest(".mk-bar")) return;
+        if (t.closest("[data-lec]")) { openLectures(); return; }
         const row = t.closest("[data-deck]");
         if (row) { open(decks[+row.dataset.deck]); return; }
         if (win.dataset.view === "done") { setView("decks"); return; }
         if (win.dataset.view !== "review") return;
         if (t.closest(".mk-chip")) { toggleOriginal(); return; }
+        if (t.closest("[data-continue]")) { practiceContinue(); return; }
         const gb = t.closest("[data-grade]");
         if (gb) { grade(+gb.dataset.grade); return; }
         const opt = t.closest("[data-opt]");
         if (opt) { pick(+opt.dataset.opt); return; }
         if (!revealed) { reveal(); return; }
+        if (card().mcq) return;   // practice grades only through Continue
         // Answer showing: grade by where you clicked, like Janki's position grading.
         const r = win.getBoundingClientRect();
         grade(Math.min(3, Math.floor((e.clientX - r.left) / r.width * 4)));
       });
 
       win.addEventListener("keydown", e => {
+        if (win.dataset.view === "stats" && e.key === "Escape") {
+          setView("decks");
+          e.preventDefault();
+          return;
+        }
+        if (!$(".mk-lec").hidden) {
+          if (e.key === "Escape") { $(".mk-lec").hidden = true; e.preventDefault(); }
+          return;
+        }
         if (win.dataset.view === "done" && (e.key === " " || e.key === "Enter")) {
           setView("decks");
         } else if (win.dataset.view !== "review") {
           return;
         } else if (e.key === " " || e.key === "Enter") {
-          if (!revealed) reveal(); else grade(2);
-        } else if (/^[1-4]$/.test(e.key) && revealed) {
+          if (!revealed) reveal();
+          else if (card().mcq) practiceContinue();
+          else grade(2);
+        } else if (card().mcq && !revealed && /^[1-5]$/.test(e.key)) {
+          pick(+e.key - 1);
+        } else if (/^[1-4]$/.test(e.key) && revealed && !card().mcq) {
           grade(+e.key - 1);
         } else if (e.key === "Escape") {
           setView("decks");
@@ -1772,6 +2133,256 @@ Anki's source.
         void edge.offsetWidth;
         edge.classList.add("on");
       });
+
+      // --- Load Lectures ------------------------------------------------------
+      // A made-up class calendar (day offset → events) matched against a made-up
+      // lecture → tag spreadsheet; `fuzzy` rows are the "~" auto-guesses.
+      const LECTURES = {
+        "Cardiac cycle & pressure–volume loops": [142, "Ranki::Cardio::CardiacCycle"],
+        "GFR and renal clearance": [96, "Ranki::Renal::GFR"],
+        "Autonomic pharmacology": [188, "Ranki::Pharm::Autonomics"],
+        "Receptors and second messengers": [74, "Ranki::Cell::Signaling"],
+        "Innate immune system": [121, "Ranki::Immuno::Innate"],
+        "Thoracic anatomy": [203, "Ranki::Anatomy::Thorax"],
+        "Microcytic and macrocytic anemias": [167, "Ranki::Heme::Anemia"],
+        "Test characteristics": [58, "Ranki::Biostats::SensSpec"],
+      };
+      const SCHEDULE = {
+        "-1": [
+          { ev: "Cell Signaling", lec: "Receptors and second messengers", fuzzy: true },
+          { ev: "Immunology: Innate Immunity", lec: "Innate immune system" },
+          { ev: "Anatomy Lab: Thorax", lec: "Thoracic anatomy" },
+        ],
+        "0": [
+          { ev: "Cardiac Physiology I: The Cardiac Cycle", lec: "Cardiac cycle & pressure–volume loops" },
+          { ev: "Renal Physiology: Filtration", lec: "GFR and renal clearance", fuzzy: true },
+          { ev: "Pharmacology: Autonomic Drugs", lec: "Autonomic pharmacology" },
+          { ev: "Small Group: Case Discussion", lec: "" },
+          { ev: "Wellness Session", lec: "" },
+        ],
+        "1": [
+          { ev: "Hematology: Anemias", lec: "Microcytic and macrocytic anemias" },
+          { ev: "Biostatistics: Sensitivity & Specificity", lec: "Test characteristics", fuzzy: true },
+          { ev: "Exam Review Q&A", lec: "" },
+        ],
+      };
+      const lec = $(".mk-lec");
+      const lecState = {};   // day → [{use, lec}] (the dialog's "Changes are saved")
+      const applied = {};    // day → cards unsuspended
+      let lecDay = 0, exactOnly = false;
+
+      const lecRows = () => {
+        const sched = SCHEDULE[lecDay] || [];
+        if (!lecState[lecDay]) lecState[lecDay] = sched.map(r => ({ use: !!r.lec, lec: r.lec }));
+        return lecState[lecDay].map((st, i) => {
+          const skip = !st.lec || (exactOnly && sched[i].fuzzy && st.lec === sched[i].lec);
+          return { ...sched[i], ...st, live: st.use && !skip };
+        });
+      };
+
+      function renderLec() {
+        const rows = lecRows();
+        const d = new Date();
+        d.setDate(d.getDate() + lecDay);
+        const when = lecDay === 0 ? "Today"
+          : `${lecDay > 0 ? "+" : ""}${lecDay} day${Math.abs(lecDay) === 1 ? "" : "s"}`;
+        const date = d.toLocaleDateString("en-US",
+          { weekday: "short", month: "short", day: "2-digit", year: "numeric" }).replace(",", "");
+        const fuzzy = rows.filter(r => r.fuzzy && r.live).length;
+        const total = rows.reduce((n, r) => n + (r.live ? LECTURES[r.lec][0] : 0), 0);
+        const opts = sel => ['<option value="">— skip —</option>']
+          .concat(Object.keys(LECTURES).map(l =>
+            `<option${l === sel ? " selected" : ""}>${l}</option>`)).join("");
+        lec.innerHTML =
+          '<div class="mk-lec-title"><div class="mk-lights"><i data-lecact="close"></i><i></i><i></i></div>Lectures</div>' +
+          '<div class="mk-lec-body">' +
+            '<div class="mk-lec-nav"><button data-lecnav="-1">◀ Prev day</button>' +
+              '<button data-lecnav="0">Today</button><button data-lecnav="1">Next day ▶</button>' +
+              `<span class="mk-lec-date">${when} — ${date}</span></div>` +
+            `<p class="mk-lec-info">${rows.length} calendar event${rows.length === 1 ? "" : "s"}, ` +
+              `${Object.keys(LECTURES).length} lectures in spreadsheet. Pick the matching lecture for each row. ` +
+              "“~” = auto-guess (fuzzy). Changes are saved.</p>" +
+            (fuzzy ? `<p class="mk-lec-warn">⚠ ${fuzzy} event${fuzzy === 1 ? " was" : "s were"} matched loosely (~) — double-check ${fuzzy === 1 ? "it unsuspends" : "they unsuspend"} the right cards.</p>` : "") +
+            '<div class="mk-lec-opts"><span>Unsuspend from: <label><input type="checkbox" checked disabled> Ranki</label></span>' +
+              `<label><input type="checkbox" data-exact${exactOnly ? " checked" : ""}> Exact matches only</label></div>` +
+            '<div class="mk-lec-table"><div class="mk-lec-tr mk-lec-th"><span>Use</span><span>Calendar event</span>' +
+              "<span>Matched lecture</span><span>Cards</span><span>Tags</span></div>" +
+              (rows.length ? rows.map((r, i) =>
+                `<div class="mk-lec-tr${r.live ? "" : " off"}">` +
+                  `<span><input type="checkbox" data-use="${i}"${r.live ? " checked" : ""}></span>` +
+                  `<span title="${r.ev}">${r.ev}${r.fuzzy ? "  (~)" : ""}</span>` +
+                  `<span><select data-pick="${i}">${opts(r.lec)}</select></span>` +
+                  `<span>${r.live ? LECTURES[r.lec][0] : "—"}</span>` +
+                  `<span title="${r.lec ? "tag:" + LECTURES[r.lec][1] : ""}">${r.live ? "+" : ""}</span>` +
+                "</div>").join("")
+              : '<div class="mk-lec-empty">No classes on the calendar for this day.</div>') +
+            "</div>" +
+            `<div class="mk-lec-foot"><span><b>${total}</b> cards will be unsuspended — Ranki ${total}</span>` +
+              `<button data-lecact="resuspend"${applied[lecDay] ? "" : " disabled"}>Re-suspend day</button>` +
+              '<button data-lecact="close">Close</button>' +
+              `<button class="primary" data-lecact="apply"${total ? "" : " disabled"}>Apply</button></div>` +
+          "</div>";
+        lec.dataset.total = total;
+      }
+
+      function toast(text) {
+        const t = document.createElement("div");
+        t.className = "mk-toast";
+        t.textContent = text;
+        win.appendChild(t);
+        setTimeout(() => t.remove(), 2700);
+      }
+
+      // Unsuspending adds the day's cards to Ranki's New count.
+      function lecAction(act) {
+        const ranki = decks[0];
+        if (act === "apply") {
+          const n = +lec.dataset.total;
+          ranki.c[0] += n;
+          applied[lecDay] = (applied[lecDay] || 0) + n;
+          toast(`Unsuspended ${n} cards for ${lecDay === 0 ? "today" : "that day"}'s lectures`);
+        } else if (act === "resuspend") {
+          ranki.c[0] = Math.max(0, ranki.c[0] - applied[lecDay]);
+          toast(`Re-suspended ${applied[lecDay]} cards`);
+          delete applied[lecDay];
+        }
+        lec.hidden = true;
+        renderDecks();
+        if (act !== "close") $('[data-deck="0"]').classList.add("mk-bump");
+      }
+
+      lec.addEventListener("change", e => {
+        const t = e.target, st = lecState[lecDay];
+        if (t.dataset.exact !== undefined) exactOnly = t.checked;
+        else if (t.dataset.use !== undefined) {
+          const row = st[+t.dataset.use];
+          row.use = t.checked;
+          if (t.checked && !row.lec) row.lec = SCHEDULE[lecDay][+t.dataset.use].lec || Object.keys(LECTURES)[0];
+        } else if (t.dataset.pick !== undefined) {
+          const row = st[+t.dataset.pick];
+          row.lec = t.value;
+          row.use = !!t.value;
+        }
+        renderLec();
+      });
+
+      lec.addEventListener("click", e => {
+        e.stopPropagation();
+        const nav = e.target.closest("[data-lecnav]");
+        const act = e.target.closest("[data-lecact]");
+        if (nav) {
+          const step = +nav.dataset.lecnav;   // 0 = Today
+          lecDay = step ? lecDay + step : 0;
+          renderLec();
+        } else if (act) {
+          lecAction(act.dataset.lecact);
+        }
+      });
+
+      // --- Stats ---------------------------------------------------------------
+      // Fake but stable history (seeded), drawn as small SVG charts.
+      function seeded(seed) {
+        return () => {
+          seed = (seed + 0x6d2b79f5) | 0;
+          let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+      const rand = seeded(20260928);
+      const PAST = Array.from({ length: 182 }, (_, i) =>
+        rand() < 0.12 ? 0 : Math.round(30 + rand() * 90 + i * 0.35));
+      const FUTURE = Array.from({ length: 30 }, (_, i) => Math.round(60 + rand() * 80 - i * 1.2));
+      const BLUES = ["#0d47a1", "#1769cc", "#2f8ae0", "#5aa8ee"];   // Mature/Young/Relearn/Learn
+      const GREENS = ["#1d3325", "#1f5c35", "#2a8a4a", "#3fc46a", "#8ff0b0"];
+
+      function barChart(stacks, colors, labels) {
+        const W = 300, H = 90, n = stacks[0].length, bw = W / n;
+        const tot = i => stacks.reduce((a, st) => a + st[i], 0);
+        const max = Math.max(...stacks[0].map((_, i) => tot(i))) || 1;
+        let out = "";
+        for (let i = 0; i < n; i++) {
+          let y = H - 12;
+          stacks.forEach((st, k) => {
+            const h = st[i] / max * (H - 20);
+            y -= h;
+            out += `<rect x="${(i * bw + 0.6).toFixed(1)}" y="${y.toFixed(1)}" width="${(bw - 1.2).toFixed(1)}" height="${h.toFixed(1)}" fill="${colors[k]}" rx="0.6"/>`;
+          });
+        }
+        return `<svg viewBox="0 0 ${W} ${H}">${out}` +
+          `<line x1="0" x2="${W}" y1="${H - 12}" y2="${H - 12}" stroke="currentColor" stroke-opacity="0.2"/>` +
+          `<text x="0" y="${H - 2}">${labels[0]}</text>` +
+          `<text x="${W / 2}" y="${H - 2}" text-anchor="middle">${labels[1]}</text>` +
+          `<text x="${W}" y="${H - 2}" text-anchor="end">${labels[2]}</text>` +
+          `<text x="0" y="7">${max}</text></svg>`;
+      }
+
+      function calendar(days) {
+        const cols = Math.ceil(days.length / 7), cell = 300 / cols;
+        const max = Math.max(...days);
+        let out = "";
+        days.forEach((v, i) => {
+          const lvl = v ? Math.min(4, 1 + Math.floor(v / max * 4)) : 0;
+          out += `<rect x="${(Math.floor(i / 7) * cell + 0.5).toFixed(1)}" y="${((i % 7) * cell + 0.5).toFixed(1)}" ` +
+            `width="${(cell - 1).toFixed(1)}" height="${(cell - 1).toFixed(1)}" rx="1" fill="${GREENS[lvl]}"><title>${v} reviews</title></rect>`;
+        });
+        return `<svg viewBox="0 0 300 ${(7 * cell + 9).toFixed(1)}">${out}` +
+          `<text x="0" y="${(7 * cell + 8).toFixed(1)}">6 months ago</text>` +
+          `<text x="300" y="${(7 * cell + 8).toFixed(1)}" text-anchor="end">today</text></svg>`;
+      }
+
+      function donut(parts) {
+        const total = parts.reduce((a, p) => a + p[1], 0);
+        let a0 = -Math.PI / 2, out = "";
+        parts.forEach(([, v, c]) => {
+          const a1 = a0 + v / total * Math.PI * 2;
+          const pt = (a, r) => `${(50 + r * Math.cos(a)).toFixed(2)} ${(50 + r * Math.sin(a)).toFixed(2)}`;
+          const big = a1 - a0 > Math.PI ? 1 : 0;
+          out += `<path d="M${pt(a0, 46)}A46 46 0 ${big} 1 ${pt(a1, 46)}L${pt(a1, 28)}A28 28 0 ${big} 0 ${pt(a0, 28)}Z" fill="${c}"/>`;
+          a0 = a1;
+        });
+        return `<svg viewBox="0 0 100 100">${out}</svg>`;
+      }
+
+      function renderStats() {
+        const today = 68 + studied, secs = 9.5;
+        const past30 = PAST.slice(-30);
+        past30[29] = today;
+        const split = f => past30.map(v => Math.round(v * f));
+        const ranki = decks[0].c;
+        const counts = [
+          ["New", 4812 + ranki[0] - 528, "#6baed6"],
+          ["Learning", ranki[1], "#5aa8ee"],
+          ["Relearning", 31, "#2f8ae0"],
+          ["Young", 1944, "#74c476"],
+          ["Mature", 3106, "#31a354"],
+          ["Suspended", Math.max(0, 12480 - (ranki[0] - 528)), "#ffdc41"],
+        ];
+        const cardTotal = counts.reduce((a, p) => a + p[1], 0);
+        const fmt = n => n.toLocaleString("en-US");
+        $(".mk-stats-grid").innerHTML =
+          '<div class="mk-panel"><h4>Today</h4><div class="mk-today">' +
+            `Studied <b>${today}</b> cards in <b>${(today * secs / 60).toFixed(1)}</b> minutes today (${secs}s/card)<br>` +
+            `Again count: <b>${Math.round(today * 0.1)}</b> (${(90).toFixed(1)}% correct)<br>` +
+            `Learn: ${Math.round(today * 0.35)}, Review: ${Math.round(today * 0.55)}, Relearn: ${Math.round(today * 0.1)}<br>` +
+            "Correct answers on mature cards: 41/44 (93.2%)</div></div>" +
+          '<div class="mk-panel"><h4>Calendar</h4>' + calendar(PAST.slice(0, 181).concat(today)) + "</div>" +
+          '<div class="mk-panel"><h4>Reviews</h4><p class="sub">The number of questions you have answered.</p>' +
+            barChart([split(0.5), split(0.3), split(0.05), split(0.15)], BLUES, ["-30d", "-15d", "today"]) + "</div>" +
+          '<div class="mk-panel"><h4>Future Due</h4><p class="sub">The number of reviews due in the future.</p>' +
+            barChart([FUTURE], ["#2f8ae0"], ["today", "+15d", "+30d"]) + "</div>" +
+          '<div class="mk-panel mk-wide"><h4>Card Counts</h4><div class="mk-counts-wrap">' + donut(counts) +
+            '<table class="mk-legend">' + counts.map(([k, v, c]) =>
+              `<tr><td><i style="background:${c}"></i></td><td>${k}</td><td>${fmt(v)}</td><td>${(v / cardTotal * 100).toFixed(1)}%</td></tr>`).join("") +
+            `<tr><td></td><td><b>Total</b></td><td><b>${fmt(cardTotal)}</b></td><td></td></tr></table></div></div>`;
+        $(".mk-stats").scrollTop = 0;
+      }
+
+      function openLectures() {
+        lecDay = 0;
+        renderLec();
+        lec.hidden = false;
+      }
 
       renderDecks();
       return mock;
