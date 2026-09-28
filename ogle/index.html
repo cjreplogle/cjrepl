@@ -73,7 +73,7 @@
     @media (min-width: 1100px) {
       #typed { font-size: 1.5rem; line-height: 1.5; }
       #typed .hdg, #typed strong { font-size: clamp(1.5rem, 3vw, 4rem); line-height: 1.25; display: inline; }
-      #typed .mob-br { margin-bottom: 0.4rem; }
+      #typed .mob-br { margin-bottom: 0; }
     }
     #typed:focus {
       outline: none;
@@ -258,7 +258,7 @@
     a {
       color: #ccc;
     }
-    .mob-br { display: block; margin-bottom: 0.4em; }
+    .mob-br { display: block; margin-bottom: 0; }
     @media (max-width: 768px) {
       body {
         margin: 40px auto;
@@ -266,7 +266,7 @@
       .tab-hint {
         font-size: 0.75em;
       }
-      .mob-br { margin-bottom: 0.5em; }
+      .mob-br { margin-bottom: 0.9em; }
       .intro {
         flex-direction: column;
         align-items: flex-start;
@@ -799,7 +799,7 @@
       let html = '', j = 0;
       while (j < chars.length) {
         const c = chars[j];
-        if (c.mobBr) { html += c.br ? '<br>' : '<br class="mob-br">'; j++; }
+        if (c.mobBr) { html += c.br ? '<br>' : '<span class="mob-br"></span>'; j++; }
         else if (c.bold) {
           let s = ''; while (j < chars.length && chars[j].bold) s += chars[j++].ch;
           html += `<strong>${s}</strong>`;
@@ -855,7 +855,7 @@
         if (deleteCount < seg.backspace) {
           deleteCount++;
           el.innerHTML = buildHTML(deleteCount);
-          setTimeout(type, 10);
+          setTimeout(type, 7);
           return;
         }
         segIndex++; charIndex = 0; deleteCount = 0;
@@ -884,7 +884,7 @@
       }
       el.innerHTML = buildHTML();
       const ch = seg.text[charIndex - 1];
-      const delay = ch === '.' ? 200 : 11;
+      const delay = ch === '.' ? 150 : 8;
       setTimeout(type, delay);
     }
 
