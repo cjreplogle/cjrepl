@@ -2899,7 +2899,7 @@ Anki's source.
         { sel: '[data-deck="0"]', prep: () => setView("decks"), on: "open",
           text: `<b>Decks.</b> This is a working Janki window. ${Click} <b>Ranki</b> to start studying.` },
         { sel: ".mk-card", prep: onRanki, on: "reveal",
-          text: `Each <span class="mk-tour-cz">[...]</span> is a cloze hiding an answer. ${Click} the card${touch ? "" : " (or press Space)"} to reveal it. <b>↻ Rephrased</b> cards can flip back to the deck's original wording.` },
+          text: `Each <span class="mk-tour-cz">[...]</span> is a cloze hiding an answer. ${Click} the card to reveal it. <b>↻ Rephrased</b> cards can flip back to the deck's original wording.` },
         { sel: ".mk-answer", prep: () => { onRanki(); if (!revealed) reveal(); }, on: "grade",
           text: `Grade by where you ${click}: left edge <b style="color:#ff5c5c">Again</b> → right edge ` +
                 `<b style="color:#4d9dff">Easy</b>. The window flashes that grade’s color.` },
@@ -2931,6 +2931,9 @@ Anki's source.
         if (s.prep) s.prep();
         const el = win.querySelector(s.sel);
         if (el) el.classList.add("mk-tour-hl");
+        // Keep keyboard focus in the demo so Space / Tab chords act on it rather
+        // than scrolling the page.
+        win.focus({ preventScroll: true });
         tourBar.innerHTML =
           `<div class="mk-tour-text"><span class="mk-tour-n">${i + 1}/${TOUR.length}</span> ${s.text}</div>` +
           '<div class="mk-tour-btns"><button data-tour="skip">Skip tour</button>' +
