@@ -562,7 +562,9 @@
       --mk-dlg: #ffffff;
       --mk-warn: #9a6700;
       container-type: inline-size;
-      max-width: 900px;
+      /* Shrink on short windows so the mock + the preview arrow fit on screen
+         (≈430px of title, tagline, caption and arrow around a 1800:1130 window). */
+      max-width: min(900px, max(500px, (100svh - 430px) * 1.593));
       margin: 0 auto 24px;
     }
     @media (prefers-color-scheme: dark) {
@@ -748,7 +750,10 @@
       overflow-y: auto;
       scrollbar-width: none;
     }
-    .mk-win { transition: background-color 0.25s ease; }
+    /* The pick's card-wide wash flashes in, then fades back out. */
+    .mk-win { transition: background-color 0.9s ease; }
+    .mk-win.mk-fill-right,
+    .mk-win.mk-fill-wrong { transition-duration: 0.25s; }
     .mk-win.mk-fill-right { background-color: var(--mk-fill-right); }
     .mk-win.mk-fill-wrong { background-color: var(--mk-fill-wrong); }
     .mk-opts {
@@ -1018,7 +1023,7 @@
       border-radius: 0.2em;
     }
     .mk-wide { grid-column: 1 / -1; }
-    @container (max-width: 600px) {
+    @container (max-width: 480px) {
       .mk-stats-grid { grid-template-columns: 1fr; }
       .mk-lec { top: 4.2em; font-size: 0.95em; width: 97%; }
       .mk-lec-tr { grid-template-columns: 3em 1fr 11em 3.6em 2.6em; }
@@ -1126,12 +1131,33 @@
       color: var(--muted);
     }
     /* Phone widths: a taller window with a bigger base so text stays legible. */
-    @container (max-width: 600px) {
+    @container (max-width: 480px) {
       .mk-win {
         aspect-ratio: 4 / 5;
         font-size: calc(100cqw / 52);
       }
       .mk-card { top: 5em; }
+    }
+
+    /* Preview phase: only the title, tagline and mock show, with an arrow below
+       the mock; clicking it (or scrolling / swiping down) reveals the rest. */
+    .more-arrow { display: none; }
+    body.preview-mode .more-arrow {
+      display: flex;
+      margin: 4px auto 0;
+      padding: 6px 14px;
+      color: var(--muted);
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+      opacity: 0.7;
+      animation: moreBounce 1.8s ease-in-out infinite;
+    }
+    body.preview-mode .more-arrow:hover { opacity: 1; }
+    body.preview-mode .more-arrow ~ * { display: none !important; }
+    @keyframes moreBounce { 50% { transform: translateY(5px); } }
+    @media (prefers-reduced-motion: reduce) {
+      body.preview-mode .more-arrow { animation: none; }
     }
 
     .loading {
@@ -1337,11 +1363,6 @@ so nothing is left behind.
 - **Quick Zoom** — for whatever god forsaken reason Anki does not have **`Cmd+`**
   or **`Cmd-`** hotkeys to zoom card contents so that exists now...
 
-## Suggested Add-Ons
-
-These extra installs help tie together some theming:
-* [Anki Redesign](https://ankiweb.net/shared/info/2119814566) (Some menu animations)
-
 ## Support
 
 >[!NOTE]
@@ -1465,6 +1486,8 @@ Anki's source.
       });
 
     function render(markdown) {
+        // The site leaves out the README's Suggested Add-Ons section.
+        markdown = markdown.replace(/^## Suggested Add-Ons\b[\s\S]*?(?=^## )/m, "");
         const html = marked.parse(markdown);
         const container = document.createElement("div");
 
@@ -1674,7 +1697,9 @@ Anki's source.
         // Swap the hero reviewer photo for a live-drawn mock of the deck browser.
         const hero = container.querySelector('img[src$="reviewer.jpg"]');
         if (hero) {
-          (hero.closest("p") || hero).replaceWith(buildAnkiMock());
+          const mock = buildAnkiMock();
+          (hero.closest("p") || hero).replaceWith(mock);
+          if (!window.__previewDone && !location.hash) addMoreArrow(mock);
         }
 
         container
@@ -1827,6 +1852,58 @@ Anki's source.
         // (otherwise the "feature-rich" lookup finds nothing to wrap).
         setupCardMode(container);
         typeTagline(container);
+    }
+
+    // The arrow under the mock that ends the preview phase (see .more-arrow CSS).
+    function addMoreArrow(mock) {
+      const arrow = document.createElement("button");
+      arrow.type = "button";
+      arrow.className = "more-arrow";
+      arrow.setAttribute("aria-label", "Show the rest of the page");
+      arrow.innerHTML =
+        '<svg width="22" height="14" viewBox="0 0 22 14" fill="none" stroke="currentColor" ' +
+        'stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l9 9 9-9"/></svg>';
+      arrow.addEventListener("click", revealRest);
+      mock.after(arrow);
+      document.body.classList.add("preview-mode");
+      if (window.__previewBound) return;
+      window.__previewBound = true;
+
+      // Any downward gesture outside the mock (which has its own scrolling panes
+      // and keys) also ends the preview. Not while the phone card intro is up.
+      const ready = e =>
+        document.body.classList.contains("preview-mode") &&
+        !document.body.classList.contains("card-mode") &&
+        !(e.target.closest && e.target.closest(".mk-win"));
+      window.addEventListener("wheel", e => {
+        if (e.deltaY > 0 && ready(e)) revealRest();
+      }, { passive: true });
+      let touchY = null;
+      // (a swipe that started on the phone card intro doesn't count)
+      window.addEventListener("touchstart", e => {
+        touchY = document.body.classList.contains("card-mode") ? null : e.touches[0].clientY;
+      }, { passive: true });
+      window.addEventListener("touchmove", e => {
+        if (touchY !== null && touchY - e.touches[0].clientY > 30 && ready(e)) revealRest();
+      }, { passive: true });
+      window.addEventListener("keydown", e => {
+        if (["ArrowDown", "PageDown", " "].includes(e.key) && ready(e) &&
+            !e.target.isContentEditable) {
+          e.preventDefault();
+          revealRest();
+        }
+      });
+    }
+
+    function revealRest() {
+      const arrow = document.querySelector(".more-arrow");
+      if (window.__previewDone || !arrow) return;
+      window.__previewDone = true;
+      const top = arrow.getBoundingClientRect().top + window.scrollY;
+      document.body.classList.remove("preview-mode");
+      document.querySelectorAll(".more-arrow ~ *").forEach(el => el.classList.add("fade-in"));
+      arrow.remove();
+      window.scrollTo({ top: top - 12, behavior: "smooth" });
     }
 
     // Interactive mock of Janki (see the .anki-mock CSS): the deck browser opens
@@ -2012,6 +2089,7 @@ Anki's source.
         cardEl.querySelector(`[data-opt="${i}"]`).classList.add(result ? "right" : "wrong");
         if (!result) cardEl.querySelector(`[data-opt="${c.ans}"]`).classList.add("blue");
         win.classList.add(result ? "mk-fill-right" : "mk-fill-wrong");
+        setTimeout(() => win.classList.remove("mk-fill-right", "mk-fill-wrong"), 700);
         setTimeout(practiceBack, 450);
       }
 
