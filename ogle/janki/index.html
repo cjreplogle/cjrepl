@@ -1639,23 +1639,27 @@ Anki's source.
     }
 
     // On laptop widths, line the corner mark up with the centre of the "Janki"
-    // title (measured at the top of the page); phones keep the CSS top.
+    // title (measured at the top of the page) and mirror its horizontal inset,
+    // so the two sit symmetrically; phones keep the CSS position.
     function alignCornerMark() {
       const mark = document.querySelector(".corner-mark");
       const h1 = document.querySelector("#content h1");
       if (!mark) return;
       if (!h1 || window.matchMedia("(max-width: 768px)").matches) {
         mark.style.top = "";
+        mark.style.right = "";
         return;
       }
       // The title text (its repo link), not the h1 box with its bottom padding.
       // Layout offsets, not getBoundingClientRect: the content's fade-in slides it
       // 4px, which would skew a measurement taken mid-animation.
-      let el = h1.querySelector("a") || h1, top = 0;
+      let el = h1.querySelector("a") || h1, top = 0, left = 0;
       const height = el.offsetHeight;
-      for (; el; el = el.offsetParent) top += el.offsetTop;
+      for (; el; el = el.offsetParent) { top += el.offsetTop; left += el.offsetLeft; }
       const center = top + height / 2;
       mark.style.top = Math.round(center - mark.offsetHeight / 2) + "px";
+      // Same distance from the right edge as the title is from the left.
+      mark.style.right = Math.round(left) + "px";
     }
     window.addEventListener("resize", alignCornerMark);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(alignCornerMark);
