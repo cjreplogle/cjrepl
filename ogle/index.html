@@ -34,7 +34,7 @@
     @media (max-width: 768px) {
       .intro, .intro + p {
         transition: opacity 0.35s ease, transform 0.35s ease, max-height 0.4s ease, margin 0.4s ease;
-        max-height: 300px;
+        max-height: 600px;   /* room for the full intro; collapses to 0 when a tab opens */
         overflow: hidden;
       }
       .intro.tab-open, .intro.tab-open + p {
@@ -799,7 +799,9 @@
       let html = '', j = 0;
       while (j < chars.length) {
         const c = chars[j];
-        if (c.mobBr) { html += c.br ? '<br>' : '<span class="mob-br"></span>'; j++; }
+        // Both break kinds render as block spans: a plain line break on desktop,
+        // with the mobile paragraph gap (margins on <br> are ignored).
+        if (c.mobBr) { html += '<span class="mob-br"></span>'; j++; }
         else if (c.bold) {
           let s = ''; while (j < chars.length && chars[j].bold) s += chars[j++].ch;
           html += `<strong>${s}</strong>`;
