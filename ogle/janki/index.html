@@ -832,16 +832,8 @@
       font-size: 0.86em;
       font-style: italic;
     }
-    .mk-answer .mk-continue {
-      flex: 0 1 16em;
-      margin: 0 auto;
-      font-weight: 600;
-      color: var(--mk-go);
-      background: #50c88229;
-      border: 1px solid #50c8828c;
-      border-radius: 0.6em;
-    }
-    .mk-answer .mk-continue:hover { background: #50c88247; }
+    /* Continue: plain, like Show Answer (no green outline/tint). */
+    .mk-answer .mk-continue { font-weight: 600; }
     @keyframes jpIn { from { opacity: 0; } }
 
     /* Load Lectures: a mock of Janki's Lectures dialog over the deck browser. */
@@ -1120,22 +1112,20 @@
     .mk-win.mk-focus[data-view="review"] .mk-bar,
     .mk-win.mk-focus[data-view="review"] .mk-answer,
     .mk-win.mk-focus[data-view="review"] .mk-counts { opacity: 0; pointer-events: none; }
-    /* Related question: a tab on the card's corner. */
+    /* Related question: a gray "Practice" chip in the bottom-right corner,
+       mirroring the rephrase chip on the left. */
     .mk-rel {
       position: absolute;
-      top: 5.4em;
-      right: 0;
-      padding: 0.45em 0.8em 0.45em 0.9em;
-      font-size: 0.8em;
-      font-weight: 700;
-      color: var(--mk-practice);
-      background: var(--mk-pill);
+      right: 1.1em;
+      bottom: 5.85em;
+      padding: 0.35em 0.75em;
+      font-size: 0.9em;
+      color: var(--mk-zero);
       border: 1px solid var(--mk-edge);
-      border-right: none;
-      border-radius: 0.7em 0 0 0.7em;
+      border-radius: 1em;
       cursor: pointer;
     }
-    .mk-rel:hover { background: var(--mk-hover); }
+    .mk-rel:hover { color: var(--mk-text); }
     .mk-rel[hidden] { display: none; }
     .mk-focus-btn {
       position: absolute;
@@ -1251,7 +1241,7 @@
         font-size: 1.3em;
       }
       .mk-counts { bottom: 3.3em; }
-      .mk-chip { bottom: 4.8em; }
+      .mk-chip, .mk-rel { bottom: 4.8em; }
     }
 
     /* Condensed Features list: one line per feature (name + shortcut), click to
@@ -2281,7 +2271,7 @@ Anki's source.
           '<div class="mk-view mk-review">' +
             '<div class="mk-card"></div>' +
             '<span class="mk-chip" hidden></span>' +
-            '<span class="mk-rel" hidden>Related question</span>' +
+            '<span class="mk-rel" hidden>Practice</span>' +
             '<span class="mk-focus-btn">Focus</span>' +
             '<div class="mk-counts"></div>' +
             '<div class="mk-answer"></div>' +
@@ -2904,7 +2894,7 @@ Anki's source.
           text: `Grade by where you ${click}: left edge <b style="color:#ff5c5c">Again</b> → right edge ` +
                 `<b style="color:#4d9dff">Easy</b>. The window flashes that grade’s color.` },
         { sel: ".mk-rel", prep: withRel, on: "relend",
-          text: `<b>Related questions.</b> ${Click} the <b>Related question</b> tab in the corner to pull a practice question tied to this card — Janki also intersperses them into your reviews on its own. Answer it to continue.` },
+          text: `<b>Related questions.</b> ${Click} the gray <b>Practice</b> button in the bottom-right corner to pull a question tied to this card — Janki also intersperses them into your reviews on its own. Answer it to continue.` },
         { sel: ".mk-focus-btn", prep: onRanki, on: "focusoff",
           text: `<b>Focus Mode.</b> ${Click} <b>Focus</b>${touch ? "" : " (or Tab+F)"} to strip away everything but the card and start a timer ring — linger too long and the edges flare red. Then turn it back off.` },
         { sel: '.mk-bar [data-go="practice"]', prep: () => setFocus(false), on: "pgrade",
