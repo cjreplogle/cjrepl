@@ -1557,29 +1557,21 @@ Anki's source.
 
       // Cards: {{answer}} marks the cloze; `orig` is the un-rephrased wording.
       const RANKI = [
-        { q: 0, t: "polycythemia vera: neoplastic blood disorder, too many RBCs are made<br>mutations often present in {{JAK2}}" },
-        { q: 2, t: "Community-acquired pneumonia in adults is most often caused by {{Streptococcus pneumoniae}}",
-          orig: "most common cause of community-acquired pneumonia: {{Streptococcus pneumoniae}}" },
-        { q: 1, t: "absence seizures (3 Hz spike-and-wave)<br>first-line treatment: {{ethosuximide}}" },
-        { q: 2, t: "Kussmaul breathing: deep, rapid respirations compensating for {{metabolic acidosis}}" },
+        { q: 0, t: "Insulin is secreted by the {{β cells}} of the pancreatic islets" },
+        { q: 2, t: "The heart's natural pacemaker is the {{sinoatrial (SA) node}}, found in the right atrium",
+          orig: "normal cardiac pacemaker: {{sinoatrial (SA) node}}" },
+        { q: 1, t: "Thiamine (vitamin B1) deficiency can cause {{Wernicke}} encephalopathy" },
+        { q: 2, t: "Hemoglobin's O<sub>2</sub> affinity falls as {{2,3-BPG}} rises<br>(right shift of the dissociation curve)" },
       ];
       const PRACTICE = [
-        { q: 0, mcq: true, ans: 3,
-          t: "Type 1 diabetes mellitus is caused by a decreased ability of the β cells of the pancreas to produce insulin. A person with Type 1 diabetes mellitus who has neglected to take insulin injections will exhibit which one of the following?",
-          opts: ["Increased fatty acid synthesis from glucose in liver",
-                 "Decreased conversion of fatty acids to ketone bodies",
-                 "Increased stores of triacylglycerol in adipose tissue",
-                 "Increased production of acetone",
-                 "Increased glucose transport into muscle cells"] },
         { q: 0, mcq: true, ans: 1,
-          t: "An infant develops jaundice, hepatomegaly and cataracts after starting breast milk. Deficiency of which enzyme is most likely?",
-          opts: ["Galactokinase", "Galactose-1-phosphate uridyltransferase",
-                 "Aldolase B", "Fructokinase", "Glucose-6-phosphatase"] },
+          t: "Which organelle is the main site of ATP production by oxidative phosphorylation?",
+          opts: ["Golgi apparatus", "Mitochondrion", "Lysosome", "Rough endoplasmic reticulum", "Peroxisome"] },
+        { q: 0, mcq: true, ans: 2,
+          t: "A deficiency of which vitamin most directly impairs synthesis of functional clotting factors II, VII, IX and X?",
+          opts: ["Vitamin C", "Vitamin D", "Vitamin K", "Vitamin B12", "Vitamin A"] },
       ];
       const decks = [
-        { exp: "+", name: "AJ", c: [0, 0, 0] },
-        { exp: "", name: "_AnKing Step Deck", c: [0, 0, 0] },
-        { exp: "+", name: "hUtCh", c: [0, 0, 0] },
         { exp: "+", name: "Ranki", c: [528, 267, 228], cards: RANKI },
       ];
       const practice = { name: "Practice", c: [40, 0, 0], cards: PRACTICE };
