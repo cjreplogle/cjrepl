@@ -2088,12 +2088,12 @@ Anki's source.
         setTimeout(() => f.remove(), 650);
       }
 
-      function grade(g) {
+      function grade(g, { quiet = false } = {}) {
         if (busy) return;
         busy = true;
         const c = card();
         studied += 1;
-        flare(GRADES[g]);
+        if (!quiet) flare(GRADES[g]);
         deck.c[c.q] = Math.max(0, deck.c[c.q] - 1);
         if (g === 0) deck.c[1] += 1;   // Again → back into learning
         idx += 1;
@@ -2101,8 +2101,8 @@ Anki's source.
       }
 
       // Practice questions: the pick IS the grade (right → Easy, wrong → Hard, as
-      // Janki's binary grading); it only tints here — the one flare plays when
-      // Continue applies the grade.
+      // Janki's binary grading). Its card-wide wash is the card's one flash;
+      // Continue applies the grade quietly.
       function pick(i) {
         if (busy || revealed) return;
         const c = card();
@@ -2156,8 +2156,9 @@ Anki's source.
         $(".mk-answer").innerHTML = '<span class="mk-continue" data-continue>Continue →</span>';
       }
 
-      // No pick (Show Answer) counts as a miss.
-      const practiceContinue = () => grade(result ? 3 : 1);
+      // No pick (Show Answer) counts as a miss. The pick already flashed the card,
+      // so Continue moves on without a second flare.
+      const practiceContinue = () => grade(result ? 3 : 1, { quiet: true });
 
       function toggleOriginal() {
         const c = card();
@@ -2236,35 +2237,29 @@ Anki's source.
       });
 
       // --- Load Lectures ------------------------------------------------------
-      // A made-up class calendar (day offset → events) matched against a made-up
-      // lecture → tag spreadsheet; `fuzzy` rows are the "~" auto-guesses.
+      // Placeholder calendar (day offset → events) matched against a placeholder
+      // lecture → tag list; `fuzzy` rows are the "~" auto-guesses.
       const LECTURES = {
-        "Cardiac cycle & pressure–volume loops": [142, "Ranki::Cardio::CardiacCycle"],
-        "GFR and renal clearance": [96, "Ranki::Renal::GFR"],
-        "Autonomic pharmacology": [188, "Ranki::Pharm::Autonomics"],
-        "Receptors and second messengers": [74, "Ranki::Cell::Signaling"],
-        "Innate immune system": [121, "Ranki::Immuno::Innate"],
-        "Thoracic anatomy": [203, "Ranki::Anatomy::Thorax"],
-        "Microcytic and macrocytic anemias": [167, "Ranki::Heme::Anemia"],
-        "Test characteristics": [58, "Ranki::Biostats::SensSpec"],
+        "Topic A": [120, "Ranki::TopicA"],
+        "Topic B": [80, "Ranki::TopicB"],
+        "Topic C": [150, "Ranki::TopicC"],
+        "Topic D": [60, "Ranki::TopicD"],
+        "Topic E": [100, "Ranki::TopicE"],
       };
       const SCHEDULE = {
         "-1": [
-          { ev: "Cell Signaling", lec: "Receptors and second messengers", fuzzy: true },
-          { ev: "Immunology: Innate Immunity", lec: "Innate immune system" },
-          { ev: "Anatomy Lab: Thorax", lec: "Thoracic anatomy" },
+          { ev: "Sample Lecture 1", lec: "Topic D" },
+          { ev: "Sample Lecture 2", lec: "Topic E", fuzzy: true },
         ],
         "0": [
-          { ev: "Cardiac Physiology I: The Cardiac Cycle", lec: "Cardiac cycle & pressure–volume loops" },
-          { ev: "Renal Physiology: Filtration", lec: "GFR and renal clearance", fuzzy: true },
-          { ev: "Pharmacology: Autonomic Drugs", lec: "Autonomic pharmacology" },
-          { ev: "Small Group: Case Discussion", lec: "" },
-          { ev: "Wellness Session", lec: "" },
+          { ev: "Sample Lecture A", lec: "Topic A" },
+          { ev: "Sample Lecture B", lec: "Topic B", fuzzy: true },
+          { ev: "Sample Lecture C", lec: "Topic C" },
+          { ev: "Break", lec: "" },
         ],
         "1": [
-          { ev: "Hematology: Anemias", lec: "Microcytic and macrocytic anemias" },
-          { ev: "Biostatistics: Sensitivity & Specificity", lec: "Test characteristics", fuzzy: true },
-          { ev: "Exam Review Q&A", lec: "" },
+          { ev: "Sample Lecture X", lec: "Topic E" },
+          { ev: "Sample Event", lec: "" },
         ],
       };
       const lec = $(".mk-lec");
