@@ -1935,6 +1935,7 @@ Anki's source.
     // smaller features are grouped under one "Various Quality-of-Life Features".
     function condenseFeatures(root) {
       const QOL = /global hotkeys|pomodoro|tray menu|quick zoom/i;
+      const RENAME = { "Rephrase": "Card Rephrasing" };   // site-only display names
       const h2 = [...root.querySelectorAll("h2")].find(h => /^\s*features\s*$/i.test(h.textContent));
       let list = h2 && h2.nextElementSibling;
       while (list && list.tagName !== "UL" && list.tagName !== "H2") list = list.nextElementSibling;
@@ -1971,7 +1972,7 @@ Anki's source.
         head.type = "button";
         head.className = "feat-head";
         head.setAttribute("aria-expanded", "false");
-        head.innerHTML = `<span class="feat-name">${m[1]}</span>` +
+        head.innerHTML = `<span class="feat-name">${RENAME[m[1].trim()] || m[1]}</span>` +
           (m[2] ? `<span class="feat-key">${m[2]}</span>` : "") +
           '<span class="feat-chev">+</span>';
         head.addEventListener("click", () => {
