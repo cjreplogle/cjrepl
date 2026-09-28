@@ -1130,14 +1130,65 @@
       text-align: center;
       color: var(--muted);
     }
-    /* Phone widths: a taller window with a bigger base so text stays legible. */
+    /* Phone widths: still a landscape window (3:2), with a bigger base so text
+       stays legible; practice questions shrink a little and scroll if needed. */
     @container (max-width: 480px) {
       .mk-win {
-        aspect-ratio: 4 / 5;
+        aspect-ratio: 3 / 2;
         font-size: calc(100cqw / 52);
       }
-      .mk-card { top: 5em; }
+      .mk-card { top: 4.4em; }
+      .mk-card.mk-mcq {
+        top: 3.4em;
+        bottom: 3.6em;
+        font-size: 1.3em;
+      }
+      .mk-counts { bottom: 3.3em; }
+      .mk-chip { bottom: 4.8em; }
     }
+
+    /* Condensed Features list: one line per feature (name + shortcut), click to
+       expand its full description. */
+    ul.feat-list {
+      padding-left: 0;
+      list-style: none;
+    }
+    .feat-list > li + li { margin-top: 0; }
+    .feat-head {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      width: 100%;
+      padding: 9px 2px;
+      font: inherit;
+      color: inherit;
+      text-align: left;
+      background: none;
+      border: 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .feat-name { font-weight: 600; }
+    .feat-key { font-size: 0.85em; color: var(--muted); }
+    .feat-chev {
+      margin-left: auto;
+      font-size: 18px;
+      line-height: 1;
+      color: var(--muted);
+      opacity: 0.6;
+    }
+    .feat-head:hover .feat-chev { opacity: 1; }
+    .feat-body {
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.3s ease;
+    }
+    .feat-body > :first-child { margin-top: 10px; }
+    .feat-body > :last-child { margin-bottom: 14px; }
+    .feat:not(.open) > .feat-body {
+      max-height: 0 !important;
+      opacity: 0;
+    }
+    .feat-sub { padding-left: 1.2em; }
 
     /* Preview phase: only the title, tagline and mock show, with an arrow below
        the mock; clicking it (or scrolling / swiping down) reveals the rest. */
@@ -1760,6 +1811,8 @@ Anki's source.
             }
           });
 
+        condenseFeatures(container);
+
         // Make each ## section collapsible via a +/− toggle on the right.
         container
           .querySelectorAll("h2")
@@ -1875,6 +1928,72 @@ Anki's source.
         setupCardMode(container);
         alignCornerMark();
         typeTagline(container);
+    }
+
+    // Features: each item collapses to its name (and shortcut, if the README puts
+    // one in parentheses after it); clicking expands the full description. The
+    // smaller features are grouped under one "Various Quality-of-Life Features".
+    function condenseFeatures(root) {
+      const QOL = /global hotkeys|pomodoro|tray menu|quick zoom/i;
+      const h2 = [...root.querySelectorAll("h2")].find(h => /^\s*features\s*$/i.test(h.textContent));
+      let list = h2 && h2.nextElementSibling;
+      while (list && list.tagName !== "UL" && list.tagName !== "H2") list = list.nextElementSibling;
+      if (!list || list.tagName !== "UL") return;
+
+      const items = [...list.children];
+      const qol = items.filter(li => QOL.test(li.textContent.slice(0, 40)));
+      if (qol.length) {
+        const group = document.createElement("li");
+        const sub = document.createElement("ul");
+        sub.className = "feat-sub";
+        qol.forEach(li => sub.appendChild(li));
+        group.innerHTML = "<strong>Various Quality-of-Life Features</strong>";
+        group.appendChild(sub);
+        list.appendChild(group);
+      }
+
+      list.classList.add("feat-list");
+      [...list.children].forEach(li => {
+        // Loose lists wrap the first line in a <p>; tight ones don't.
+        const lead = li.innerHTML.trimStart().startsWith("<p") ? li.firstElementChild : li;
+        const m = lead.innerHTML.match(
+          /^\s*<strong>([\s\S]*?)<\/strong>\s*(\((?:(?!—)[\s\S])*?\))?\s*(?:—\s*)?/);
+        if (!m) return;
+        lead.innerHTML = lead.innerHTML.slice(m[0].length)
+          .replace(/^(\s*)([a-z])/, (_, sp, ch) => sp + ch.toUpperCase());   // was mid-sentence
+
+        const body = document.createElement("div");
+        body.className = "feat-body";
+        while (li.firstChild) body.appendChild(li.firstChild);
+        if (lead !== li && !lead.textContent.trim() && !lead.querySelector("img,video")) lead.remove();
+
+        const head = document.createElement("button");
+        head.type = "button";
+        head.className = "feat-head";
+        head.setAttribute("aria-expanded", "false");
+        head.innerHTML = `<span class="feat-name">${m[1]}</span>` +
+          (m[2] ? `<span class="feat-key">${m[2]}</span>` : "") +
+          '<span class="feat-chev">+</span>';
+        head.addEventListener("click", () => {
+          const open = !li.classList.contains("open");
+          body.style.maxHeight = body.scrollHeight + "px";
+          void body.offsetHeight;
+          li.classList.toggle("open", open);
+          head.setAttribute("aria-expanded", String(open));
+          head.lastChild.textContent = open ? "−" : "+";
+          if (open) {
+            // Let it grow freely once open (videos/images load after the measure).
+            body.addEventListener("transitionend", function done(e) {
+              if (e.propertyName !== "max-height") return;
+              body.style.maxHeight = "";
+              body.removeEventListener("transitionend", done);
+            });
+          }
+        });
+
+        li.classList.add("feat");
+        li.append(head, body);
+      });
     }
 
     // The arrow under the mock that ends the preview phase (see .more-arrow CSS).
