@@ -536,6 +536,321 @@
       pointer-events: none;
     }
 
+    /* Mock Janki deck browser, drawn in place of the reviewer.jpg hero. Sized in
+       em off a container-width base (1em = 1/90 of the window width), so it scales
+       like a screenshot; the dark tokens match Janki on a black background. */
+    .anki-mock {
+      --mk-win: #f4f4f5;
+      --mk-edge: #d4d4d8;
+      --mk-pill: #e4e4e7;
+      --mk-text: #18181b;
+      --mk-zero: #8a8f98;
+      --mk-rule: #d4d4d8;
+      --mk-new: #1d6fd6;
+      --mk-learn: #d63a3a;
+      --mk-due: #1f9d4c;
+      --mk-practice: #1f9d4c;
+      --mk-sync: #4a63a8;
+      --mk-hover: #0000000d;
+      --mk-opt: #ffffff;
+      --mk-cloze: #1d6fd6;
+      container-type: inline-size;
+      max-width: 900px;
+      margin: 0 auto 24px;
+    }
+    @media (prefers-color-scheme: dark) {
+      .anki-mock {
+        --mk-win: #111214;
+        --mk-edge: #3a3b3e;
+        --mk-pill: #09090a;
+        --mk-text: #ffffff;
+        --mk-zero: #8a8f98;
+        --mk-rule: #3a3b3e;
+        --mk-new: #82b6ff;
+        --mk-learn: #ff6b6b;
+        --mk-due: #36c75e;
+        --mk-practice: #86e39a;
+        --mk-sync: #a9bde6;
+        --mk-hover: #ffffff0f;
+        --mk-opt: #ffffff08;
+        --mk-cloze: #5aa0ff;
+      }
+    }
+    .mk-win {
+      position: relative;
+      aspect-ratio: 1800 / 1130;
+      font-size: calc(100cqw / 90);
+      line-height: 1;
+      color: var(--mk-text);
+      background: var(--mk-win);
+      border: 1px solid var(--mk-edge);
+      border-radius: 0.8em;
+      overflow: hidden;
+      user-select: none;
+    }
+    .mk-lights {
+      position: absolute;
+      top: 0.6em;
+      left: 0.58em;
+      display: flex;
+      gap: 0.62em;
+    }
+    .mk-lights i {
+      width: 0.88em;
+      height: 0.88em;
+      border-radius: 50%;
+    }
+    .mk-lights i:nth-child(1) { background: #ff5f57; }
+    .mk-lights i:nth-child(2) { background: #febc2e; }
+    .mk-lights i:nth-child(3) { background: #28c840; }
+    .mk-bar,
+    .mk-actions {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      white-space: nowrap;
+    }
+    .mk-bar {
+      top: 2.15em;
+      height: 2.25em;
+      align-items: center;
+      gap: 2.2em;
+      padding: 0 1.4em;
+      font-weight: 700;
+      background: var(--mk-pill);
+      border-radius: 1.125em;
+    }
+    .mk-bar .practice { color: var(--mk-practice); }
+    .mk-bar .sync { color: var(--mk-sync); }
+    .mk-table {
+      position: absolute;
+      top: 8.15em;
+      left: 50%;
+      width: 39.7em;
+      transform: translateX(-50%);
+    }
+    .mk-row {
+      position: relative;
+      display: flex;
+      align-items: center;
+      height: 2.4em;
+      padding-right: 0.6em;
+    }
+    .mk-row.mk-head {
+      height: auto;
+      padding-bottom: 0.52em;
+      margin-bottom: 0.55em;
+      font-weight: 700;
+      border-bottom: 1px solid var(--mk-rule);
+    }
+    .mk-name {
+      flex: 1;
+      display: flex;
+    }
+    .mk-row:not(.mk-head) .mk-name::before {
+      content: attr(data-exp);
+      width: 1.45em;
+      padding-left: 0.3em;
+    }
+    .mk-row > span:not(.mk-name) {
+      width: 5.8em;
+      text-align: center;
+    }
+    .mk-row .z { color: var(--mk-zero); }
+    .mk-row .n { color: var(--mk-new); }
+    .mk-row .l { color: var(--mk-learn); }
+    .mk-row .d { color: var(--mk-due); }
+    .mk-gear {
+      position: absolute;
+      right: 1.3em;
+      width: 0.95em;
+      height: 0.95em;
+      fill: var(--mk-zero);
+    }
+    .mk-actions {
+      bottom: 1.05em;
+      gap: 0.6em;
+      font-size: 0.9em;
+    }
+    .mk-actions span {
+      display: flex;
+      align-items: center;
+      height: 2.55em;
+      padding: 0 1.1em;
+      background: var(--mk-pill);
+      border-radius: 1.28em;
+    }
+
+    /* Interactive layer: one view at a time (decks / review / done). */
+    .mk-win { outline: none; }
+    .mk-bar { z-index: 3; }
+    .mk-bar [data-go] { cursor: pointer; }
+    .mk-view {
+      position: absolute;
+      inset: 0;
+      display: none;
+    }
+    .mk-win[data-view="decks"] .mk-decks,
+    .mk-win[data-view="review"] .mk-review,
+    .mk-win[data-view="done"] .mk-done { display: block; }
+    .mk-row[data-deck] {
+      cursor: pointer;
+      border-radius: 0.4em;
+    }
+    .mk-row[data-deck]:hover { background: var(--mk-hover); }
+    .mk-review { cursor: pointer; }
+    .mk-card {
+      position: absolute;
+      top: 6.7em;
+      left: 50%;
+      width: min(75em, 88%);
+      transform: translateX(-50%);
+      font-size: 2.15em;
+      line-height: 1.3;
+      text-align: center;
+    }
+    .mk-card.mk-in { animation: fadeIn 0.35s ease-out; }
+    .mk-cloze {
+      font-weight: 700;
+      color: var(--mk-cloze);
+    }
+    .mk-cloze.mk-ans {
+      display: inline-block;
+      animation: clozeReveal 0.45s ease-out;
+    }
+    .mk-card.mk-mcq {
+      top: 4.3em;
+      width: min(50em, 90%);
+      font-size: 1.6em;
+      line-height: 1.4;
+      text-align: left;
+    }
+    .mk-opts {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35em;
+      margin-top: 0.85em;
+    }
+    .mk-opt {
+      padding: 0.45em 0.6em;
+      background: var(--mk-opt);
+      border: 1px solid var(--mk-edge);
+      border-radius: 0.3em;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+    .mk-opt:hover { border-color: var(--mk-zero); }
+    .mk-opt.right { border-color: #35d073; background: #35d07326; }
+    .mk-opt.wrong { border-color: #ff5c5c; background: #ff5c5c26; }
+    .mk-chip {
+      position: absolute;
+      left: 1.1em;
+      bottom: 5.85em;
+      padding: 0.35em 0.75em;
+      font-size: 0.9em;
+      color: var(--mk-zero);
+      border: 1px solid var(--mk-edge);
+      border-radius: 1em;
+    }
+    .mk-chip:hover { color: var(--mk-text); }
+    .mk-counts {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 4em;
+      font-size: 0.9em;
+      text-align: center;
+      color: var(--mk-zero);
+    }
+    .mk-counts .u { text-decoration: underline; }
+    .mk-counts .n { color: var(--mk-new); }
+    .mk-counts .l { color: var(--mk-learn); }
+    .mk-counts .d { color: var(--mk-due); }
+    .mk-answer {
+      position: absolute;
+      left: 1.15em;
+      right: 1.15em;
+      bottom: 0.9em;
+      height: 2.1em;
+      display: flex;
+      font-size: 0.9em;
+      background: var(--mk-pill);
+      border-radius: 0.6em;
+      overflow: hidden;
+    }
+    .mk-answer > * {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mk-answer > *:hover { background: var(--mk-hover); }
+    .mk-timer {
+      position: absolute;
+      top: 0.55em;
+      right: 0.8em;
+      width: 1.5em;
+      height: 1.5em;
+      transform: rotate(-90deg);
+      display: none;
+    }
+    .mk-win[data-view="review"] .mk-timer { display: block; }
+    .mk-timer circle {
+      fill: none;
+      stroke-width: 2.4;
+    }
+    .mk-timer .track { stroke: var(--mk-hover); }
+    .mk-timer .fill {
+      stroke: var(--mk-zero);
+      stroke-dasharray: 56.55;
+      stroke-dashoffset: 56.55;
+    }
+    .mk-timer.run .fill { animation: mkTimer var(--mk-secs) linear forwards; }
+    @keyframes mkTimer { to { stroke-dashoffset: 0; } }
+    .mk-flare,
+    .mk-edge {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+    }
+    .mk-flare { animation: gradeFlare 0.6s ease-out forwards; }
+    .mk-edge {
+      opacity: 0;
+      box-shadow: inset 0 0 3.5em #ff4646b3;
+      border-radius: inherit;
+    }
+    .mk-edge.on { animation: mkEdge 1.8s ease-out; }
+    @keyframes mkEdge { 25% { opacity: 1; } }
+    .mk-done p {
+      position: absolute;
+      top: 14em;
+      left: 0;
+      right: 0;
+      margin: 0;
+      font-size: 1.3em;
+      line-height: 1.5;
+      text-align: center;
+    }
+    .mk-done small {
+      color: var(--mk-zero);
+      font-size: 0.7em;
+    }
+    .mk-caption {
+      margin-top: 8px;
+      font-size: 0.8rem;
+      text-align: center;
+      color: var(--muted);
+    }
+    /* Phone widths: a taller window with a bigger base so text stays legible. */
+    @container (max-width: 600px) {
+      .mk-win {
+        aspect-ratio: 4 / 5;
+        font-size: calc(100cqw / 52);
+      }
+      .mk-card { top: 5em; }
+    }
+
     .loading {
       color: var(--muted);
       text-align: center;
@@ -1073,6 +1388,12 @@ Anki's source.
             link.rel = "noopener noreferrer";
           });
 
+        // Swap the hero reviewer photo for a live-drawn mock of the deck browser.
+        const hero = container.querySelector('img[src$="reviewer.jpg"]');
+        if (hero) {
+          (hero.closest("p") || hero).replaceWith(buildAnkiMock());
+        }
+
         container
           .querySelectorAll("img")
           .forEach(img => {
@@ -1223,6 +1544,244 @@ Anki's source.
         // (otherwise the "feature-rich" lookup finds nothing to wrap).
         setupCardMode(container);
         typeTagline(container);
+    }
+
+    // Interactive mock of Janki (see the .anki-mock CSS): the deck browser opens
+    // a reviewer with Janki's real behaviours — cloze reveal, grading by where you
+    // click (Again/Hard/Good/Easy left→right, with the grade-colour flare), the
+    // card-timer ring + red edge glow, rephrase ↔ original, and practice questions.
+    function buildAnkiMock() {
+      const GRADES = ["#ff5c5c", "#ffa63d", "#35d073", "#4d9dff"];
+      const GRADE_NAMES = ["Again", "Hard", "Good", "Easy"];
+      const TIMER_SECS = 12;
+
+      // Cards: {{answer}} marks the cloze; `orig` is the un-rephrased wording.
+      const RANKI = [
+        { q: 0, t: "polycythemia vera: neoplastic blood disorder, too many RBCs are made<br>mutations often present in {{JAK2}}" },
+        { q: 2, t: "Community-acquired pneumonia in adults is most often caused by {{Streptococcus pneumoniae}}",
+          orig: "most common cause of community-acquired pneumonia: {{Streptococcus pneumoniae}}" },
+        { q: 1, t: "absence seizures (3 Hz spike-and-wave)<br>first-line treatment: {{ethosuximide}}" },
+        { q: 2, t: "Kussmaul breathing: deep, rapid respirations compensating for {{metabolic acidosis}}" },
+      ];
+      const PRACTICE = [
+        { q: 0, mcq: true, ans: 3,
+          t: "Type 1 diabetes mellitus is caused by a decreased ability of the β cells of the pancreas to produce insulin. A person with Type 1 diabetes mellitus who has neglected to take insulin injections will exhibit which one of the following?",
+          opts: ["Increased fatty acid synthesis from glucose in liver",
+                 "Decreased conversion of fatty acids to ketone bodies",
+                 "Increased stores of triacylglycerol in adipose tissue",
+                 "Increased production of acetone",
+                 "Increased glucose transport into muscle cells"] },
+        { q: 0, mcq: true, ans: 1,
+          t: "An infant develops jaundice, hepatomegaly and cataracts after starting breast milk. Deficiency of which enzyme is most likely?",
+          opts: ["Galactokinase", "Galactose-1-phosphate uridyltransferase",
+                 "Aldolase B", "Fructokinase", "Glucose-6-phosphatase"] },
+      ];
+      const decks = [
+        { exp: "+", name: "_AJ", c: [0, 0, 0] },
+        { exp: "", name: "_AnKing Step Deck", c: [0, 0, 0] },
+        { exp: "+", name: "_hUtCh", c: [0, 0, 0] },
+        { exp: "+", name: "Ranki", c: [528, 267, 228], cards: RANKI },
+      ];
+      const practice = { name: "Practice", c: [40, 0, 0], cards: PRACTICE };
+
+      const gear =
+        '<svg class="mk-gear" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.6 7.6 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.6 7.6 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.6 7.6 0 0 0 1.7 1l.3 2.6h4l.4-2.6a7.6 7.6 0 0 0 1.7-1l2.5 1 2-3.5ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"/></svg>';
+
+      const mock = document.createElement("div");
+      mock.className = "anki-mock";
+      mock.innerHTML =
+        '<div class="mk-win" data-view="decks" tabindex="0" role="application" aria-label="Interactive Janki demo">' +
+          '<div class="mk-lights"><i></i><i></i><i></i></div>' +
+          '<div class="mk-bar"><span data-go="decks">Decks</span><span>Add</span><span>Browse</span>' +
+            '<span>Stats</span><span class="practice" data-go="practice">Practice</span><span class="sync">Sync</span></div>' +
+          '<svg class="mk-timer" viewBox="0 0 24 24" aria-hidden="true"><circle class="track" cx="12" cy="12" r="9"/><circle class="fill" cx="12" cy="12" r="9"/></svg>' +
+          '<div class="mk-view mk-decks">' +
+            '<div class="mk-table"></div>' +
+            '<div class="mk-actions"><span>Get Shared</span><span>Create Deck</span>' +
+              "<span>Import File</span><span>Load Lectures</span></div>" +
+          "</div>" +
+          '<div class="mk-view mk-review">' +
+            '<div class="mk-card"></div>' +
+            '<span class="mk-chip" hidden></span>' +
+            '<div class="mk-counts"></div>' +
+            '<div class="mk-answer"></div>' +
+          "</div>" +
+          '<div class="mk-view mk-done"><p>Congratulations! You have finished this deck for now.<br>' +
+            "<small>Click to return to your decks.</small></p></div>" +
+          '<div class="mk-edge"></div>' +
+        "</div>" +
+        '<div class="mk-caption">Try it — open <b>Ranki</b> or <b>Practice</b>, click to reveal, then click left → right to grade (Again · Hard · Good · Easy).</div>';
+
+      const win = mock.querySelector(".mk-win");
+      const $ = sel => win.querySelector(sel);
+      const cardEl = $(".mk-card");
+      const chip = $(".mk-chip");
+      const timer = $(".mk-timer");
+      const edge = $(".mk-edge");
+      timer.style.setProperty("--mk-secs", TIMER_SECS + "s");
+
+      let deck = null, idx = 0, revealed = false, showOrig = false, busy = false;
+      const card = () => deck.cards[idx % deck.cards.length];
+
+      function renderDecks() {
+        const count = (v, cls) => `<span class="${v ? cls : "z"}">${v}</span>`;
+        $(".mk-table").innerHTML =
+          '<div class="mk-row mk-head"><span class="mk-name">Deck</span>' +
+            "<span>New</span><span>Learn</span><span>Due</span></div>" +
+          decks.map((d, i) =>
+            `<div class="mk-row" data-deck="${i}"><span class="mk-name" data-exp="${d.exp}">${d.name}</span>` +
+            count(d.c[0], "n") + count(d.c[1], "l") + count(d.c[2], "d") +
+            (d.c.some(Boolean) ? gear : "") + "</div>").join("");
+      }
+
+      function setView(v) {
+        win.dataset.view = v;
+        if (v === "review") return;
+        timer.classList.remove("run");
+        if (v === "decks") renderDecks();
+      }
+
+      function open(d) {
+        deck = d;
+        idx = 0;
+        showCard();
+      }
+
+      function cloze(text, answered) {
+        return text.replace(/\{\{(.+?)\}\}/g, (_, a) =>
+          answered ? `<span class="mk-cloze mk-ans">${a}</span>` : '<span class="mk-cloze">[...]</span>');
+      }
+
+      function showCard() {
+        if (!deck.c.some(Boolean)) { setView("done"); return; }
+        setView("review");
+        // Cards come from whichever queue still has cards (new → learn → due).
+        const c = card();
+        if (!deck.c[c.q]) c.q = deck.c.findIndex(Boolean);
+        revealed = false;
+        showOrig = false;
+        busy = false;
+        cardEl.className = "mk-card mk-in" + (c.mcq ? " mk-mcq" : "");
+        cardEl.innerHTML = c.mcq
+          ? c.t + '<div class="mk-opts">' +
+              c.opts.map((o, i) => `<div class="mk-opt" data-opt="${i}"><b>${"ABCDE"[i]}.</b> ${o}</div>`).join("") +
+            "</div>"
+          : cloze(c.t, false);
+        chip.hidden = !c.orig;
+        chip.textContent = "↻ Rephrased · show original";
+        $(".mk-counts").innerHTML = ["n", "l", "d"]
+          .map((k, i) => `<span class="${k}${i === c.q ? " u" : ""}">${deck.c[i]}</span>`).join(" + ");
+        $(".mk-answer").innerHTML = '<span data-show>Show Answer</span>';
+        timer.classList.remove("run");
+        void timer.getBoundingClientRect();
+        timer.classList.add("run");
+      }
+
+      function reveal() {
+        const c = card();
+        revealed = true;
+        if (c.mcq) {
+          cardEl.querySelector(`[data-opt="${c.ans}"]`).classList.add("right");
+        } else {
+          cardEl.querySelectorAll(".mk-cloze").forEach((el, i) => {
+            const answers = [...(showOrig ? c.orig : c.t).matchAll(/\{\{(.+?)\}\}/g)];
+            el.textContent = answers[i][1];
+            el.classList.add("mk-ans");
+          });
+        }
+        $(".mk-answer").innerHTML = GRADE_NAMES
+          .map((g, i) => `<span data-grade="${i}" style="color:${GRADES[i]}">${g}</span>`).join("");
+      }
+
+      function flare(color) {
+        const f = document.createElement("div");
+        f.className = "mk-flare";
+        f.style.background =
+          `radial-gradient(ellipse at center, ${color}17 0%, ${color}4d 50%, ${color}99 100%)`;
+        win.appendChild(f);
+        setTimeout(() => f.remove(), 650);
+      }
+
+      function grade(g) {
+        if (busy) return;
+        busy = true;
+        const c = card();
+        flare(GRADES[g]);
+        deck.c[c.q] = Math.max(0, deck.c[c.q] - 1);
+        if (g === 0) deck.c[1] += 1;   // Again → back into learning
+        idx += 1;
+        setTimeout(showCard, 260);
+      }
+
+      // Practice questions grade by answer choice: right → Good, wrong → Again.
+      function pick(i) {
+        if (busy || revealed) return;
+        const c = card();
+        revealed = true;
+        const right = i === c.ans;
+        cardEl.querySelector(`[data-opt="${c.ans}"]`).classList.add("right");
+        if (!right) cardEl.querySelector(`[data-opt="${i}"]`).classList.add("wrong");
+        flare(GRADES[right ? 2 : 0]);
+        busy = true;
+        setTimeout(() => { busy = false; grade(right ? 2 : 0); }, 1100);
+      }
+
+      function toggleOriginal() {
+        const c = card();
+        showOrig = !showOrig;
+        cardEl.classList.remove("mk-in");
+        void cardEl.offsetWidth;
+        cardEl.classList.add("mk-in");
+        cardEl.innerHTML = cloze(showOrig ? c.orig : c.t, revealed);
+        chip.textContent = showOrig ? "↻ Show rephrase" : "↻ Rephrased · show original";
+      }
+
+      win.addEventListener("click", e => {
+        const t = e.target;
+        const go = t.closest("[data-go]");
+        if (go) { go.dataset.go === "practice" ? open(practice) : setView("decks"); return; }
+        if (t.closest(".mk-bar")) return;
+        const row = t.closest("[data-deck]");
+        if (row) { open(decks[+row.dataset.deck]); return; }
+        if (win.dataset.view === "done") { setView("decks"); return; }
+        if (win.dataset.view !== "review") return;
+        if (t.closest(".mk-chip")) { toggleOriginal(); return; }
+        const gb = t.closest("[data-grade]");
+        if (gb) { grade(+gb.dataset.grade); return; }
+        const opt = t.closest("[data-opt]");
+        if (opt) { pick(+opt.dataset.opt); return; }
+        if (!revealed) { reveal(); return; }
+        // Answer showing: grade by where you clicked, like Janki's position grading.
+        const r = win.getBoundingClientRect();
+        grade(Math.min(3, Math.floor((e.clientX - r.left) / r.width * 4)));
+      });
+
+      win.addEventListener("keydown", e => {
+        if (win.dataset.view === "done" && (e.key === " " || e.key === "Enter")) {
+          setView("decks");
+        } else if (win.dataset.view !== "review") {
+          return;
+        } else if (e.key === " " || e.key === "Enter") {
+          if (!revealed) reveal(); else grade(2);
+        } else if (/^[1-4]$/.test(e.key) && revealed) {
+          grade(+e.key - 1);
+        } else if (e.key === "Escape") {
+          setView("decks");
+        } else {
+          return;
+        }
+        e.preventDefault();
+      });
+
+      // Focus Mode's card timer: when the ring fills, the edges flare red.
+      timer.addEventListener("animationend", () => {
+        edge.classList.remove("on");
+        void edge.offsetWidth;
+        edge.classList.add("on");
+      });
+
+      renderDecks();
+      return mock;
     }
 
     // First load on a phone: present the splash (title + tagline) centered like an
