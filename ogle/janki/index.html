@@ -2550,21 +2550,64 @@ Anki's source.
         grade(Math.min(3, Math.floor((e.clientX - r.left) / r.width * 4)));
       });
 
-      // Janki's Tab chords while reviewing: Tab+F = Focus Mode, Tab+Q = related question.
-      win.addEventListener("keyup", e => { if (e.key === "Tab") tabHeld = false; });
-      win.addEventListener("blur", () => { tabHeld = false; });
-      win.addEventListener("keydown", e => {
-        if (win.dataset.view === "review") {
-          if (e.key === "Tab") { tabHeld = true; e.preventDefault(); return; }
-          const k = e.key.toLowerCase();
-          if (tabHeld && k === "f") { setFocus(!focusOn); e.preventDefault(); return; }
-          if (tabHeld && k === "q" && !detour && !card().mcq && card().rel) {
-            startDetour(card(), "corner");
-            tourEvent("related");
-            e.preventDefault();
-            return;
+      // Janki's Tab chords: Tab+F = Focus Mode, Tab+Q = related question. They
+      // work whenever the demo has focus, or nothing does and the demo is on
+      // screen. A plain Tab (no chord) still moves focus on as usual.
+      let chordUsed = false, tabFromDemo = false;
+      const onScreen = () => {
+        const r = win.getBoundingClientRect();
+        return win.offsetParent !== null && r.top < innerHeight * 0.75 && r.bottom > innerHeight * 0.25;
+      };
+      const ownsKeys = () => {
+        const ae = document.activeElement;
+        if (ae === win || (ae && mock.contains(ae))) return true;
+        return (!ae || ae === document.body || ae === document.documentElement) && onScreen();
+      };
+      function leaveDemo() {
+        const next = [...document.querySelectorAll(
+          'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+          .filter(el => !el.disabled && el.offsetParent !== null && !mock.contains(el))
+          .find(el => mock.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING);
+        if (next) next.focus(); else win.blur();
+      }
+      document.addEventListener("keydown", e => {
+        if (e.key === "Tab" && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
+          if (!tabHeld) {
+            if (!ownsKeys()) return;
+            const ae = document.activeElement;
+            tabFromDemo = ae === win || (ae && mock.contains(ae));
+            tabHeld = true;
+            chordUsed = false;
           }
+          e.preventDefault();
+          win.focus({ preventScroll: true });
+          return;
         }
+        if (!tabHeld) return;
+        const k = e.key.toLowerCase();
+        if (k !== "f" && k !== "q") return;
+        e.preventDefault();
+        e.stopPropagation();
+        chordUsed = true;
+        if (k === "f") {
+          setFocus(!focusOn);
+          if (win.dataset.view !== "review")
+            toast(focusOn ? "Focus Mode on — open a deck to see it" : "Focus Mode off");
+          return;
+        }
+        if (win.dataset.view !== "review") { toast("Open a card, then Tab+Q pulls a related question"); return; }
+        if (detour || card().mcq) return;
+        if (!card().rel) { toast("No related questions for this card"); return; }
+        startDetour(card(), "corner");
+        tourEvent("related");
+      }, true);
+      document.addEventListener("keyup", e => {
+        if (e.key !== "Tab" || !tabHeld) return;
+        tabHeld = false;
+        if (!chordUsed && tabFromDemo) leaveDemo();   // plain Tab moves on out of the demo
+      }, true);
+
+      win.addEventListener("keydown", e => {
         if (win.dataset.view === "stats" && e.key === "Escape") {
           setView("decks");
           e.preventDefault();
@@ -2694,6 +2737,7 @@ Anki's source.
       }
 
       function toast(text) {
+        win.querySelectorAll(".mk-toast").forEach(old => old.remove());   // newest wins
         const t = document.createElement("div");
         t.className = "mk-toast";
         t.textContent = text;
@@ -2944,6 +2988,7 @@ Anki's source.
         clearHl();
         tourBar.hidden = true;
         caption.hidden = false;
+        win.focus({ preventScroll: true });
         try { localStorage.setItem("jankiTourDone", "1"); } catch (e) {}
         if (finished) toast("That’s the tour — explore freely!");
       }
