@@ -1461,6 +1461,28 @@ Anki's source.
       updateCornerMark();
     }
 
+    // On laptop widths, line the corner mark up with the centre of the "Janki"
+    // title (measured at the top of the page); phones keep the CSS top.
+    function alignCornerMark() {
+      const mark = document.querySelector(".corner-mark");
+      const h1 = document.querySelector("#content h1");
+      if (!mark) return;
+      if (!h1 || window.matchMedia("(max-width: 768px)").matches) {
+        mark.style.top = "";
+        return;
+      }
+      // The title text (its repo link), not the h1 box with its bottom padding.
+      // Layout offsets, not getBoundingClientRect: the content's fade-in slides it
+      // 4px, which would skew a measurement taken mid-animation.
+      let el = h1.querySelector("a") || h1, top = 0;
+      const height = el.offsetHeight;
+      for (; el; el = el.offsetParent) top += el.offsetTop;
+      const center = top + height / 2;
+      mark.style.top = Math.round(center - mark.offsetHeight / 2) + "px";
+    }
+    window.addEventListener("resize", alignCornerMark);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(alignCornerMark);
+
     // Static-first, then refresh: render the baked-in README immediately (instant
     // paint, works offline), then fetch the live README in the background and
     // re-render only if it changed — so the page is fast AND never stays desynced.
@@ -1851,6 +1873,7 @@ Anki's source.
         // Card wrapping must run before the typewriter empties the tagline text
         // (otherwise the "feature-rich" lookup finds nothing to wrap).
         setupCardMode(container);
+        alignCornerMark();
         typeTagline(container);
     }
 
