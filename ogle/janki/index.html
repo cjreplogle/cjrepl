@@ -561,6 +561,7 @@
       --mk-go: #1f7a45;
       --mk-dlg: #ffffff;
       --mk-warn: #9a6700;
+      --mk-btn: #2f7fe0;
       --mk-g0: #c43b3b; --mk-g0b: #f9e0e0;
       --mk-g1: #b0650f; --mk-g1b: #faebd8;
       --mk-g2: #1f8745; --mk-g2b: #dcf1e3;
@@ -1220,13 +1221,27 @@
       border-radius: 6px;
       cursor: pointer;
     }
-    .mk-tour-btns .next { color: #fff; background: var(--mk-cloze); border-color: transparent; }
+    .mk-tour-btns .next { color: #fff; background: var(--mk-btn); border-color: transparent; }
     .mk-win .mk-tour-hl {
       outline: 0.18em solid var(--mk-cloze);
       outline-offset: 0.3em;
       border-radius: 0.4em;
     }
-    .mk-tour-replay { cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+    .mk-tour-replay {
+      margin-top: 6px;
+      padding: 7px 18px;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #fff;
+      background: var(--mk-btn);
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: filter 0.15s ease, transform 0.15s ease;
+    }
+    .mk-tour-replay:hover { filter: brightness(1.12); transform: translateY(-1px); }
+    .mk-tour-replay:focus-visible { outline: 2px solid var(--mk-cloze); outline-offset: 3px; }
     @keyframes mkTourIn { from { opacity: 0; transform: translateY(-4px); } }
     .mk-caption {
       margin-top: 8px;
@@ -2287,7 +2302,7 @@ Anki's source.
             "<small>Click to return to your decks.</small></p></div>" +
           '<div class="mk-edge"></div>' +
         "</div>" +
-        '<div class="mk-caption"><span class="mk-tour-replay">Take the tour</span></div>';
+        '<div class="mk-caption"><button type="button" class="mk-tour-replay">Take the tour</button></div>';
 
       const win = mock.querySelector(".mk-win");
       const $ = sel => win.querySelector(sel);
