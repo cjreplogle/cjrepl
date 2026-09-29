@@ -56,6 +56,18 @@
   @keyframes up { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
   @media (prefers-reduced-motion: reduce) { *, *::before { animation:none !important; transition:none !important; } }
   .disclaim { text-align:center; font-size:.72rem; color:var(--mute); opacity:.7; margin:10px auto 0; max-width:34em; }
+
+  /* passcode gate */
+  body.gated > :not(#gate) { filter:blur(10px); pointer-events:none; user-select:none; }
+  #gate { position:fixed; inset:0; z-index:50; display:grid; place-items:center; padding:16px; background:rgba(0,0,0,.35); animation:fadeIn .3s ease both; }
+  .gcard { width:min(340px, 100%); background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:18px; padding:24px 20px;
+           text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.35); display:grid; grid-template-columns:1fr; gap:10px; align-items:stretch; }
+  .gcard .glock { font-size:2rem; } .gcard h2 { margin:0; font-size:1.3rem; font-weight:800; color:var(--ink); text-transform:none; letter-spacing:0; display:block; }
+  .gcard p { margin:0; color:var(--mute); font-size:.9rem; } .gcard .gerr { color:var(--dn, #d64545); min-height:1.1em; font-size:.85rem; }
+  .gcard input { font:inherit; text-align:center; font-size:1.1rem; padding:10px 12px; border-radius:10px; border:1.5px solid transparent; background:var(--field); color:var(--ink); outline:none; }
+  .gcard input:focus { border-color:var(--acc); }
+  .gcard button { font:inherit; font-weight:700; color:#fff; background:var(--acc); border:none; border-radius:12px; padding:11px; cursor:pointer; }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
 </style>
 </head>
 <body>
@@ -72,6 +84,37 @@
 <script>
 // Show each ladder's current #1 (same Elo rules as the game pages, top player only).
 const API = 'https://pong-worker.cjreplogle.workers.dev';
+
+// ---- optional viewing passcode (inactive unless the backend has VIEW_CODE set) ----
+let viewCode = ''; try { viewCode = localStorage.getItem('eloView') || ''; } catch {}
+const rawFetch = window.fetch.bind(window);
+window.fetch = async (u, o = {}) => {
+  if (!String(u).startsWith(API)) return rawFetch(u, o);
+  const r = await rawFetch(u, { ...o, headers: { ...(o.headers || {}), ...(viewCode ? { 'X-View': viewCode } : {}) } });
+  if (r.status === 401 && (await r.clone().json().catch(() => ({}))).gate) { showGate(); throw new Error('passcode required'); }
+  return r;
+};
+function showGate(wrong) {
+  let g = document.getElementById('gate');
+  if (!g) {
+    g = document.createElement('div'); g.id = 'gate';
+    g.innerHTML = `<form class="gcard" autocomplete="off"><div class="glock">🔒</div><h2>Passcode</h2>
+      <p>Enter the class passcode to see the ladder.</p><input id="gcode" type="password" inputmode="text" placeholder="Passcode" required>
+      <p class="gerr" id="gerr"></p><button>Unlock</button></form>`;
+    document.body.append(g);
+    g.querySelector('form').onsubmit = async e => {
+      e.preventDefault();
+      const code = document.getElementById('gcode').value.trim();
+      const r = await rawFetch(API + '/players', { headers: { 'X-View': code } });
+      if (!r.ok) { document.getElementById('gerr').textContent = 'That’s not it.'; g.querySelector('.gcard').animate([{ transform: 'translateX(-8px)' }, { transform: 'translateX(8px)' }, { transform: 'none' }], { duration: 250 }); return; }
+      viewCode = code; try { localStorage.setItem('eloView', code); } catch {}
+      g.remove(); document.body.classList.remove('gated');
+      typeof load === 'function' ? load() : (leader('pong'), leader('fifa'));
+    };
+  }
+  document.body.classList.add('gated');
+  setTimeout(() => document.getElementById('gcode')?.focus(), 50);
+}
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // Same math as the game pages (group's spreadsheet): K = 40, MROUND to 2, zero-sum; draws score 0.5.
 const mround2 = x => Math.sign(x) * Math.round(Math.abs(x) / 2) * 2;   // like Sheets MROUND (half away from 0)

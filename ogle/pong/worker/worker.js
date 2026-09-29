@@ -2,6 +2,7 @@
 // GET  /matches          → [{id,a,b,sa,sb,t}]
 // POST /matches {a,b,sa,sb} → appends a match
 // DELETE /matches/:id    → removes a match (only the most recent one — "undo")
+// Viewing gate (X-View: <VIEW_CODE secret>): only enforced while VIEW_CODE is set.
 // Admin (X-Admin: <ADMIN_PASSWORD secret>): PUT /matches/:id edits, DELETE /matches/:id any match,
 //   POST /rename {from,to} merges/renames a player everywhere, GET /admin checks the password.
 // Elo is computed client-side by replaying the log, so edits stay consistent.
@@ -12,7 +13,7 @@ const CLASSES = ['MS1', 'MS2', 'MS3', 'MS4', 'Resident', 'Faculty', 'Other'];
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Admin',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Admin, X-View',
 };
 const json = (d, s = 200) =>
   new Response(JSON.stringify(d), { status: s, headers: { 'Content-Type': 'application/json', ...CORS } });
@@ -27,6 +28,10 @@ export default {
 
     const isAdmin = !!env.ADMIN_PASSWORD && request.headers.get('X-Admin') === env.ADMIN_PASSWORD;
     const save = list => env.PONG.put(KEY, JSON.stringify(list));
+    // Optional viewing passcode: set the VIEW_CODE secret to require it for everything
+    // (reads and writes); unset it to open the site back up. Admins always pass.
+    if (env.VIEW_CODE && !isAdmin && url.pathname !== '/admin' && request.headers.get('X-View') !== env.VIEW_CODE)
+      return json({ error: 'passcode required', gate: true }, 401);
     if (url.pathname === '/admin') return isAdmin ? json({ ok: true }) : json({ error: 'wrong password' }, 401);
 
     // Player profiles (class year), shared by both ladders: { lowercased name: { cls } }
