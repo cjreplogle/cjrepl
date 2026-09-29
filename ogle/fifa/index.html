@@ -73,6 +73,7 @@
   .winbtn:hover { border-color:var(--acc); }
   .winbtn.on { color:#fff; background:var(--acc); box-shadow:0 4px 14px rgba(90,174,232,.3); }
   .winbtn.on::before { content:"🏆 "; }
+  .winbtn.lost { color:var(--mute); opacity:.7; text-decoration:line-through; text-decoration-color:rgba(127,127,127,.5); }
   .drawbtn { grid-column:1/-1; } .drawbtn.on::before { content:"🤝 "; }
   form.wl .stepper { display:none; } form.wl .winbtn { display:block; }
   .pod, .prow { cursor:pointer; transition:transform .15s, background .15s; }
@@ -408,7 +409,15 @@ document.querySelectorAll('.step').forEach(b => b.onclick = () => {
   i.value = Math.max(0, Math.min(20, (+i.value || 0) + +b.dataset.d));
 });
 let wlMode = false, winner = null;
-function pickWinner(w) { winner = w; document.querySelectorAll('.winbtn').forEach(b => b.classList.toggle('on', b.dataset.w === w)); }
+function pickWinner(w) {
+  winner = w;
+  document.querySelectorAll('.winbtn').forEach(b => {
+    const me = b.dataset.w, player = me === 'a' || me === 'b';
+    b.classList.toggle('on', me === w);
+    b.classList.toggle('lost', player && (w === 'a' || w === 'b') && me !== w);
+    if (player) b.textContent = !w ? 'Won' : w === 'draw' ? 'Drew' : me === w ? 'Won' : 'Lost';
+  });
+}
 document.querySelectorAll('.winbtn').forEach(b => b.onclick = () => pickWinner(winner === b.dataset.w ? null : b.dataset.w));
 let mode = 'score', lastScore = 'score';
 const inTour = () => mode === 'tour', scoreMode = () => lastScore;
