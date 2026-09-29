@@ -44,6 +44,9 @@
   a.game:focus-visible { outline:2px solid var(--acc); outline-offset:3px; }
   a.game img { width:96px; height:96px; display:block; margin:0 auto 14px; transition:transform .3s; }
   a.game:hover img { transform:rotate(-8deg) scale(1.05); }
+  a.game.fifa { --acc:#5aaee8; }
+  a.game.fifa:hover { box-shadow:0 14px 34px rgba(90,174,232,.22); }
+  a.game.fifa:focus-visible { outline-color:#5aaee8; }
   .name { font-size:1.5rem; font-weight:800; letter-spacing:-.01em; }
   .lead { font-size:.85rem; color:var(--mute); margin-top:6px; min-height:1.3em; }
   .lead b { color:var(--ink); }
@@ -58,7 +61,7 @@
 <p class="sub">Medcat Elo ladders. Pick your game.</p>
 <div class="pick">
   <a class="game" href="../pong/"><img src="../pong/icon.svg" alt=""><div class="name">Ping Pong</div><div class="lead" id="l-pong"></div></a>
-  <a class="game" href="../fifa/"><img src="../fifa/icon.svg" alt=""><div class="name">FIFA</div><div class="lead" id="l-fifa"></div></a>
+  <a class="game fifa" href="../fifa/"><img src="../fifa/icon.svg" alt=""><div class="name">FIFA</div><div class="lead" id="l-fifa"></div></a>
 </div>
 </div>
 <script>

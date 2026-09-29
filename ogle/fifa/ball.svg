@@ -2,7 +2,7 @@
   <defs><clipPath id="c"><circle cx="32" cy="32" r="28"/></clipPath>
   <radialGradient id="s" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".7" stop-color="#eee"/><stop offset="1" stop-color="#bbb"/></radialGradient></defs>
   <circle cx="32" cy="32" r="28" fill="url(#s)"/>
-  <g clip-path="url(#c)" fill="#e00122" stroke="#111" stroke-width="1.2" stroke-linejoin="round">
+  <g clip-path="url(#c)" fill="#8cc8f2" stroke="#111" stroke-width="1.2" stroke-linejoin="round">
     <polygon points="32,21 42.5,28.6 38.5,41 25.5,41 21.5,28.6"/>
     <polygon points="32,3 40,8 37,14 27,14 24,8"/>
     <polygon points="57,23 62,31 58,38 51,34 51,26"/>
