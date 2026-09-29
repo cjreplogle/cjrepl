@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noimageindex">
+<title>Ping pong &mdash; CJ Replogle</title>
+<style>
+  body { font-family:"Times New Roman",Times,serif; color:#000; background:#fff;
+         margin:12px; max-width:46em; line-height:1.4; }
+  h1 { font-size:1.9em; margin:0 0 0.1em; }
+  h2 { font-size:1.3em; margin:0.2em 0 0.4em; }
+  hr { border:none; border-top:1px solid #000; margin:1em 0; }
+  .top-back { margin:0 0 0.6em; font-size:0.9em; }
+  table { border-collapse:collapse; width:100%; }
+  th, td { text-align:left; padding:2px 8px 2px 0; }
+  th { border-bottom:1px solid #000; font-weight:bold; }
+  td.n, th.n { text-align:right; }
+  form { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  input { font:inherit; padding:2px 4px; border:1px solid #000; }
+  input.name { width:9em; } input.score { width:3em; }
+  button { font:inherit; cursor:pointer; }
+  .d-up { color:#070; } .d-dn { color:#b00; }
+  .muted { color:#555; font-size:0.85em; }
+  .err { color:#b00; }
+  .link { color:#00e; text-decoration:underline; cursor:pointer; background:none; border:none; padding:0; }
+</style>
+</head>
+<body>
+<p class="top-back"><a href="/ogle/">&larr; back</a></p>
+<h1>Ping pong</h1>
+<p class="muted">Elo for the class. Everyone starts at 1000.</p>
+<hr>
+
+<h2>Record a game</h2>
+<form id="f" autocomplete="off">
+  <input class="name" id="a" placeholder="player" list="names" required>
+  <input class="score" id="sa" type="number" min="0" max="99" inputmode="numeric" placeholder="11" required>
+  <span>&ndash;</span>
+  <input class="score" id="sb" type="number" min="0" max="99" inputmode="numeric" placeholder="7" required>
+  <input class="name" id="b" placeholder="player" list="names" required>
+  <button type="submit">Save</button>
+</form>
+<datalist id="names"></datalist>
+<p id="msg" class="muted"></p>
+<hr>
+
+<h2>Leaderboard</h2>
+<table id="lb"><thead><tr><th>#</th><th>Player</th><th class="n">Elo</th><th class="n">W&ndash;L</th><th class="n">Last</th></tr></thead><tbody></tbody></table>
+<p class="muted" id="lbnote"></p>
+<hr>
+
+<h2>Recent games</h2>
+<table id="hist"><thead><tr><th>Game</th><th class="n">Elo change</th><th class="n">When</th></tr></thead><tbody></tbody></table>
+<hr>
+<p class="muted">How it works: winner takes points from loser based on how surprising the win was.
+It adapts &mdash; new players move fast (K&nbsp;=&nbsp;48 for the first 5 games, 32 until 20, then 24) so they
+find their level quickly, and a blowout counts a bit more than a deuce (up to 1.5&times; for 11&ndash;0).
+Names aren&rsquo;t case-sensitive. Typo? Undo the latest game.</p>
+
+<script>
+const API = 'https://pong-worker.cjreplogle.workers.dev';
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let matches = [];
+
+const kFactor = games => games < 5 ? 48 : games < 20 ? 32 : 24;
+const marginMult = (w, l) => Math.min(1.5, Math.max(0.8, 0.8 + Math.log(w - l + 1) / Math.log(12) * 0.7));
+
+function compute() {
+  const P = {};            // key -> {name, elo, w, l, games, last}
+  const get = n => { const k = n.toLowerCase(); return P[k] ||= { name: n, elo: 1000, w: 0, l: 0, games: 0, last: 0 }; };
+  const deltas = [];
+  for (const m of matches) {
+    const A = get(m.a), B = get(m.b);
+    const aWon = m.sa > m.sb;
+    const W = aWon ? A : B, L = aWon ? B : A;
+    const exp = 1 / (1 + 10 ** ((L.elo - W.elo) / 400));
+    const mult = marginMult(Math.max(m.sa, m.sb), Math.min(m.sa, m.sb));
+    const dW = Math.round(kFactor(W.games) * (1 - exp) * mult);
+    const dL = Math.round(kFactor(L.games) * (1 - exp) * mult);
+    W.elo += dW; L.elo -= dL; W.w++; L.l++; W.games++; L.games++;
+    W.last = dW; L.last = -dL;
+    deltas.push(aWon ? [dW, -dL] : [-dL, dW]);
+  }
+  return { P, deltas };
+}
+
+function ago(t) {
+  const s = (Date.now() - t) / 1000;
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s / 60) + 'm ago';
+  if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+  return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+const fmtD = d => `<span class="${d >= 0 ? 'd-up' : 'd-dn'}">${d >= 0 ? '+' : '−'}${Math.abs(d)}</span>`;
+
+function render() {
+  const { P, deltas } = compute();
+  const players = Object.values(P).sort((x, y) => y.elo - x.elo);
+  $('lb').tBodies[0].innerHTML = players.length ? players.map((p, i) =>
+    `<tr><td>${i + 1}${i === 0 ? ' 🏓' : ''}</td><td>${esc(p.name)}${p.games < 5 ? ' <span class="muted">(new)</span>' : ''}</td>
+     <td class="n"><b>${p.elo}</b></td><td class="n">${p.w}&ndash;${p.l}</td><td class="n">${fmtD(p.last)}</td></tr>`).join('')
+    : '<tr><td colspan="5" class="muted">No games yet.</td></tr>';
+  $('lbnote').textContent = matches.length ? `${matches.length} game${matches.length > 1 ? 's' : ''} played.` : '';
+  $('names').innerHTML = players.map(p => `<option value="${esc(p.name)}">`).join('');
+  const rows = [];
+  for (let i = matches.length - 1; i >= Math.max(0, matches.length - 30); i--) {
+    const m = matches[i], [da, db] = deltas[i], aWon = m.sa > m.sb;
+    const undo = i === matches.length - 1 ? ` <button class="link" onclick="undo('${m.id}')">undo</button>` : '';
+    rows.push(`<tr><td>${aWon ? '<b>' + esc(m.a) + '</b>' : esc(m.a)} ${m.sa}&ndash;${m.sb} ${aWon ? esc(m.b) : '<b>' + esc(m.b) + '</b>'}</td>
+      <td class="n">${fmtD(da)} / ${fmtD(db)}</td><td class="n">${ago(m.t)}${undo}</td></tr>`);
+  }
+  $('hist').tBodies[0].innerHTML = rows.join('') || '<tr><td colspan="3" class="muted">Nothing yet.</td></tr>';
+}
+
+// Snap typed names to an existing player's spelling so "cj" and "CJ" stay one person.
+function canon(n) {
+  n = n.replace(/\s+/g, ' ').trim();
+  const hit = matches.flatMap(m => [m.a, m.b]).find(x => x.toLowerCase() === n.toLowerCase());
+  return hit || n;
+}
+
+async function load() {
+  try { matches = await (await fetch(API + '/matches')).json(); render(); }
+  catch { $('msg').innerHTML = '<span class="err">Couldn’t load games.</span>'; }
+}
+
+$('f').onsubmit = async e => {
+  e.preventDefault();
+  const body = { a: canon($('a').value), b: canon($('b').value), sa: +$('sa').value, sb: +$('sb').value };
+  $('msg').textContent = 'Saving…';
+  const r = await fetch(API + '/matches', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const d = await r.json();
+  if (!r.ok) { $('msg').innerHTML = `<span class="err">${esc(d.error)}</span>`; return; }
+  $('msg').textContent = 'Saved.';
+  $('sa').value = $('sb').value = '';
+  await load();
+};
+
+window.undo = async id => {
+  if (!confirm('Remove the latest game?')) return;
+  const r = await fetch(API + '/matches/' + id, { method: 'DELETE' });
+  $('msg').textContent = r.ok ? 'Removed.' : 'Couldn’t undo (someone saved a newer game?).';
+  await load();
+};
+
+load();
+setInterval(load, 30000);
+</script>
+</body>
+</html>

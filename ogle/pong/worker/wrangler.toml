@@ -1,0 +1,7 @@
+name = "pong-worker"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[[kv_namespaces]]
+binding = "PONG"
+id = "678db6c3160b44338a3ad117ad83694e"
