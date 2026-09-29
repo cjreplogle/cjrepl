@@ -8,6 +8,7 @@
 
 // ?g=fifa selects a separate log (football allows draws); default is ping pong.
 const GAMES = { pong: { key: 'matches', draws: false }, fifa: { key: 'matches:fifa', draws: true } };
+const CLASSES = ['MS1', 'MS2', 'MS3', 'MS4', 'Resident', 'Faculty', 'Other'];
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -27,6 +28,22 @@ export default {
     const isAdmin = !!env.ADMIN_PASSWORD && request.headers.get('X-Admin') === env.ADMIN_PASSWORD;
     const save = list => env.PONG.put(KEY, JSON.stringify(list));
     if (url.pathname === '/admin') return isAdmin ? json({ ok: true }) : json({ error: 'wrong password' }, 401);
+
+    // Player profiles (class year), shared by both ladders: { lowercased name: { cls } }
+    if (url.pathname === '/players') {
+      const players = JSON.parse((await env.PONG.get('players')) || '{}');
+      if (request.method === 'GET') return json(players);
+      if (request.method === 'POST') {
+        let body; try { body = await request.json(); } catch { return json({ error: 'bad json' }, 400); }
+        const key = cleanName(body.name).toLowerCase();
+        const cls = String(body.cls || '').trim().slice(0, 12);
+        if (!key) return json({ error: 'need a name' }, 400);
+        if (cls && !CLASSES.includes(cls)) return json({ error: 'unknown class' }, 400);
+        if (cls) players[key] = { ...players[key], cls }; else if (players[key]) delete players[key].cls;
+        await env.PONG.put('players', JSON.stringify(players));
+        return json(players[key] || {});
+      }
+    }
 
     if (url.pathname === '/matches' && request.method === 'GET') return json(await load());
 
