@@ -72,6 +72,37 @@
   .winbtn.on { color:#fff; background:var(--acc); box-shadow:0 4px 14px rgba(224,1,34,.3); }
   .winbtn.on::before { content:"🏆 "; }
   form.wl .stepper { display:none; } form.wl .winbtn { display:block; }
+  .pod, .prow { cursor:pointer; transition:transform .15s, background .15s; }
+  .pod:hover { transform:translateY(-2px); } .prow:hover td { background:var(--field); }
+  .pod:focus-visible, .prow:focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
+  dialog { border:none; border-radius:18px; padding:0; width:min(620px, calc(100vw - 24px)); max-height:calc(100vh - 32px);
+           background:var(--card); color:var(--ink); box-shadow:0 20px 60px rgba(0,0,0,.35); }
+  dialog::backdrop { background:rgba(0,0,0,.45); backdrop-filter:blur(3px); }
+  #pd { padding:20px; position:relative; }
+  dialog { max-width:calc(100vw - 24px); box-sizing:border-box; } .stats div { min-width:0; } .ph { table-layout:auto; }
+  #pd h3 { margin:0 0 12px; font-size:1.5rem; font-weight:800; letter-spacing:-.02em; border-left:5px solid var(--acc); padding-left:10px; }
+  .x { position:absolute; top:12px; right:14px; font-size:1.6rem; line-height:1; background:none; border:none; color:var(--mute); cursor:pointer; }
+  .stats { display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin-bottom:14px; }
+  .stats div { background:var(--field); border-radius:10px; padding:8px 4px; text-align:center; }
+  .stats b { display:block; font-size:1.05rem; } .stats span { font-size:.7rem; color:var(--mute); }
+  @media (max-width:480px) { .stats { grid-template-columns:repeat(3,1fr); } }
+  .chart { width:100%; height:auto; display:block; margin:4px 0 10px; }
+  .chart text { font-size:11px; fill:var(--mute); } .chart .grid { stroke:var(--line); }
+  .chart .base { stroke:var(--mute); stroke-dasharray:3 4; opacity:.6; }
+  .chart .ln { fill:none; stroke:var(--acc); stroke-width:2.5; stroke-linejoin:round; }
+  .chart .area { fill:var(--acc); opacity:.08; }
+  .chart .dw { fill:var(--acc); } .chart .dl { fill:var(--card); stroke:var(--acc); stroke-width:1.5; }
+  .ph td { padding:7px 6px; font-size:.88rem; } .ph .w { color:var(--up); font-weight:800; } .ph .l { color:var(--dn); font-weight:800; }
+  .foot { text-align:center; margin-top:18px; } .foot .link { color:var(--mute); }
+  .admin-on .foot .link { color:var(--acc); font-weight:700; }
+  #ad { padding:20px; display:grid; gap:10px; } #ad h3 { margin:0; font-size:1.2rem; }
+  #ad .row { display:grid; grid-template-columns:1fr 70px; gap:8px; }
+  #ad label { font-size:.85rem; color:var(--mute); display:flex; align-items:center; gap:6px; }
+  #ad .btns { display:flex; gap:8px; justify-content:flex-end; }
+  #ad .btns button { font:inherit; font-weight:600; border-radius:10px; padding:8px 14px; cursor:pointer; border:none; }
+  #ad .go { background:var(--acc); color:#fff; } #ad .cancel { background:var(--field); color:var(--ink); }
+  .rename { display:flex; gap:8px; margin-top:12px; } .rename input { flex:1; }
+  .rename button { font:inherit; font-weight:600; border:none; border-radius:10px; padding:0 14px; background:var(--acc); color:#fff; cursor:pointer; }
   .step:hover { background:rgba(224,1,34,.1); } .step:active { transform:scale(.9); background:rgba(224,1,34,.18); }
   .vs { font-weight:800; color:var(--mute); padding-bottom:14px; font-size:.85rem; }
   button.save { grid-column:1/-1; font:inherit; font-weight:700; color:#fff; border:none; cursor:pointer;
@@ -143,8 +174,11 @@
 <table id="hist"><tbody></tbody></table>
 </section>
 
+<dialog id="pdlg"><div id="pd"></div></dialog>
 <details><summary>Mechanism of action (how the rating works)</summary>
 <p>The winner takes points from the loser based on how surprising the win was. New players move fast (K&nbsp;=&nbsp;48 for their first 5 games, 32 until 20, then 24) so they find their level quickly, and a blowout counts more than a deuce (up to 1.5&times; for 11&ndash;0). Games logged as just a win/loss count as a normal 1&times; result. Names aren&rsquo;t case-sensitive. Typo? Undo the latest game.</p></details>
+<p class="foot"><button class="link" id="admbtn" onclick="adminToggle()">admin</button></p>
+<dialog id="adlg"><form id="adf" method="dialog"><div id="ad"></div></form></dialog>
 </div>
 <script>
 const API = 'https://pong-worker.cjreplogle.workers.dev';
@@ -157,7 +191,7 @@ const marginMult = (w, l) => Math.min(1.5, Math.max(0.8, 0.8 + Math.log(w - l + 
 
 function compute() {
   const P = {};            // key -> {name, elo, w, l, games, last}
-  const get = n => { const k = n.toLowerCase(); return P[k] ||= { name: n, elo: 1000, w: 0, l: 0, games: 0, last: 0 }; };
+  const get = n => { const k = n.toLowerCase(); return P[k] ||= { key: k, name: n, elo: 1000, w: 0, l: 0, games: 0, last: 0, hist: [] }; };
   const deltas = [];
   for (const m of matches) {
     const A = get(m.a), B = get(m.b);
@@ -170,6 +204,10 @@ function compute() {
     W.elo += dW; L.elo -= dL; W.w++; L.l++; W.games++; L.games++;
     W.last = dW; L.last = -dL;
     deltas.push(aWon ? [dW, -dL] : [-dL, dW]);
+    // snapshot everyone's rank after this game, for the history chart
+    const ranked = Object.values(P).sort((x, y) => y.elo - x.elo);
+    for (const p of [A, B]) p.hist.push({ i: p.hist.length, m, elo: p.elo, rank: ranked.indexOf(p) + 1, of: ranked.length,
+      d: p === A ? deltas.at(-1)[0] : deltas.at(-1)[1], opp: p === A ? B.name : A.name, won: p === W });
   }
   return { P, deltas };
 }
@@ -185,6 +223,8 @@ const fmtD = d => `<span class="${d >= 0 ? 'd-up' : 'd-dn'}">${d >= 0 ? '+' : '�
 
 function render() {
   const { P, deltas } = compute();
+  lastP = P;
+  if (openKey && $('pdlg').open) showPlayer(openKey);
   const players = Object.values(P).sort((x, y) => y.elo - x.elo);
   const medals = ['🥇', '🥈', '🥉'];
   const pod = players.slice(0, 3).map((p, i) => ({ p, i }));
@@ -192,20 +232,21 @@ function render() {
   $('podium').style.display = pod.length ? '' : 'none';
   $('podium').style.gridTemplateColumns = pod.length === 3 ? '' : `repeat(${pod.length}, 1fr)`;
   $('podium').innerHTML = order.map(({ p, i }) =>
-    `<div class="pod p${i + 1}"><div class="medal">${medals[i]}</div><div class="pname">${esc(p.name)}</div>
+    `<div class="pod p${i + 1}" data-k="${esc(p.key)}" role="button" tabindex="0"><div class="medal">${medals[i]}</div><div class="pname">${esc(p.name)}</div>
      <div class="pelo">${p.elo}</div><div class="prec">${p.w}W &middot; ${p.l}L</div></div>`).join('');
   const rest = players.slice(3);
   $('lb').style.display = rest.length || !players.length ? '' : 'none';
   $('lb').tBodies[0].innerHTML = players.length ? rest.map((p, i) =>
-    `<tr><td class="rank">${i + 4}</td><td>${esc(p.name)}${p.games < 5 ? '<span class="tag">MS1</span>' : ''}</td>
+    `<tr class="prow" data-k="${esc(p.key)}" tabindex="0"><td class="rank">${i + 4}</td><td>${esc(p.name)}${p.games < 5 ? '<span class="tag">MS1</span>' : ''}</td>
      <td class="n elo">${p.elo}</td><td class="n">${p.w}&ndash;${p.l}</td><td class="n hide-sm">${fmtD(p.last)}</td></tr>`).join('')
     : '<tr><td colspan="5" class="empty">No games yet &mdash; go play between lectures!</td></tr>';
   $('lbnote').textContent = matches.length ? `${matches.length} game${matches.length > 1 ? 's' : ''} played.` : '';
   $('names').innerHTML = players.map(p => `<option value="${esc(p.name)}">`).join('');
   const rows = [];
-  for (let i = matches.length - 1; i >= Math.max(0, matches.length - 30); i--) {
+  for (let i = matches.length - 1; i >= (adminPw ? 0 : Math.max(0, matches.length - 30)); i--) {
     const m = matches[i], [da, db] = deltas[i], aWon = m.sa > m.sb;
-    const undo = i === matches.length - 1 ? ` <button class="link" onclick="undo('${m.id}')">undo</button>` : '';
+    const undo = adminPw ? ` <button class="link" onclick="editMatch('${m.id}')">edit</button><button class="link" onclick="delMatch('${m.id}')">delete</button>`
+      : i === matches.length - 1 ? ` <button class="link" onclick="undo('${m.id}')">undo</button>` : '';
     rows.push(`<tr><td><div class="game"><span class="${aWon ? 'w' : 'l'}">${esc(m.a)}</span>
       <span class="sc">${m.wl ? (aWon ? 'W&ndash;L' : 'L&ndash;W') : m.sa + '&ndash;' + m.sb}</span><span class="${aWon ? 'l' : 'w'}">${esc(m.b)}</span>${undo}</div></td>
       <td class="n">${fmtD(da)} <span class="muted">/</span> ${fmtD(db)}</td><td class="n muted hide-sm">${ago(m.t)}</td></tr>`);
@@ -265,6 +306,105 @@ function setMode(wl) {
 $('m-score').onclick = () => setMode(false);
 $('m-wl').onclick = () => setMode(true);
 try { if (localStorage.getItem('pongMode') === 'wl') setMode(true); } catch {}
+let lastP = {}, chartMode = 'elo', openKey = null;
+function chart(h, mode) {
+  const W = 560, H = 200, pl = 38, pr = 12, pt = 12, pb = 22;
+  const pts = [{ elo: 1000, rank: h[0]?.of ? h[0].rank : 1 }, ...h];
+  const vals = pts.map(p => mode === 'elo' ? p.elo : p.rank);
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  if (mode === 'rank') { lo = 1; hi = Math.max(2, ...h.map(p => p.of)); }
+  else { const pad = Math.max(10, (hi - lo) * .12); lo -= pad; hi += pad; }
+  const x = i => pl + (pts.length < 2 ? 0 : i * (W - pl - pr) / (pts.length - 1));
+  const y = v => mode === 'rank' ? pt + (v - lo) / (hi - lo) * (H - pt - pb) : H - pb - (v - lo) / (hi - lo) * (H - pt - pb);
+  const ticks = mode === 'rank' ? [...new Set([1, Math.ceil(hi / 2), hi])] : [lo, (lo + hi) / 2, hi].map(Math.round);
+  const line = vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
+  const area = mode === 'elo' ? `${line}L${x(vals.length - 1)},${H - pb}L${x(0)},${H - pb}Z` : '';
+  return `<svg viewBox="0 0 ${W} ${H}" class="chart">
+    ${ticks.map(t => `<line x1="${pl}" x2="${W - pr}" y1="${y(t)}" y2="${y(t)}" class="grid"/><text x="${pl - 6}" y="${y(t) + 4}" text-anchor="end">${mode === 'rank' ? '#' + t : t}</text>`).join('')}
+    ${mode === 'elo' ? `<line x1="${pl}" x2="${W - pr}" y1="${y(1000)}" y2="${y(1000)}" class="base"/>` : ''}
+    ${area ? `<path d="${area}" class="area"/>` : ''}
+    <path d="${line}" class="ln"/>
+    ${vals.map((v, i) => i ? `<circle cx="${x(i)}" cy="${y(v)}" r="${pts.length > 40 ? 2 : 3.5}" class="${pts[i].won ? 'dw' : 'dl'}"><title>Game ${i} vs ${esc(pts[i].opp)}: ${mode === 'rank' ? '#' + v : v}</title></circle>` : '').join('')}
+    <text x="${pl}" y="${H - 5}">start</text><text x="${W - pr}" y="${H - 5}" text-anchor="end">now</text></svg>`;
+}
+function showPlayer(k) {
+  const p = lastP[k]; if (!p) return;
+  openKey = k;
+  const ranked = Object.values(lastP).sort((x, y) => y.elo - x.elo);
+  const peak = Math.max(1000, ...p.hist.map(h => h.elo)), best = Math.min(...p.hist.map(h => h.rank));
+  let streak = 0; for (let i = p.hist.length - 1; i >= 0 && p.hist[i].won === p.hist.at(-1).won; i--) streak++;
+  $('pd').innerHTML = `<button class="x" onclick="$('pdlg').close()" aria-label="close">&times;</button>
+    <h3>${esc(p.name)}</h3>
+    <div class="stats"><div><b>${p.elo}</b><span>Elo</span></div><div><b>#${ranked.indexOf(p) + 1}</b><span>of ${ranked.length}</span></div>
+      <div><b>${peak}</b><span>peak</span></div><div><b>#${best}</b><span>best rank</span></div>
+      <div><b>${p.w}&ndash;${p.l}</b><span>${Math.round(100 * p.w / Math.max(1, p.games))}% wins</span></div>
+      <div><b>${streak}${p.hist.at(-1)?.won ? 'W' : 'L'}</b><span>streak</span></div></div>
+    <div class="seg"><button type="button" class="${chartMode === 'elo' ? 'on' : ''}" onclick="chartMode='elo';showPlayer(openKey)">Elo</button><button type="button" class="${chartMode === 'rank' ? 'on' : ''}" onclick="chartMode='rank';showPlayer(openKey)">Rank</button></div>
+    ${chart(p.hist, chartMode)}
+    ${adminPw ? `<div class="rename"><input id="rn" value="${esc(p.name)}" aria-label="new name"><button type="button" onclick="renamePlayer()">Rename / merge</button></div><p class="muted">Renaming to an existing player merges their games.</p>` : ''}
+    <table class="ph">${p.hist.slice().reverse().slice(0, 15).map(h => `<tr><td><span class="${h.won ? 'w' : 'l'}">${h.won ? 'W' : 'L'}</span> vs ${esc(h.opp)} <span class="sc">${h.m.wl ? '' : (h.m.a === p.name || h.m.a.toLowerCase() === k ? h.m.sa + '&ndash;' + h.m.sb : h.m.sb + '&ndash;' + h.m.sa)}</span></td><td class="n">${fmtD(h.d)}</td><td class="n">${h.elo}</td><td class="n muted">#${h.rank}</td></tr>`).join('')}</table>`;
+  if (!$('pdlg').open) $('pdlg').showModal();
+}
+document.addEventListener('click', e => { const t = e.target.closest('[data-k]'); if (t) showPlayer(t.dataset.k); });
+document.addEventListener('keydown', e => { const t = e.target.closest?.('[data-k]'); if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); showPlayer(t.dataset.k); } });
+$('pdlg').addEventListener('click', e => { if (e.target === $('pdlg')) $('pdlg').close(); });
+$('pdlg').addEventListener('close', () => openKey = null);
+let adminPw = null;
+try { adminPw = sessionStorage.getItem('pongAdmin'); } catch {}
+const adminHdr = () => ({ 'Content-Type': 'application/json', 'X-Admin': adminPw });
+function syncAdmin() { document.body.classList.toggle('admin-on', !!adminPw); $('admbtn').textContent = adminPw ? 'admin on · log out' : 'admin'; render(); }
+function adDialog(html, onGo) {
+  $('ad').innerHTML = html + '<div class="btns"><button value="cancel" class="cancel" formnovalidate>Cancel</button><button value="go" class="go">OK</button></div>';
+  $('adf').onsubmit = async e => {
+    if (e.submitter?.value !== 'go') return;
+    e.preventDefault();
+    const err = await onGo();
+    if (err) { let p = $('ad').querySelector('.err'); if (!p) { p = document.createElement('p'); p.className = 'err'; $('ad').insertBefore(p, $('ad').lastChild); } p.textContent = err; }
+    else $('adlg').close();
+  };
+  $('adlg').showModal();
+}
+window.adminToggle = () => {
+  if (adminPw) { adminPw = null; try { sessionStorage.removeItem('pongAdmin'); } catch {} syncAdmin(); if ($('pdlg').open && openKey) showPlayer(openKey); return; }
+  adDialog('<h3>Admin</h3><input id="apw" type="password" placeholder="Password" required autocomplete="current-password">', async () => {
+    const pw = $('apw').value;
+    const r = await fetch(API + '/admin', { headers: { 'X-Admin': pw } });
+    if (!r.ok) return 'Wrong password.';
+    adminPw = pw; try { sessionStorage.setItem('pongAdmin', pw); } catch {}
+    syncAdmin();
+  });
+};
+window.editMatch = id => {
+  const m = matches.find(x => x.id === id); if (!m) return;
+  adDialog(`<h3>Edit game</h3>
+    <div class="row"><input id="ea" value="${esc(m.a)}" required><input id="esa" type="number" min="0" max="99" value="${m.sa}" required></div>
+    <div class="row"><input id="eb" value="${esc(m.b)}" required><input id="esb" type="number" min="0" max="99" value="${m.sb}" required></div>
+    <label><input type="checkbox" id="ewl" ${m.wl ? 'checked' : ''} style="width:auto"> Just who won (higher number = winner)</label>`, async () => {
+    const r = await fetch(API + '/matches/' + id, { method: 'PUT', headers: adminHdr(),
+      body: JSON.stringify({ a: $('ea').value, b: $('eb').value, sa: +$('esa').value, sb: +$('esb').value, wl: $('ewl').checked }) });
+    if (!r.ok) return (await r.json()).error;
+    const upd = await r.json(); Object.assign(matches.find(x => x.id === id), upd); if (!upd.wl) delete matches.find(x => x.id === id).wl;
+    render();
+  });
+};
+window.delMatch = id => {
+  const m = matches.find(x => x.id === id); if (!m) return;
+  adDialog(`<h3>Delete game?</h3><p>${esc(m.a)} ${m.sa}&ndash;${m.sb} ${esc(m.b)} &middot; ${ago(m.t)}</p>`, async () => {
+    const r = await fetch(API + '/matches/' + id, { method: 'DELETE', headers: adminHdr() });
+    if (!r.ok) return (await r.json()).error;
+    matches = matches.filter(x => x.id !== id); render();
+  });
+};
+window.renamePlayer = async () => {
+  const to = $('rn').value.trim(), from = openKey;
+  if (!to) return;
+  const r = await fetch(API + '/rename', { method: 'POST', headers: adminHdr(), body: JSON.stringify({ from, to }) });
+  const d = await r.json();
+  if (!r.ok) { $('msg').innerHTML = `<span class="err">${esc(d.error)}</span>`; return; }
+  for (const m of matches) { if (m.a.toLowerCase() === from) m.a = to; if (m.b.toLowerCase() === from) m.b = to; }
+  $('pdlg').close(); render(); showPlayer(to.toLowerCase());
+};
+syncAdmin();
 load();
 setInterval(load, 30000);
 </script>

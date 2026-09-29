@@ -2,13 +2,15 @@
 // GET  /matches          → [{id,a,b,sa,sb,t}]
 // POST /matches {a,b,sa,sb} → appends a match
 // DELETE /matches/:id    → removes a match (only the most recent one — "undo")
+// Admin (X-Admin: <ADMIN_PASSWORD secret>): PUT /matches/:id edits, DELETE /matches/:id any match,
+//   POST /rename {from,to} merges/renames a player everywhere, GET /admin checks the password.
 // Elo is computed client-side by replaying the log, so edits stay consistent.
 
 const KEY = 'matches';
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Admin',
 };
 const json = (d, s = 200) =>
   new Response(JSON.stringify(d), { status: s, headers: { 'Content-Type': 'application/json', ...CORS } });
@@ -20,17 +22,15 @@ export default {
     const url = new URL(request.url);
     const load = async () => JSON.parse((await env.PONG.get(KEY)) || '[]');
 
+    const isAdmin = !!env.ADMIN_PASSWORD && request.headers.get('X-Admin') === env.ADMIN_PASSWORD;
+    const save = list => env.PONG.put(KEY, JSON.stringify(list));
+    if (url.pathname === '/admin') return isAdmin ? json({ ok: true }) : json({ error: 'wrong password' }, 401);
+
     if (url.pathname === '/matches' && request.method === 'GET') return json(await load());
 
     if (url.pathname === '/matches' && request.method === 'POST') {
-      let body;
-      try { body = await request.json(); } catch { return json({ error: 'bad json' }, 400); }
-      const a = cleanName(body.a), b = cleanName(body.b);
-      const sa = Number(body.sa), sb = Number(body.sb);
-      if (!a || !b) return json({ error: 'need two names' }, 400);
-      if (a.toLowerCase() === b.toLowerCase()) return json({ error: 'players must differ' }, 400);
-      if (![sa, sb].every(s => Number.isInteger(s) && s >= 0 && s <= 99)) return json({ error: 'scores must be 0–99' }, 400);
-      if (sa === sb) return json({ error: 'no ties in ping pong' }, 400);
+      const v = await validate(request); if (v.error) return json(v, 400);
+      const { a, b, sa, sb, body } = v;
       const list = await load();
       if (list.length >= 20000) return json({ error: 'log full' }, 507);
       const m = { id: crypto.randomUUID().slice(0, 8), a, b, sa, sb, t: Date.now() };
@@ -41,6 +41,36 @@ export default {
     }
 
     const del = url.pathname.match(/^\/matches\/([\w-]+)$/);
+    if (del && request.method === 'PUT') {
+      if (!isAdmin) return json({ error: 'admin only' }, 401);
+      const v = await validate(request); if (v.error) return json(v, 400);
+      const list = await load(), m = list.find(x => x.id === del[1]);
+      if (!m) return json({ error: 'no such match' }, 404);
+      Object.assign(m, { a: v.a, b: v.b, sa: v.sa, sb: v.sb });
+      if (v.body.wl === true) m.wl = true; else delete m.wl;
+      await save(list);
+      return json(m);
+    }
+    if (del && request.method === 'DELETE' && isAdmin) {
+      const list = await load(), i = list.findIndex(x => x.id === del[1]);
+      if (i < 0) return json({ error: 'no such match' }, 404);
+      list.splice(i, 1); await save(list);
+      return json({ ok: true });
+    }
+    if (url.pathname === '/rename' && request.method === 'POST') {
+      if (!isAdmin) return json({ error: 'admin only' }, 401);
+      let body; try { body = await request.json(); } catch { return json({ error: 'bad json' }, 400); }
+      const from = cleanName(body.from).toLowerCase(), to = cleanName(body.to);
+      if (!from || !to) return json({ error: 'need names' }, 400);
+      const list = await load(); let n = 0;
+      for (const m of list) {
+        if (m.a.toLowerCase() === from) { m.a = to; n++; }
+        if (m.b.toLowerCase() === from) { m.b = to; n++; }
+      }
+      if (list.some(m => m.a.toLowerCase() === m.b.toLowerCase())) return json({ error: 'that would make someone play themselves' }, 409);
+      await save(list);
+      return json({ ok: true, changed: n });
+    }
     if (del && request.method === 'DELETE') {
       const list = await load();
       if (!list.length || list[list.length - 1].id !== del[1]) return json({ error: 'can only undo the latest match' }, 409);
@@ -51,3 +81,15 @@ export default {
     return json({ error: 'not found' }, 404);
   },
 };
+
+async function validate(request) {
+  let body;
+  try { body = await request.json(); } catch { return { error: 'bad json' }; }
+  const a = cleanName(body.a), b = cleanName(body.b);
+  const sa = Number(body.sa), sb = Number(body.sb);
+  if (!a || !b) return { error: 'need two names' };
+  if (a.toLowerCase() === b.toLowerCase()) return { error: 'players must differ' };
+  if (![sa, sb].every(s => Number.isInteger(s) && s >= 0 && s <= 99)) return { error: 'scores must be 0–99' };
+  if (sa === sb) return { error: 'no ties in ping pong' };
+  return { a, b, sa, sb, body };
+}
