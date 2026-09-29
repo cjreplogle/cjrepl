@@ -77,6 +77,12 @@
   .pod:focus-visible, .prow:focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
   dialog { border:none; border-radius:18px; padding:0; width:min(620px, calc(100vw - 24px)); max-height:calc(100vh - 32px);
            background:var(--card); color:var(--ink); box-shadow:0 20px 60px rgba(0,0,0,.35); }
+  #pdlg[open] { animation:pdIn .45s cubic-bezier(.2,.8,.2,1) both; }
+  #pdlg[open]::backdrop { animation:bdIn .3s ease both; }
+  @keyframes pdIn { from { opacity:0; transform:translateY(-18px); clip-path:inset(0 0 100% 0 round 18px); }
+                    to   { opacity:1; transform:none; clip-path:inset(0 0 0 0 round 18px); } }
+  @keyframes bdIn { from { opacity:0; } to { opacity:1; } }
+  @media (prefers-reduced-motion: reduce) { #pdlg[open], #pdlg[open]::backdrop { animation:none; } }
   dialog::backdrop { background:rgba(0,0,0,.45); backdrop-filter:blur(3px); }
   #pd { padding:20px; position:relative; }
   dialog { max-width:calc(100vw - 24px); box-sizing:border-box; } .stats div { min-width:0; } .ph { table-layout:auto; }
