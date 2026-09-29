@@ -834,11 +834,20 @@
         var ms = Math.min(C.max, Math.max(C.min, total / 5 / C.wpm * 60000)) / C.speed, t0 = performance.now();
         function done(){ items.forEach(function(it){ it.n.nodeValue = it.s; it.sp.remove(); }); }
         addEventListener("keydown", function(e){ if (e.key === "Escape") t0 = -1e9; });
+        // Only the node being typed changes each step (finished nodes are settled and
+        // untouched), and steps land ~30×/s — far less re-layout than every node every
+        // frame, which dragged on slower machines.
+        var cur = 0, before = 0, last = 0;
         (function tick(now){
-          var k = Math.floor(total * Math.min(1, (now - t0) / ms)), used = 0;
-          for (var i = 0; i < items.length; i++) { var it = items[i], take = Math.max(0, Math.min(it.s.length, k - used));
+          if (now - last < 32 && now !== t0) { requestAnimationFrame(tick); return; }
+          last = now;
+          var k = Math.floor(total * Math.min(1, (now - t0) / ms));
+          while (cur < items.length) {
+            var it = items[cur], take = Math.max(0, Math.min(it.s.length, k - before));
             if (it.n.nodeValue.length !== take) { it.n.nodeValue = it.s.slice(0, take); it.sp.textContent = it.s.slice(take); }
-            used += it.s.length; }
+            if (take < it.s.length) break;
+            before += it.s.length; cur++;
+          }
           if (k < total) requestAnimationFrame(tick); else done();
         })(t0);
       }); })();`;
