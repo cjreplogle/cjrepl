@@ -41,7 +41,8 @@
   @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
   @media (prefers-reduced-motion: reduce) { .ball { animation:none; } }
   h1 { font-size:1.9rem; font-weight:800; letter-spacing:-.02em; margin:0; }
-  .sub { color:var(--mute); font-size:.9rem; margin:2px 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sub { color:var(--mute); font-size:.9rem; margin:2px 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:.25em; }
+  .sub em { padding-right:.08em; }   /* room for the italic overhang so the last R isn't clipped */
   header > div:last-child { min-width:0; }
   h1 small { color:var(--acc); }
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px;
