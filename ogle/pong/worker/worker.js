@@ -34,6 +34,7 @@ export default {
       const list = await load();
       if (list.length >= 20000) return json({ error: 'log full' }, 507);
       const m = { id: crypto.randomUUID().slice(0, 8), a, b, sa, sb, t: Date.now() };
+      if (body.wl === true) m.wl = true;
       list.push(m);
       await env.PONG.put(KEY, JSON.stringify(list));
       return json(m, 201);
