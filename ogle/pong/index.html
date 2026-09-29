@@ -299,7 +299,7 @@ function render() {
     : '<tr><td colspan="5" class="empty">No games yet &mdash; go play between lectures!</td></tr>';
   $('lbnote').textContent = matches.length ? 'tap a name for history & class' : '';
   const n = matches.length;
-  $('gcount').innerHTML = n ? ` &middot; ${n} game${n === 1 ? '' : 's'} played<span id="rr"> in the R&amp;R</span>` : '';
+  $('gcount').innerHTML = n ? ` &middot; <em>${n} game${n === 1 ? '' : 's'} played<span id="rr"> in the R&amp;R</span></em>` : '';
   fitSub();
   $('names').innerHTML = players.map(p => `<option value="${esc(p.name)}">`).join('');
   const rows = [];
