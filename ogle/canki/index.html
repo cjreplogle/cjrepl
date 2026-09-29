@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#111214" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#f4f4f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111214" id="themeColor">
+<script>(function(){var t="auto";try{t=localStorage.getItem("canki.theme")||"auto";}catch(e){}document.documentElement.dataset.theme=t;})();</script>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -22,18 +22,33 @@
   :root {
     --bg: #f4f4f5; --edge: #d4d4d8; --pill: #e4e4e7; --text: #18181b; --muted: #71717a;
     --zero: #8a8f98; --new: #1d6fd6; --learn: #d63a3a; --due: #1f9d4c; --practice: #1f9d4c;
-    --hover: #0000000d; --opt: #ffffff; --dlg: #ffffff; --btn: #2f7fe0; --exp: #3f444c;
+    --hover: #0000000d; --hover2: #0000000f; --opt: #ffffff; --dlg: #ffffff; --btn: #2f7fe0; --exp: #3f444c;
     --ok: #1f8745; --bad: #c43b3b;
     --g0: #c43b3b; --g0b: #f9e0e0; --g1: #b0650f; --g1b: #faebd8;
     --g2: #1f8745; --g2b: #dcf1e3; --g3: #2b6cc4; --g3b: #dde9fa;
     --heat0: #e4e4e7; --heat1: #b7e4c4; --heat2: #6fcf8e; --heat3: #2fa85a; --heat4: #1a7a3e;
     color-scheme: light;
   }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
+  /* Themes: Auto follows the system; Dark = Janki's dark; Black = OLED; White = light. */
+  :root[data-theme="dark"], :root[data-theme="black"] {
       --bg: #111214; --edge: #3a3b3e; --pill: #09090a; --text: #ffffff; --muted: #9ca3af;
       --zero: #8a8f98; --new: #82b6ff; --learn: #ff6b6b; --due: #36c75e; --practice: #86e39a;
-      --hover: #ffffff0f; --opt: #ffffff08; --dlg: #1c1d21; --btn: #2f7fe0; --exp: #cfd3da;
+      --hover: #ffffff0f; --hover2: #ffffff1a; --opt: #ffffff08; --dlg: #1c1d21; --btn: #2f7fe0; --exp: #cfd3da;
+      --ok: #5fd081; --bad: #ff8585;
+      --g0: #ff8585; --g0b: #3d2024; --g1: #f0a45a; --g1b: #3b2b1c;
+      --g2: #5fd081; --g2b: #173220; --g3: #80b3ff; --g3b: #1a2b46;
+      --heat0: #1c1d21; --heat1: #173a24; --heat2: #1f6b3a; --heat3: #2fa85a; --heat4: #5fd081;
+      color-scheme: dark;
+  }
+  :root[data-theme="black"] {
+      --bg: #000000; --pill: #0b0b0c; --dlg: #0e0e10; --edge: #26272b; --opt: #ffffff06;
+      --heat0: #141416; --g0b: #2a1316; --g1b: #291d12; --g2b: #0f2216; --g3b: #111d31;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root[data-theme="auto"] {
+      --bg: #111214; --edge: #3a3b3e; --pill: #09090a; --text: #ffffff; --muted: #9ca3af;
+      --zero: #8a8f98; --new: #82b6ff; --learn: #ff6b6b; --due: #36c75e; --practice: #86e39a;
+      --hover: #ffffff0f; --hover2: #ffffff1a; --opt: #ffffff08; --dlg: #1c1d21; --btn: #2f7fe0; --exp: #cfd3da;
       --ok: #5fd081; --bad: #ff8585;
       --g0: #ff8585; --g0b: #3d2024; --g1: #f0a45a; --g1b: #3b2b1c;
       --g2: #5fd081; --g2b: #173220; --g3: #80b3ff; --g3b: #1a2b46;
@@ -41,6 +56,7 @@
       color-scheme: dark;
     }
   }
+  :root { --ease: cubic-bezier(.2,.8,.2,1); }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
   body {
@@ -90,7 +106,9 @@
   .deck-row { padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 1.05em; }
   .deck-row:hover { background: var(--hover); }
   .deck-row .nm { display: flex; align-items: center; min-width: 0; }
-  .deck-row .nm b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .deck-row .nm b { font-weight: 500; position: relative; isolation: isolate; min-width: 0; display: block; }
+  .deck-row .nm b .t { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .deck-row.top:not(:first-child) { margin-top: 6px; }
   .deck-row .tw { width: 1.2em; flex: none; color: var(--muted); font-size: 0.8em; text-align: center; }
   .n { font-variant-numeric: tabular-nums; }
   .n.new { color: var(--new); } .n.learn { color: var(--learn); } .n.due { color: var(--due); }
@@ -142,8 +160,10 @@
   .app.focus .bar { opacity: 0; pointer-events: none; }
   .app.focus .bar:hover { opacity: 1; pointer-events: auto; }
   .app.focus .counts { visibility: hidden; }
-  .ring { position: absolute; top: 12px; right: 14px; width: 26px; height: 26px; display: none; }
-  .app.focus .review.on .ring { display: block; }
+  .ring { position: absolute; top: 12px; right: 16px; width: 18px; height: 18px; display: none;
+          opacity: .72; transition: opacity .78s ease; z-index: 2; }
+  .ring.on { display: block; }
+  .ring.wipe { opacity: 0; }
   .ring circle { fill: none; stroke-width: 3; }
   .ring .trk { stroke: var(--edge); }
   .ring .arc { stroke: var(--muted); stroke-linecap: round; transform: rotate(-90deg);
@@ -213,6 +233,61 @@
                 border: 1px solid var(--edge); border-radius: 8px; padding: 8px 10px; }
   .pair .row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
   .spin { color: var(--muted); }
+
+  /* ---- Janki motion: screen fades, deck-name slide + pill, lifted buttons, folding decks */
+  @keyframes ckFade { from { opacity: 0; } to { opacity: 1; } }
+  html.ck-anim .view.on { animation: ckFade .25s ease-out both; }
+  html.ck-anim .deck-row:hover { background: none; }
+  html.ck-anim .deck-row .nm b { transition: transform .35s var(--ease), color .3s ease; }
+  html.ck-anim .deck-row .nm b::before {
+    content: ""; position: absolute; z-index: -1; inset: -3px -8px -3px -7px; border-radius: 8px;
+    background: var(--hover2); opacity: 0; transform-origin: left center; transform: scaleX(.7);
+    transition: opacity .3s ease, transform .35s var(--ease), left .35s var(--ease); }
+  html.ck-anim .deck-row:hover .nm b { transform: translateX(6px); }
+  html.ck-anim .deck-row:hover .nm b::before { opacity: 1; transform: scaleX(1); left: -13px; }
+  html.ck-anim .deck-row .tw { transition: opacity .25s ease; }
+  html.ck-anim .deck-row .tw:hover { opacity: .75; }
+  html.ck-anim :is(.g, .show-btn, .pill-btn, .tab, .chip, .focus-btn, .opt, .deck-foot button, .set-btn) {
+    transition: background-color .2s linear, color .3s ease-out, filter .2s ease, border-color .2s ease,
+                transform .2s var(--ease); }
+  html.ck-anim :is(.g, .show-btn, .pill-btn, .tab, .chip, .focus-btn, .deck-foot button, .set-btn):hover { transform: translateY(-1px); }
+  html.ck-anim :is(.g, .show-btn, .pill-btn, .tab, .chip, .focus-btn, .deck-foot button, .set-btn):active {
+    transform: translateY(0) scale(.97); transition-duration: .08s; }
+  html.ck-anim .card-frame.enter { animation: ckFade .22s ease-out both; }
+  @media (prefers-reduced-motion: reduce) {
+    html.ck-anim * { animation: none !important; transition: none !important; }
+  }
+
+  /* ---- card timer: ring + edge flares (Janki card_timer) */
+  .flare { position: fixed; inset: 0; pointer-events: none; z-index: 4; opacity: 0;
+           transition: opacity .5s ease; }
+  .flare.red { box-shadow: inset 0 0 120px 10px rgba(255, 90, 90, var(--fa, .22)); }
+  .flare.green { box-shadow: inset 0 0 120px 10px rgba(95, 208, 129, var(--fa, .22)); }
+  @keyframes ckPulse { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+  .flare.red.on { animation: ckPulse var(--pm, 2.2s) ease-in-out infinite; }
+  .flare.green.on { opacity: 1; transition: opacity .25s ease; }
+
+  /* ---- settings menu */
+  .set-btn { position: absolute; right: 86px; top: 50%; translate: 0 -40%; border: 1px solid var(--edge);
+             background: none; border-radius: 999px; padding: 3px 11px; font-size: 0.8em; color: var(--muted); cursor: pointer; }
+  .set-btn:hover { color: var(--text); }
+  .menu { position: absolute; right: 14px; top: calc(100% + 4px); z-index: 12; background: var(--dlg);
+          border: 1px solid var(--edge); border-radius: 12px; padding: 12px 14px; width: 250px;
+          box-shadow: 0 12px 40px #0006; font-size: 0.9em; display: none; }
+  .menu.on { display: block; }
+  html.ck-anim .menu.on { animation: ckFade .18s ease-out both; }
+  .menu h4 { margin: 0 0 6px; font-size: 0.8em; color: var(--muted); font-weight: 600; }
+  .seg { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--pill); border-radius: 9px; padding: 3px; gap: 2px; margin-bottom: 12px; }
+  .seg button { border: 0; background: none; border-radius: 7px; padding: 5px 0; cursor: pointer; font-size: 0.9em; }
+  .seg button.on { background: var(--bg); box-shadow: 0 1px 3px #0003; font-weight: 600; }
+  .sw { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; cursor: pointer; }
+  .sw input { accent-color: var(--btn); width: 16px; height: 16px; }
+  .menu .note { color: var(--muted); font-size: 0.8em; margin-top: 8px; }
+  .phone { display: flex; gap: 16px; align-items: center; margin-top: 30px; padding: 14px;
+           border: 1px solid var(--edge); border-radius: 14px; font-size: 0.9em; color: var(--muted); line-height: 1.5; }
+  .phone b { color: var(--text); }
+  .phone .qr { padding: 8px; flex: none; }
+  .phone code { background: var(--pill); border-radius: 5px; padding: 1px 6px; color: var(--text); }
   .err { color: var(--bad); font-size: 0.9em; margin-top: 10px; min-height: 1.2em; }
   .privacy { color: var(--muted); font-size: 0.85em; margin-top: 2em; }
 
@@ -237,6 +312,7 @@
   @media (max-width: 600px) {
     .bar { padding-top: 10px; }
     .brand .lbl { display: none; }
+    .set-btn { right: 80px; }
     .tab { padding: 5px 10px; font-size: 0.9em; }
     .tiles { grid-template-columns: repeat(2, 1fr); }
     .deck-head, .deck-row { grid-template-columns: 1fr 2.6em 2.6em 2.6em; }
@@ -252,7 +328,16 @@
       <button class="tab" data-go="decks">Decks</button>
       <button class="tab" data-go="stats">Stats</button>
     </div>
+    <button class="set-btn" id="setBtn" title="Appearance">Aa</button>
     <button class="focus-btn" id="focusBtn" hidden title="Focus Mode (Tab+F)">Focus</button>
+    <div class="menu" id="menu">
+      <h4>Theme</h4>
+      <div class="seg" id="themeSeg"><button data-t="auto">Auto</button><button data-t="dark">Dark</button><button data-t="black">Black</button><button data-t="white">White</button></div>
+      <label class="sw">Typewriter reveal <input type="checkbox" id="optTw"></label>
+      <label class="sw">Card timer <input type="checkbox" id="optTimer"></label>
+      <label class="sw">Animations <input type="checkbox" id="optAnim"></label>
+      <div class="note" id="optNote">Starts from your Janki settings.</div>
+    </div>
   </div>
   <main>
     <section class="view" id="v-connect">
@@ -269,11 +354,11 @@
             <a href="http://127.0.0.1:8766/">127.0.0.1:8766</a> — Janki serves this same page there.</p>
           <div class="pair">
             <b>On a phone or another computer?</b>
-            <div style="color:var(--muted);font-size:0.9em;margin-top:4px">On your Mac, open Canki (or Anki → Tools → Canki) and scan the QR code. Or enter it here:</div>
+            <div style="color:var(--muted);font-size:0.9em;margin-top:4px">Enter the address from Anki → Tools → Canki, then click <b>Allow</b> on your Mac. (Or scan the QR on your Mac's Canki page.)</div>
             <label for="addr">Address</label>
-            <input id="addr" placeholder="your-mac.local:8766" autocomplete="off" autocapitalize="off" spellcheck="false">
-            <label for="key">Pairing key</label>
-            <input id="key" placeholder="8 letters" autocomplete="off" autocapitalize="off" spellcheck="false">
+            <input id="addr" placeholder="192.168.1.23:8766" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url">
+            <details style="margin-top:8px"><summary style="font-size:0.85em;color:var(--muted);cursor:pointer">Have a pairing key?</summary>
+              <input id="key" placeholder="8 letters" autocomplete="off" autocapitalize="off" spellcheck="false" style="margin-top:6px"></details>
             <div class="row"><button class="pill-btn" id="pairGo">Connect</button></div>
             <div class="err" id="pairErr"></div>
           </div>
@@ -286,6 +371,10 @@
       <div class="decks">
         <div class="deck-head"><b>Deck</b><span>New</span><span>Learn</span><span>Due</span></div>
         <div id="deckList"></div>
+        <div class="phone" id="phoneBox" hidden>
+          <div class="qr" id="qrInline"></div>
+          <div><b>Review on your phone</b><br>Same Wi-Fi: scan this, or open <code id="shortAddr"></code> and click Allow in Anki.</div>
+        </div>
         <div class="deck-foot">
           <button id="pairBtn" hidden>Connect a phone</button>
           <button id="refreshBtn">Refresh</button>
@@ -296,7 +385,7 @@
     <section class="view" id="v-review">
       <div class="review on" id="review">
         <div class="card-scroll" id="cardScroll"><iframe class="card-frame" id="cardFrame" title="Card" sandbox="allow-scripts"></iframe></div>
-        <svg class="ring" viewBox="0 0 26 26"><circle class="trk" cx="13" cy="13" r="10"/><circle class="arc" id="arc" cx="13" cy="13" r="10"/></svg>
+        <svg class="ring" id="ring" viewBox="0 0 26 26"><circle class="trk" cx="13" cy="13" r="10"/><circle class="arc" id="arc" cx="13" cy="13" r="10"/></svg>
         <div class="chips">
           <button class="chip" id="rwChip">↻ Rephrased · show original</button>
           <button class="chip" id="prChip" title="Related practice question (Tab+Q)">Practice</button>
@@ -335,6 +424,7 @@
   </div>
 </div>
 <div class="toast" id="toast"></div>
+<div class="flare red" id="flareRed"></div><div class="flare green" id="flareGreen"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 <script>
@@ -399,6 +489,36 @@
     } catch { return null; } finally { clearTimeout(t); }
   }
 
+  function deviceName() {
+    const ua = navigator.userAgent;
+    const dev = /iPhone/.test(ua) ? "iPhone" : /iPad/.test(ua) ? "iPad" : /Android/.test(ua) ? "Android phone"
+      : /Macintosh/.test(ua) ? "A Mac" : /Windows/.test(ua) ? "A Windows PC" : "A device";
+    const br = /Edg\//.test(ua) ? "Edge" : /Chrome\//.test(ua) ? "Chrome" : /Firefox\//.test(ua) ? "Firefox" : /Safari\//.test(ua) ? "Safari" : "";
+    return dev + (br ? " (" + br + ")" : "");
+  }
+
+  // No key yet → ask Anki to approve this device; it shows "Allow?" on the Mac.
+  let pairing = false;
+  async function requestPair(b, say) {
+    if (pairing) return false;
+    pairing = true;
+    try {
+      const r = await fetch(b + "/api/pair/request", { method: "POST", headers: { "Content-Type": "application/json" },
+                                                         body: JSON.stringify({ name: deviceName() }) }).then((x) => x.json());
+      if (!r.id) { say(r.error === "busy" ? "Too many requests — wait a minute and try again." : "Couldn't ask Anki to pair."); return false; }
+      say("Click <b>Allow</b> in Anki on your Mac…");
+      for (let i = 0; i < 200; i++) {
+        await new Promise((res) => setTimeout(res, 1500));
+        const st = await fetch(b + "/api/pair/status?id=" + encodeURIComponent(r.id), { cache: "no-store" }).then((x) => x.json()).catch(() => ({}));
+        if (st.state === "allowed") { key = st.key; LS.set("key", key); say(""); return true; }
+        if (st.state === "denied") { say("Anki denied this device."); return false; }
+        if (st.state === "gone") { say("The request expired — try again."); return false; }
+      }
+      say("Timed out waiting for Anki."); return false;
+    } catch { say("Couldn't reach Anki."); return false; }
+    finally { pairing = false; }
+  }
+
   let hello = null;
   async function connect() {
     const cands = [];
@@ -415,7 +535,11 @@
         loopback = b === "" ? /^(127\.0\.0\.1|localhost)$/.test(location.hostname) : b.includes("127.0.0.1");
         return true;
       }
-      if (r && r.key && b) { $("pairErr").textContent = "That pairing key didn't work — check it in Anki → Tools → Canki."; }
+      if (r && r.key) {
+        const say = (h) => { $("probe").hidden = false; $("probe").innerHTML = h; };
+        if (await requestPair(b, say)) { const r2 = await tryBase(b); if (r2 && r2.ok) { base = b; hello = r2; loopback = false; return true; } }
+        return false;
+      }
     }
     return false;
   }
@@ -430,17 +554,22 @@
     if (saved) $("addr").value = saved.replace(/^http:\/\//, "");
     if (key) $("key").value = key;
     clearTimeout(retryTimer);
-    retryTimer = setTimeout(boot, 4000);
+    if (!pairing) retryTimer = setTimeout(boot, 4000);
   }
 
   $("pairGo").onclick = async () => {
     const b = normBase($("addr").value);
     key = $("key").value.trim().toLowerCase();
     if (!b) { $("pairErr").textContent = "Enter the address shown in Anki → Tools → Canki."; return; }
+    if (!key) key = "";
     LS.set("base", b); LS.set("key", key);
     $("pairErr").textContent = "Connecting…";
     clearTimeout(retryTimer);
-    const r = await tryBase(b, 5000);
+    let r = await tryBase(b, 5000);
+    if (r && r.key && !key) {
+      if (await requestPair(b, (h) => { $("pairErr").innerHTML = h; })) r = await tryBase(b, 5000);
+      else return;
+    }
     if (r && r.ok) { base = b; hello = r; loopback = false; $("pairErr").textContent = ""; return onConnected(); }
     $("pairErr").textContent = r && r.key
       ? "Wrong pairing key."
@@ -453,9 +582,13 @@
     clearTimeout(retryTimer);
     $("dot").classList.add("on");
     $("who").textContent = "Janki" + (hello.profile ? " · " + hello.profile : "");
+    prefs = { ...JANKI_DEFAULTS, ...(hello.prefs || {}) };
+    $("optNote").textContent = hello.prefs ? "Starts from your Janki settings." : "Update Janki to sync these with your desktop.";
+    applyAppearance();
     $("tabs").hidden = false;
     $("focusBtn").hidden = false;
-    $("pairBtn").hidden = !loopback;
+    $("pairBtn").hidden = true;
+    if (loopback) showPhoneBox();
     loadDecks();
   }
 
@@ -466,13 +599,51 @@
     setTimeout(boot, 1500);
   }
 
+  // ---------------------------------------------------------------- Janki prefs + appearance
+  // Defaults mirror Janki; the connected desktop's own settings override them; the
+  // Aa menu overrides those per browser.
+  const JANKI_DEFAULTS = {
+    typewriter: true, typewriter_wpm: 550, typewriter_min_ms: 300, typewriter_max_ms: 2600, typewriter_speed: 1,
+    card_timer: true, card_timer_seconds: 8, card_timer_sentence_chars: 80, card_timer_len_min_mult: 0.5,
+    card_timer_len_max_mult: 1.5, card_timer_min_s: 1.75, card_timer_cap_s: 600, card_timer_bg_pulse: true,
+    card_timer_pulse_ms: 2200, card_timer_green_flare: true, card_timer_red_flare: true,
+    uniform_text: true, card_font: "Lora", card_zoom: 1, ui_animations: true, text_black_to_white: true,
+  };
+  let prefs = { ...JANKI_DEFAULTS };
+  const opt = (name, jankiKey) => { const v = LS.get(name); return v == null ? !!prefs[jankiKey] : v === "1"; };
+  const twOn = () => opt("tw", "typewriter");
+  const timerOn = () => opt("timer", "card_timer");
+  const animOn = () => opt("anim", "ui_animations");
+
+  let theme = LS.get("theme") || "auto";
+  const sysDark = matchMedia("(prefers-color-scheme: dark)");
+  function isDark() { return theme === "auto" ? sysDark.matches : theme !== "white"; }
+  function applyAppearance() {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.classList.toggle("ck-anim", animOn());
+    $("themeColor").content = theme === "black" && isDark() ? "#000000" : isDark() ? "#111214" : "#f4f4f5";
+    for (const b of $("themeSeg").children) b.classList.toggle("on", b.dataset.t === theme);
+    $("optTw").checked = twOn(); $("optTimer").checked = timerOn(); $("optAnim").checked = animOn();
+    if (!timerOn()) stopTimer(true);
+  }
+  $("themeSeg").onclick = (e) => {
+    const b = e.target.closest("[data-t]"); if (!b) return;
+    theme = b.dataset.t; LS.set("theme", theme); applyAppearance();
+    if (cur && view === "review" && !mcqOpen) renderCard();
+  };
+  for (const [id, name] of [["optTw", "tw"], ["optTimer", "timer"], ["optAnim", "anim"]])
+    $(id).onchange = (e) => { LS.set(name, e.target.checked ? "1" : "0"); applyAppearance(); if (name === "timer" && cur && !revealed && e.target.checked) startTimer(); };
+  $("setBtn").onclick = (e) => { e.stopPropagation(); $("menu").classList.toggle("on"); };
+  document.addEventListener("click", (e) => { if (!e.target.closest("#menu, #setBtn")) $("menu").classList.remove("on"); });
+  sysDark.addEventListener("change", () => { applyAppearance(); if (theme === "auto" && cur && view === "review" && !mcqOpen) renderCard(); });
+
   // ---------------------------------------------------------------- views
   let view = "connect";
   function show(v) {
     view = v;
     for (const s of document.querySelectorAll(".view")) s.classList.toggle("on", s.id === "v-" + v);
     for (const t of document.querySelectorAll(".tab")) t.classList.toggle("on", t.dataset.go === v);
-    if (v !== "review") stopRing();
+    if (v !== "review") stopTimer(true);
   }
   document.addEventListener("click", (e) => {
     const go = e.target.closest("[data-go]");
@@ -509,8 +680,8 @@
       if (isCol) hideBelow = d.depth;
       const leaf = d.name.split("::").pop();
       const n = (v, c) => `<span class="n ${v ? c : "z"}">${v}</span>`;
-      out.push(`<div class="deck-row" data-did="${d.id}">
-        <span class="nm" style="padding-left:${d.depth * 1.1}em"><span class="tw" data-tw="${d.id}">${d.hasChildren ? (isCol ? "▸" : "▾") : ""}</span><b title="${esc(d.name)}">${esc(leaf)}</b></span>
+      out.push(`<div class="deck-row${d.depth === 0 ? " top" : ""}" data-did="${d.id}" data-depth="${d.depth}">
+        <span class="nm" style="padding-left:${d.depth * 1.1}em"><span class="tw" data-tw="${d.id}">${d.hasChildren ? (isCol ? "▸" : "▾") : ""}</span><b title="${esc(d.name)}"><span class="t">${esc(leaf)}</span></b></span>
         ${n(d.new, "new")}${n(d.learn, "learn")}${n(d.review, "due")}</div>`);
     }
     $("deckList").innerHTML = out.join("") || `<p style="color:var(--muted);text-align:center">No decks.</p>`;
@@ -519,19 +690,41 @@
     const tw = e.target.closest("[data-tw]");
     if (tw && tw.textContent) {
       const id = +tw.dataset.tw;
-      collapsed.has(id) ? collapsed.delete(id) : collapsed.add(id);
+      const opening = collapsed.has(id);
+      opening ? collapsed.delete(id) : collapsed.add(id);
       LS.set("collapsed", JSON.stringify([...collapsed]));
-      return renderDecks();
+      if (!animOn()) return renderDecks();
+      if (opening) { renderDecks(); return fold(kidsOf(id), true); }
+      return fold(kidsOf(id), false, renderDecks);
     }
     const row = e.target.closest(".deck-row");
     if (row) startReview(+row.dataset.did);
   });
   $("refreshBtn").onclick = loadDecks;
 
+  // Janki's deck fold: sub-decks slide open/closed instead of popping.
+  function kidsOf(id) {
+    const row = $("deckList").querySelector(`[data-did="${id}"]`); if (!row) return [];
+    const depth = +row.dataset.depth, out = [];
+    for (let n = row.nextElementSibling; n && +n.dataset.depth > depth; n = n.nextElementSibling) out.push(n);
+    return out;
+  }
+  function fold(rows, open, done) {
+    const DUR = 260, EASE = "cubic-bezier(.2,.8,.2,1)";
+    if (!rows.length) { if (done) done(); return; }
+    for (const r of rows) {
+      const h = r.offsetHeight + "px", pad = { paddingTop: "0px", paddingBottom: "0px", height: "0px", opacity: 0, marginTop: "0px" };
+      r.style.overflow = "hidden";
+      r.animate(open ? [pad, { height: h, opacity: 1 }] : [{ height: h, opacity: 1 }, pad],
+                { duration: DUR, easing: EASE, fill: open ? "none" : "forwards" });
+    }
+    setTimeout(() => { for (const r of rows) r.style.overflow = ""; if (done) done(); }, DUR + 20);
+  }
+
   // ---------------------------------------------------------------- review
   let cur = null, revealed = false, shownAt = 0, deckId = 0, showOrig = false, busy = false;
   const frame = $("cardFrame");
-  const dark = () => matchMedia("(prefers-color-scheme: dark)").matches;
+  const dark = () => isDark();
   const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
   // Each card renders in a sandboxed frame, like Anki's own reviewer: the card's scripts
@@ -559,7 +752,9 @@
       addEventListener("DOMContentLoaded", function(){
         var hr = document.getElementById("answer");
         if (hr && ${revealed}) setTimeout(function(){ hr.scrollIntoView({block:"start"}); scrollBy(0,-60); }, 30);
-      });`;
+      });
+      ${d && prefs.text_black_to_white ? CONTRAST_JS : ""}
+      ${twOn() ? typewriterJs() : ""}`;
     return `<!doctype html><html class="${d ? "night-mode" : ""}"><head><meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <meta name="color-scheme" content="${d ? "dark" : "light"}">
@@ -575,12 +770,68 @@
         html, body { background: transparent !important; }
         body { margin: 0; padding: 20px 20px 30px; color: ${cssVar("--text")};
                font-family: "Lora", Georgia, serif; font-size: 20px; }
+        ${cardLookCss()}
         .card { background: transparent !important; }
         img { max-width: 100%; height: auto; }
         hr#answer { border: 0; border-top: 1px solid ${cssVar("--edge")}; margin: 1.2em 0; }
         ${focusOn ? "html, body { height: 100%; } body { display: flex; flex-direction: column; box-sizing: border-box; } #qa { margin: auto 0; }" : ""}
       </style></head>
       <body class="card card${cur.ord + 1}${d ? " nightMode night_mode" : ""}"><div id="qa">${html}</div></body></html>`;
+  }
+
+  // Janki's card look: its card font + one uniform text size (× card zoom).
+  function cardLookCss() {
+    const font = String(prefs.card_font || "Lora").replace(/[^\w \-]/g, "");
+    const px = Math.round(24 * (+prefs.card_zoom || 1));
+    let css = `#qa, #qa *:not(code):not(pre):not(kbd):not(mjx-container):not(mjx-container *) {
+                 font-family: "${font}", "Lora", Georgia, serif !important; }`;
+    if (prefs.uniform_text) css += `#qa { font-size: ${px}px; line-height: 1.45; }
+      #qa *:not(h1):not(h2):not(h3):not(sub):not(sup):not(mjx-container):not(mjx-container *) { font-size: inherit !important; }`;
+    return css;
+  }
+  // Dark themes: near-black inline text (pasted from slides) becomes readable.
+  const CONTRAST_JS = `addEventListener("load", function(){
+    var els = document.querySelectorAll("#qa [style*=color], #qa font[color]");
+    for (var i = 0; i < els.length; i++) {
+      var c = getComputedStyle(els[i]).color.match(/\\d+(\\.\\d+)?/g); if (!c) continue;
+      var l = (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255;
+      if (l < 0.25) els[i].style.setProperty("color", "inherit", "important");
+    }});`;
+  // Janki's typewriter: the text types itself out (anti shape-memory). Layout is reserved up
+  // front (untyped text is transparent), so nothing reflows. On the back, only the answer types.
+  function typewriterJs() {
+    const cfg = JSON.stringify({ wpm: +prefs.typewriter_wpm || 550, min: +prefs.typewriter_min_ms || 0,
+      max: +prefs.typewriter_max_ms || 2600, speed: Math.max(0.25, Math.min(8, +prefs.typewriter_speed || 1)), back: revealed });
+    return `(function(){ var C = ${cfg};
+      var st = document.createElement("style"); st.textContent = "#qa{visibility:hidden}"; document.head.appendChild(st);
+      var tws = document.createElement("style"); tws.textContent = ".ck-tw{color:transparent!important}"; document.head.appendChild(tws);
+      var safety = setTimeout(function(){ st.remove(); }, 1500);
+      addEventListener("DOMContentLoaded", function(){
+        var qa = document.getElementById("qa"), hr = document.getElementById("answer");
+        var w = document.createTreeWalker(qa, NodeFilter.SHOW_TEXT, { acceptNode: function(n){
+          if (!n.nodeValue.trim()) return 2;
+          if (n.parentElement.closest("script,style,mjx-container,.MathJax,svg,textarea")) return 2;
+          if (/\\\\[\\(\\[]/.test(n.nodeValue)) return 2;
+          if (C.back && hr && !(hr.compareDocumentPosition(n) & 4)) return 2;
+          return 1; } });
+        var items = [], n, total = 0;
+        while ((n = w.nextNode())) items.push(n);
+        items = items.map(function(n){ var s = n.nodeValue, sp = document.createElement("span");
+          sp.className = "ck-tw"; sp.textContent = s; n.nodeValue = ""; n.parentNode.insertBefore(sp, n.nextSibling);
+          total += s.length; return { n: n, sp: sp, s: s }; });
+        clearTimeout(safety); st.remove();
+        if (!total) return;
+        var ms = Math.min(C.max, Math.max(C.min, total / 5 / C.wpm * 60000)) / C.speed, t0 = performance.now();
+        function done(){ items.forEach(function(it){ it.n.nodeValue = it.s; it.sp.remove(); }); }
+        addEventListener("keydown", function(e){ if (e.key === "Escape") t0 = -1e9; });
+        (function tick(now){
+          var k = Math.floor(total * Math.min(1, (now - t0) / ms)), used = 0;
+          for (var i = 0; i < items.length; i++) { var it = items[i], take = Math.max(0, Math.min(it.s.length, k - used));
+            if (it.n.nodeValue.length !== take) { it.n.nodeValue = it.s.slice(0, take); it.sp.textContent = it.s.slice(take); }
+            used += it.s.length; }
+          if (k < total) requestAnimationFrame(tick); else done();
+        })(t0);
+      }); })();`;
   }
 
   addEventListener("message", (e) => {
@@ -611,6 +862,7 @@
     }
     cur = r; revealed = false; showOrig = false;
     closeMcq();
+    if (animOn()) { frame.classList.remove("enter"); void frame.offsetWidth; frame.classList.add("enter"); }
     renderCard();
     renderCounts();
     $("answerBar").classList.remove("revealed");
@@ -618,7 +870,7 @@
     $("prChip").classList.add("show");
     show("review");
     shownAt = Date.now();
-    startRing();
+    startTimer();
   }
 
   function renderCard() {
@@ -640,6 +892,7 @@
   function reveal() {
     if (!cur || revealed || mcqOpen) return;
     revealed = true;
+    stopTimer();
     renderCard();
     const names = ["Again", "Hard", "Good", "Easy"];
     $("grades").innerHTML = names.map((n, i) =>
@@ -650,6 +903,7 @@
   async function answer(ease) {
     if (!cur || !revealed || busy || mcqOpen) return;
     busy = true;
+    if (timerOn() && prefs.card_timer_green_flare && !timerExpired && ease >= 3) flash("flareGreen", 900);
     try { await api("/api/answer", { cid: cur.cid, ease, ms: Date.now() - shownAt }); }
     catch (e) { busy = false; if (e.key || /fetch|network|abort/i.test(e.message)) return lost(e); toast(e.message); return nextCard(false); }
     busy = false;
@@ -677,21 +931,52 @@
   });
   $("rwChip").onclick = () => { showOrig = !showOrig; renderCard(); };
 
-  // ---- card timer ring (visible in Focus Mode)
-  let ringRaf = 0;
-  const LAP = 30000, CIRC = 2 * Math.PI * 10;
-  function startRing() {
-    cancelAnimationFrame(ringRaf);
-    const arc = $("arc");
+  // ---- Janki card timer: a ring that empties over a length-scaled time, then the window
+  // edges pulse red until you flip. Answering Good/Easy in time flashes green.
+  let ringRaf = 0, timerExpired = false, timerDur = 0;
+  const CIRC = 2 * Math.PI * 10;
+  function cardSeconds() {
+    const len = (new DOMParser().parseFromString(cur.q, "text/html").body.textContent || "").trim().length;
+    const mult = Math.max(+prefs.card_timer_len_min_mult, Math.min(+prefs.card_timer_len_max_mult, len / Math.max(1, +prefs.card_timer_sentence_chars)));
+    return Math.min(+prefs.card_timer_cap_s, Math.max(+prefs.card_timer_min_s, +prefs.card_timer_seconds * mult));
+  }
+  function startTimer() {
+    stopTimer(true);
+    timerExpired = false;
+    if (!timerOn() || !cur) return;
+    timerDur = cardSeconds() * 1000;
+    const ring = $("ring"), arc = $("arc");
+    ring.classList.remove("wipe"); ring.classList.add("on");
     arc.style.strokeDasharray = CIRC;
+    const t0 = shownAt;
     const tick = () => {
-      const t = ((Date.now() - shownAt) % LAP) / LAP;
-      arc.style.strokeDashoffset = CIRC * (1 - t);
+      const f = Math.min(1, (Date.now() - t0) / timerDur);
+      arc.style.strokeDashoffset = CIRC * f;               // full → empty
+      arc.style.stroke = f >= 1 ? "var(--learn)" : "";
+      if (f >= 1 && !timerExpired) {
+        timerExpired = true;
+        if (prefs.card_timer_red_flare && prefs.card_timer_bg_pulse) {
+          const fl = $("flareRed");
+          fl.style.setProperty("--pm", (+prefs.card_timer_pulse_ms || 2200) / 1000 + "s");
+          fl.style.setProperty("--fa", focusOn ? ".3" : ".2");
+          fl.classList.add("on");
+        }
+        return;
+      }
       ringRaf = requestAnimationFrame(tick);
     };
     tick();
   }
-  function stopRing() { cancelAnimationFrame(ringRaf); }
+  function stopTimer(hard) {
+    cancelAnimationFrame(ringRaf);
+    $("flareRed").classList.remove("on");
+    const ring = $("ring");
+    if (hard) ring.classList.remove("on", "wipe"); else ring.classList.add("wipe");
+  }
+  function flash(id, ms) {
+    const el = $(id); el.classList.add("on");
+    setTimeout(() => el.classList.remove("on"), ms);
+  }
 
   // ---- focus mode
   let focusOn = LS.get("focus") === "1";
@@ -719,14 +1004,14 @@
     mcqList = (r.questions || []).filter((q) => q.stem && q.choices && q.choices.length);
     if (!mcqList.length) return toast("No related questions for this card");
     mcqIdx = 0; mcqOpen = true;
-    stopRing();
+    stopTimer(true);
     renderMcq();
     $("mcq").classList.add("on");
   }
   function closeMcq() {
     mcqOpen = false;
     $("mcq").classList.remove("on");
-    if (cur && view === "review") startRing();
+    if (cur && view === "review" && !revealed) startTimer();
   }
   function qimg(p) { return base + "/" + p.split("/").map(encodeURIComponent).join("/") + (key ? "?k=" + encodeURIComponent(key) : ""); }
   function correctIndex(q) {
@@ -816,6 +1101,18 @@
     $("pairUrl").textContent = p.urls.join("  ·  ");
     $("pairModal").classList.add("on");
   };
+  async function showPhoneBox() {
+    let p;
+    try { p = await api("/api/pair"); } catch { return; }
+    const draw = () => {
+      if (!window.QRCode) return setTimeout(draw, 300);
+      $("qrInline").innerHTML = "";
+      new QRCode($("qrInline"), { text: p.urls[0], width: 116, height: 116, correctLevel: QRCode.CorrectLevel.M });
+    };
+    $("shortAddr").textContent = p.short;
+    $("phoneBox").hidden = false;
+    draw();
+  }
   $("pairClose").onclick = () => $("pairModal").classList.remove("on");
   $("pairModal").onclick = (e) => { if (e.target.id === "pairModal") $("pairModal").classList.remove("on"); };
 
@@ -855,8 +1152,9 @@
   document.addEventListener("keyup", onKeyUp);
   window.addEventListener("blur", () => { tabHeld = false; });
 
-  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (cur && view === "review") renderCard(); });
 
+
+  applyAppearance();
   boot();
 })();
 </script>
