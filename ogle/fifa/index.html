@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow, noimageindex">
-<title>UCCOM Ping Pong</title>
+<title>UCCOM FIFA</title>
 <meta name="description" content="Medcat Elo ladder — log games, climb the leaderboard.">
-<meta property="og:title" content="UCCOM Ping Pong">
+<meta property="og:title" content="UCCOM FIFA">
 <meta property="og:description" content="Medcat Elo ladder — log games, climb the leaderboard.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://cjre.pl/ogle/pong/">
-<meta property="og:image" content="https://cjre.pl/ogle/pong/og.png">
+<meta property="og:url" content="https://cjre.pl/ogle/fifa/">
+<meta property="og:image" content="https://cjre.pl/ogle/fifa/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -37,6 +37,8 @@
   .ball { width:46px; height:46px; border-radius:50%; flex:none;
           background:radial-gradient(circle at 32% 30%,#fff 0 16%,var(--acc2) 42%,var(--acc) 72%,#000 100%);
           box-shadow:0 6px 16px rgba(224,1,34,.35); animation:bounce 2.4s ease-in-out infinite; }
+  .ball { background:none !important; box-shadow:0 6px 16px rgba(0,0,0,.25) !important; border-radius:50%; }
+  .ball img { width:100%; height:100%; display:block; }
   .ball svg { width:100%; height:100%; display:block; filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.45)); }
   @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
   @media (prefers-reduced-motion: reduce) { .ball { animation:none; } }
@@ -71,6 +73,7 @@
   .winbtn:hover { border-color:var(--acc); }
   .winbtn.on { color:#fff; background:var(--acc); box-shadow:0 4px 14px rgba(224,1,34,.3); }
   .winbtn.on::before { content:"🏆 "; }
+  .drawbtn { grid-column:1/-1; } .drawbtn.on::before { content:"🤝 "; }
   form.wl .stepper { display:none; } form.wl .winbtn { display:block; }
   .pod, .prow { cursor:pointer; transition:transform .15s, background .15s; }
   .pod:hover { transform:translateY(-2px); } .prow:hover td { background:var(--field); }
@@ -98,6 +101,7 @@
   .chart .ln { fill:none; stroke:var(--acc); stroke-width:2.5; stroke-linejoin:round; }
   .chart .area { fill:var(--acc); opacity:.08; }
   .chart .dw { fill:var(--acc); } .chart .dl { fill:var(--card); stroke:var(--acc); stroke-width:1.5; }
+  .chart .dd { fill:var(--mute); } .ph .dr { color:var(--mute); font-weight:800; }
   .ph td { padding:7px 6px; font-size:.88rem; } .ph .w { color:var(--up); font-weight:800; } .ph .l { color:var(--dn); font-weight:800; }
   .foot { text-align:center; margin-top:18px; } .foot .link { color:var(--mute); }
   .admin-on .foot .link { color:var(--acc); font-weight:700; }
@@ -149,20 +153,18 @@
 <body>
 <div class="wrap">
 <a class="back" href="/ogle/elo/">&larr; back</a>
-<header><div class="ball"><svg viewBox="0 0 64 64" aria-hidden="true"><g transform="translate(5 5)">
-<line x1="27" y1="10" x2="27" y2="46" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/>
-<path d="M24 42 C 18 40, 19 35, 27 34 C 35 33, 36 28, 27 27 C 19 26, 19 21, 27 20 C 33 19.5, 34 16, 31 14.5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-<ellipse cx="30" cy="13.6" rx="3.4" ry="2.3" fill="#fff" transform="rotate(-20 30 13.6)"/></g></svg></div><div><h1>UCCOM Ping Pong</h1><p class="sub">Medcat Elo ladder &middot; everyone starts at 1000</p></div></header>
+<header><div class="ball"><img src="icon.svg" alt=""></div><div><h1>UCCOM FIFA</h1><p class="sub">Medcat Elo ladder &middot; everyone starts at 1000</p></div></header>
 
 <section class="card">
 <h2>Chart a game</h2>
 <div class="seg" role="tablist"><button type="button" id="m-score" class="on">Score</button><button type="button" id="m-wl">Outcome</button></div>
 <form id="f" autocomplete="off">
-  <div class="side"><input id="a" placeholder="Bearcat 1" list="names" required>
-    <div class="stepper"><button type="button" class="step" data-t="sa" data-d="-1" aria-label="minus">&minus;</button><input class="score" id="sa" type="number" min="0" max="99" inputmode="numeric" placeholder="0" required><button type="button" class="step" data-t="sa" data-d="1" aria-label="plus">+</button></div><button type="button" class="winbtn" data-w="a">Won</button></div>
+  <div class="side"><input id="a" placeholder="Medcat 1" list="names" required>
+    <div class="stepper"><button type="button" class="step" data-t="sa" data-d="-1" aria-label="minus">&minus;</button><input class="score" id="sa" type="number" min="0" max="20" inputmode="numeric" placeholder="0" required><button type="button" class="step" data-t="sa" data-d="1" aria-label="plus">+</button></div><button type="button" class="winbtn" data-w="a">Won</button></div>
   <div class="vs">VS</div>
-  <div class="side r"><input id="b" placeholder="Bearcat 2" list="names" required>
-    <div class="stepper"><button type="button" class="step" data-t="sb" data-d="-1" aria-label="minus">&minus;</button><input class="score" id="sb" type="number" min="0" max="99" inputmode="numeric" placeholder="0" required><button type="button" class="step" data-t="sb" data-d="1" aria-label="plus">+</button></div><button type="button" class="winbtn" data-w="b">Won</button></div>
+  <div class="side r"><input id="b" placeholder="Medcat 2" list="names" required>
+    <div class="stepper"><button type="button" class="step" data-t="sb" data-d="-1" aria-label="minus">&minus;</button><input class="score" id="sb" type="number" min="0" max="20" inputmode="numeric" placeholder="0" required><button type="button" class="step" data-t="sb" data-d="1" aria-label="plus">+</button></div><button type="button" class="winbtn" data-w="b">Won</button></div>
+  <button type="button" class="winbtn drawbtn" data-w="draw">Draw</button>
   <button class="save" type="submit">Save game</button>
 </form>
 <datalist id="names"></datalist>
@@ -172,7 +174,7 @@
 <section class="card">
 <h2>Rounds &mdash; the ladder <span id="lbnote"></span></h2>
 <div class="podium" id="podium"></div>
-<table id="lb"><thead><tr><th>#</th><th>Player</th><th class="n">Elo</th><th class="n">W&ndash;L</th><th class="n hide-sm">Last</th></tr></thead><tbody></tbody></table>
+<table id="lb"><thead><tr><th>#</th><th>Player</th><th class="n">Elo</th><th class="n">W&ndash;D&ndash;L</th><th class="n hide-sm">Last</th></tr></thead><tbody></tbody></table>
 </section>
 
 <section class="card">
@@ -182,38 +184,39 @@
 
 <dialog id="pdlg"><div id="pd"></div></dialog>
 <details><summary>Mechanism of action (how the rating works)</summary>
-<p>The winner takes points from the loser based on how surprising the win was. New players move fast (K&nbsp;=&nbsp;48 for their first 5 games, 32 until 20, then 24) so they find their level quickly, and a blowout counts more than a deuce (up to 1.5&times; for 11&ndash;0). Games logged as just a win/loss count as a normal 1&times; result. Names aren&rsquo;t case-sensitive. Typo? Undo the latest game.</p></details>
+<p>You gain points for beating (or drawing) someone better than expected and lose them for the reverse. New players move fast (K&nbsp;=&nbsp;48 for their first 5 games, 32 until 20, then 24) so they find their level quickly. Goal difference matters: a 1-goal win counts 1&times;, 2 goals 1.5&times;, and bigger thrashings up to 2.25&times;. Draws count too. Games logged as just an outcome count 1&times;. Names aren&rsquo;t case-sensitive. Typo? Undo the latest game.</p></details>
 <p class="foot"><button class="link" id="admbtn" onclick="adminToggle()">admin</button></p>
 <dialog id="adlg"><form id="adf" method="dialog"><div id="ad"></div></form></dialog>
 </div>
 <script>
 const API = 'https://pong-worker.cjreplogle.workers.dev';
+const api = p => API + p + '?g=fifa';
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let matches = [];
 
 const kFactor = games => games < 5 ? 48 : games < 20 ? 32 : 24;
-const marginMult = (w, l) => Math.min(1.5, Math.max(0.8, 0.8 + Math.log(w - l + 1) / Math.log(12) * 0.7));
+const marginMult = (a, b) => { const g = Math.abs(a - b); return g <= 1 ? 1 : g === 2 ? 1.5 : Math.min(2.25, (11 + g) / 8); };
 
 function compute() {
   const P = {};            // key -> {name, elo, w, l, games, last}
-  const get = n => { const k = n.toLowerCase(); return P[k] ||= { key: k, name: n, elo: 1000, w: 0, l: 0, games: 0, last: 0, hist: [] }; };
+  const get = n => { const k = n.toLowerCase(); return P[k] ||= { key: k, name: n, elo: 1000, w: 0, d: 0, l: 0, games: 0, last: 0, hist: [] }; };
   const deltas = [];
   for (const m of matches) {
     const A = get(m.a), B = get(m.b);
-    const aWon = m.sa > m.sb;
-    const W = aWon ? A : B, L = aWon ? B : A;
-    const exp = 1 / (1 + 10 ** ((L.elo - W.elo) / 400));
-    const mult = m.wl ? 1 : marginMult(Math.max(m.sa, m.sb), Math.min(m.sa, m.sb));
-    const dW = Math.round(kFactor(W.games) * (1 - exp) * mult);
-    const dL = Math.round(kFactor(L.games) * (1 - exp) * mult);
-    W.elo += dW; L.elo -= dL; W.w++; L.l++; W.games++; L.games++;
-    W.last = dW; L.last = -dL;
-    deltas.push(aWon ? [dW, -dL] : [-dL, dW]);
+    const res = m.sa > m.sb ? 1 : m.sa < m.sb ? 0 : 0.5;          // A's result
+    const expA = 1 / (1 + 10 ** ((B.elo - A.elo) / 400));
+    const mult = m.wl ? 1 : marginMult(m.sa, m.sb);
+    const dA = Math.round(kFactor(A.games) * (res - expA) * mult);
+    const dB = -Math.round(kFactor(B.games) * (res - expA) * mult);
+    A.elo += dA; B.elo += dB; A.games++; B.games++;
+    if (res === 1) { A.w++; B.l++; } else if (res === 0) { B.w++; A.l++; } else { A.d++; B.d++; }
+    A.last = dA; B.last = dB;
+    deltas.push([dA, dB]);
     // snapshot everyone's rank after this game, for the history chart
     const ranked = Object.values(P).sort((x, y) => y.elo - x.elo);
     for (const p of [A, B]) p.hist.push({ i: p.hist.length, m, elo: p.elo, rank: ranked.indexOf(p) + 1, of: ranked.length,
-      d: p === A ? deltas.at(-1)[0] : deltas.at(-1)[1], opp: p === A ? B.name : A.name, won: p === W });
+      d: p === A ? dA : dB, opp: p === A ? B.name : A.name, r: res === 0.5 ? 'D' : (res === 1) === (p === A) ? 'W' : 'L' });
   }
   return { P, deltas };
 }
@@ -225,7 +228,7 @@ function ago(t) {
   if (s < 86400) return Math.floor(s / 3600) + 'h ago';
   return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
-const fmtD = d => `<span class="${d >= 0 ? 'd-up' : 'd-dn'}">${d >= 0 ? '+' : '−'}${Math.abs(d)}</span>`;
+const fmtD = d => d === 0 ? '<span class="muted">±0</span>' : `<span class="${d > 0 ? 'd-up' : 'd-dn'}">${d > 0 ? '+' : '−'}${Math.abs(d)}</span>`;
 
 function render() {
   const { P, deltas } = compute();
@@ -239,22 +242,22 @@ function render() {
   $('podium').style.gridTemplateColumns = pod.length === 3 ? '' : `repeat(${pod.length}, 1fr)`;
   $('podium').innerHTML = order.map(({ p, i }) =>
     `<div class="pod p${i + 1}" data-k="${esc(p.key)}" role="button" tabindex="0"><div class="medal">${medals[i]}</div><div class="pname">${esc(p.name)}</div>
-     <div class="pelo">${p.elo}</div><div class="prec">${p.w}W &middot; ${p.l}L</div></div>`).join('');
+     <div class="pelo">${p.elo}</div><div class="prec">${p.w}W &middot; ${p.d}D &middot; ${p.l}L</div></div>`).join('');
   const rest = players.slice(3);
   $('lb').style.display = rest.length || !players.length ? '' : 'none';
   $('lb').tBodies[0].innerHTML = players.length ? rest.map((p, i) =>
     `<tr class="prow" data-k="${esc(p.key)}" tabindex="0"><td class="rank">${i + 4}</td><td>${esc(p.name)}${p.games < 5 ? '<span class="tag">MS1</span>' : ''}</td>
-     <td class="n elo">${p.elo}</td><td class="n">${p.w}&ndash;${p.l}</td><td class="n hide-sm">${fmtD(p.last)}</td></tr>`).join('')
-    : '<tr><td colspan="5" class="empty">No games yet &mdash; go play between lectures!</td></tr>';
+     <td class="n elo">${p.elo}</td><td class="n">${p.w}&ndash;${p.d}&ndash;${p.l}</td><td class="n hide-sm">${fmtD(p.last)}</td></tr>`).join('')
+    : '<tr><td colspan="5" class="empty">No games yet &mdash; grab a controller between lectures!</td></tr>';
   $('lbnote').textContent = matches.length ? `${matches.length} game${matches.length > 1 ? 's' : ''} played.` : '';
   $('names').innerHTML = players.map(p => `<option value="${esc(p.name)}">`).join('');
   const rows = [];
   for (let i = matches.length - 1; i >= (adminPw ? 0 : Math.max(0, matches.length - 30)); i--) {
-    const m = matches[i], [da, db] = deltas[i], aWon = m.sa > m.sb;
+    const m = matches[i], [da, db] = deltas[i], aWon = m.sa > m.sb, draw = m.sa === m.sb;
     const undo = adminPw ? ` <button class="link" onclick="editMatch('${m.id}')">edit</button><button class="link" onclick="delMatch('${m.id}')">delete</button>`
       : i === matches.length - 1 ? ` <button class="link" onclick="undo('${m.id}')">undo</button>` : '';
-    rows.push(`<tr><td><div class="game"><span class="${aWon ? 'w' : 'l'}">${esc(m.a)}</span>
-      <span class="sc">${m.wl ? (aWon ? 'W&ndash;L' : 'L&ndash;W') : m.sa + '&ndash;' + m.sb}</span><span class="${aWon ? 'l' : 'w'}">${esc(m.b)}</span>${undo}</div></td>
+    rows.push(`<tr><td><div class="game"><span class="${draw ? '' : aWon ? 'w' : 'l'}">${esc(m.a)}</span>
+      <span class="sc">${m.wl ? (draw ? 'Draw' : aWon ? 'W&ndash;L' : 'L&ndash;W') : m.sa + '&ndash;' + m.sb}</span><span class="${draw ? '' : aWon ? 'l' : 'w'}">${esc(m.b)}</span>${undo}</div></td>
       <td class="n">${fmtD(da)} <span class="muted">/</span> ${fmtD(db)}</td><td class="n muted hide-sm">${ago(m.t)}</td></tr>`);
   }
   $('hist').tBodies[0].innerHTML = rows.join('') || '<tr><td colspan="3" class="empty">Nothing yet.</td></tr>';
@@ -268,7 +271,7 @@ function canon(n) {
 }
 
 async function load() {
-  try { matches = await (await fetch(API + '/matches')).json(); render(); }
+  try { matches = await (await fetch(api('/matches'))).json(); render(); }
   catch { $('msg').innerHTML = '<span class="err">Couldn’t load games.</span>'; }
 }
 
@@ -276,11 +279,11 @@ $('f').onsubmit = async e => {
   e.preventDefault();
   let body = { a: canon($('a').value), b: canon($('b').value), sa: +$('sa').value, sb: +$('sb').value };
   if (wlMode) {
-    if (!winner) { $('msg').innerHTML = '<span class="err">Tap who won.</span>'; return; }
-    body = { ...body, sa: winner === 'a' ? 1 : 0, sb: winner === 'a' ? 0 : 1, wl: true };
+    if (!winner) { $('msg').innerHTML = '<span class="err">Tap who won (or Draw).</span>'; return; }
+    body = { ...body, sa: winner === 'a' ? 1 : 0, sb: winner === 'b' ? 1 : 0, wl: true };
   }
   $('msg').textContent = 'Saving…';
-  const r = await fetch(API + '/matches', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const r = await fetch(api('/matches'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const d = await r.json();
   if (!r.ok) { $('msg').innerHTML = `<span class="err">${esc(d.error)}</span>`; return; }
   $('msg').innerHTML = '<span class="ok">Saved ✓</span>';
@@ -290,14 +293,14 @@ $('f').onsubmit = async e => {
 
 window.undo = async id => {
   if (!confirm('Remove the latest game?')) return;
-  const r = await fetch(API + '/matches/' + id, { method: 'DELETE' });
+  const r = await fetch(api('/matches/' + id), { method: 'DELETE' });
   $('msg').textContent = r.ok ? 'Removed.' : 'Couldn’t undo (someone saved a newer game?).';
   await load();
 };
 
 document.querySelectorAll('.step').forEach(b => b.onclick = () => {
   const i = $(b.dataset.t);
-  i.value = Math.max(0, Math.min(99, (+i.value || 0) + +b.dataset.d));
+  i.value = Math.max(0, Math.min(20, (+i.value || 0) + +b.dataset.d));
 });
 let wlMode = false, winner = null;
 function pickWinner(w) { winner = w; document.querySelectorAll('.winbtn').forEach(b => b.classList.toggle('on', b.dataset.w === w)); }
@@ -307,11 +310,11 @@ function setMode(wl) {
   $('f').classList.toggle('wl', wl);
   $('m-wl').classList.toggle('on', wl); $('m-score').classList.toggle('on', !wl);
   $('sa').required = $('sb').required = !wl;
-  try { localStorage.setItem('pongMode', wl ? 'wl' : 'score'); } catch {}
+  try { localStorage.setItem('fifaMode', wl ? 'wl' : 'score'); } catch {}
 }
 $('m-score').onclick = () => setMode(false);
 $('m-wl').onclick = () => setMode(true);
-try { if (localStorage.getItem('pongMode') === 'wl') setMode(true); } catch {}
+try { if (localStorage.getItem('fifaMode') === 'wl') setMode(true); } catch {}
 let lastP = {}, chartMode = 'elo', openKey = null;
 function chart(h, mode) {
   const W = 560, H = 200, pl = 38, pr = 12, pt = 12, pb = 22;
@@ -330,7 +333,7 @@ function chart(h, mode) {
     ${mode === 'elo' ? `<line x1="${pl}" x2="${W - pr}" y1="${y(1000)}" y2="${y(1000)}" class="base"/>` : ''}
     ${area ? `<path d="${area}" class="area"/>` : ''}
     <path d="${line}" class="ln"/>
-    ${vals.map((v, i) => i ? `<circle cx="${x(i)}" cy="${y(v)}" r="${pts.length > 40 ? 2 : 3.5}" class="${pts[i].won ? 'dw' : 'dl'}"><title>Game ${i} vs ${esc(pts[i].opp)}: ${mode === 'rank' ? '#' + v : v}</title></circle>` : '').join('')}
+    ${vals.map((v, i) => i ? `<circle cx="${x(i)}" cy="${y(v)}" r="${pts.length > 40 ? 2 : 3.5}" class="${{ W: 'dw', L: 'dl', D: 'dd' }[pts[i].r]}"><title>Game ${i} vs ${esc(pts[i].opp)}: ${mode === 'rank' ? '#' + v : v}</title></circle>` : '').join('')}
     <text x="${pl}" y="${H - 5}">start</text><text x="${W - pr}" y="${H - 5}" text-anchor="end">now</text></svg>`;
 }
 function showPlayer(k) {
@@ -338,17 +341,17 @@ function showPlayer(k) {
   openKey = k;
   const ranked = Object.values(lastP).sort((x, y) => y.elo - x.elo);
   const peak = Math.max(1000, ...p.hist.map(h => h.elo)), best = Math.min(...p.hist.map(h => h.rank));
-  let streak = 0; for (let i = p.hist.length - 1; i >= 0 && p.hist[i].won === p.hist.at(-1).won; i--) streak++;
+  let streak = 0; for (let i = p.hist.length - 1; i >= 0 && p.hist[i].r === p.hist.at(-1).r; i--) streak++;
   $('pd').innerHTML = `<button class="x" onclick="$('pdlg').close()" aria-label="close">&times;</button>
     <h3>${esc(p.name)}</h3>
     <div class="stats"><div><b>${p.elo}</b><span>Elo</span></div><div><b>#${ranked.indexOf(p) + 1}</b><span>of ${ranked.length}</span></div>
       <div><b>${peak}</b><span>peak</span></div><div><b>#${best}</b><span>best rank</span></div>
-      <div><b>${p.w}&ndash;${p.l}</b><span>${Math.round(100 * p.w / Math.max(1, p.games))}% wins</span></div>
-      <div><b>${streak}${p.hist.at(-1)?.won ? 'W' : 'L'}</b><span>streak</span></div></div>
+      <div><b>${p.w}&ndash;${p.d}&ndash;${p.l}</b><span>${Math.round(100 * p.w / Math.max(1, p.games))}% wins</span></div>
+      <div><b>${streak}${p.hist.at(-1)?.r || ''}</b><span>streak</span></div></div>
     <div class="seg"><button type="button" class="${chartMode === 'elo' ? 'on' : ''}" onclick="chartMode='elo';showPlayer(openKey)">Elo</button><button type="button" class="${chartMode === 'rank' ? 'on' : ''}" onclick="chartMode='rank';showPlayer(openKey)">Rank</button></div>
     ${chart(p.hist, chartMode)}
     ${adminPw ? `<div class="rename"><input id="rn" value="${esc(p.name)}" aria-label="new name"><button type="button" onclick="renamePlayer()">Rename / merge</button></div><p class="muted">Renaming to an existing player merges their games.</p>` : ''}
-    <table class="ph">${p.hist.slice().reverse().slice(0, 15).map(h => `<tr><td><span class="${h.won ? 'w' : 'l'}">${h.won ? 'W' : 'L'}</span> vs ${esc(h.opp)} <span class="sc">${h.m.wl ? '' : (h.m.a === p.name || h.m.a.toLowerCase() === k ? h.m.sa + '&ndash;' + h.m.sb : h.m.sb + '&ndash;' + h.m.sa)}</span></td><td class="n">${fmtD(h.d)}</td><td class="n">${h.elo}</td><td class="n muted">#${h.rank}</td></tr>`).join('')}</table>`;
+    <table class="ph">${p.hist.slice().reverse().slice(0, 15).map(h => `<tr><td><span class="${{ W: 'w', L: 'l', D: 'dr' }[h.r]}">${h.r}</span> vs ${esc(h.opp)} <span class="sc">${h.m.wl ? '' : (h.m.a === p.name || h.m.a.toLowerCase() === k ? h.m.sa + '&ndash;' + h.m.sb : h.m.sb + '&ndash;' + h.m.sa)}</span></td><td class="n">${fmtD(h.d)}</td><td class="n">${h.elo}</td><td class="n muted">#${h.rank}</td></tr>`).join('')}</table>`;
   if (!$('pdlg').open) $('pdlg').showModal();
 }
 document.addEventListener('click', e => { const t = e.target.closest('[data-k]'); if (t) showPlayer(t.dataset.k); });
@@ -356,7 +359,7 @@ document.addEventListener('keydown', e => { const t = e.target.closest?.('[data-
 $('pdlg').addEventListener('click', e => { if (e.target === $('pdlg')) $('pdlg').close(); });
 $('pdlg').addEventListener('close', () => openKey = null);
 let adminPw = null;
-try { adminPw = sessionStorage.getItem('pongAdmin'); } catch {}
+try { adminPw = sessionStorage.getItem('fifaAdmin'); } catch {}
 const adminHdr = () => ({ 'Content-Type': 'application/json', 'X-Admin': adminPw });
 function syncAdmin() { document.body.classList.toggle('admin-on', !!adminPw); $('admbtn').textContent = adminPw ? 'admin on · log out' : 'admin'; render(); }
 function adDialog(html, onGo) {
@@ -371,22 +374,22 @@ function adDialog(html, onGo) {
   $('adlg').showModal();
 }
 window.adminToggle = () => {
-  if (adminPw) { adminPw = null; try { sessionStorage.removeItem('pongAdmin'); } catch {} syncAdmin(); if ($('pdlg').open && openKey) showPlayer(openKey); return; }
+  if (adminPw) { adminPw = null; try { sessionStorage.removeItem('fifaAdmin'); } catch {} syncAdmin(); if ($('pdlg').open && openKey) showPlayer(openKey); return; }
   adDialog('<h3>Admin</h3><input id="apw" type="password" placeholder="Password" required autocomplete="current-password">', async () => {
     const pw = $('apw').value;
-    const r = await fetch(API + '/admin', { headers: { 'X-Admin': pw } });
+    const r = await fetch(api('/admin'), { headers: { 'X-Admin': pw } });
     if (!r.ok) return 'Wrong password.';
-    adminPw = pw; try { sessionStorage.setItem('pongAdmin', pw); } catch {}
+    adminPw = pw; try { sessionStorage.setItem('fifaAdmin', pw); } catch {}
     syncAdmin();
   });
 };
 window.editMatch = id => {
   const m = matches.find(x => x.id === id); if (!m) return;
   adDialog(`<h3>Edit game</h3>
-    <div class="row"><input id="ea" value="${esc(m.a)}" required><input id="esa" type="number" min="0" max="99" value="${m.sa}" required></div>
-    <div class="row"><input id="eb" value="${esc(m.b)}" required><input id="esb" type="number" min="0" max="99" value="${m.sb}" required></div>
-    <label><input type="checkbox" id="ewl" ${m.wl ? 'checked' : ''} style="width:auto"> Just who won (higher number = winner)</label>`, async () => {
-    const r = await fetch(API + '/matches/' + id, { method: 'PUT', headers: adminHdr(),
+    <div class="row"><input id="ea" value="${esc(m.a)}" required><input id="esa" type="number" min="0" max="20" value="${m.sa}" required></div>
+    <div class="row"><input id="eb" value="${esc(m.b)}" required><input id="esb" type="number" min="0" max="20" value="${m.sb}" required></div>
+    <label><input type="checkbox" id="ewl" ${m.wl ? 'checked' : ''} style="width:auto"> Outcome only (higher number = winner, equal = draw)</label>`, async () => {
+    const r = await fetch(api('/matches/' + id), { method: 'PUT', headers: adminHdr(),
       body: JSON.stringify({ a: $('ea').value, b: $('eb').value, sa: +$('esa').value, sb: +$('esb').value, wl: $('ewl').checked }) });
     if (!r.ok) return (await r.json()).error;
     const upd = await r.json(); Object.assign(matches.find(x => x.id === id), upd); if (!upd.wl) delete matches.find(x => x.id === id).wl;
@@ -396,7 +399,7 @@ window.editMatch = id => {
 window.delMatch = id => {
   const m = matches.find(x => x.id === id); if (!m) return;
   adDialog(`<h3>Delete game?</h3><p>${esc(m.a)} ${m.sa}&ndash;${m.sb} ${esc(m.b)} &middot; ${ago(m.t)}</p>`, async () => {
-    const r = await fetch(API + '/matches/' + id, { method: 'DELETE', headers: adminHdr() });
+    const r = await fetch(api('/matches/' + id), { method: 'DELETE', headers: adminHdr() });
     if (!r.ok) return (await r.json()).error;
     matches = matches.filter(x => x.id !== id); render();
   });
@@ -404,7 +407,7 @@ window.delMatch = id => {
 window.renamePlayer = async () => {
   const to = $('rn').value.trim(), from = openKey;
   if (!to) return;
-  const r = await fetch(API + '/rename', { method: 'POST', headers: adminHdr(), body: JSON.stringify({ from, to }) });
+  const r = await fetch(api('/rename'), { method: 'POST', headers: adminHdr(), body: JSON.stringify({ from, to }) });
   const d = await r.json();
   if (!r.ok) { $('msg').innerHTML = `<span class="err">${esc(d.error)}</span>`; return; }
   for (const m of matches) { if (m.a.toLowerCase() === from) m.a = to; if (m.b.toLowerCase() === from) m.b = to; }

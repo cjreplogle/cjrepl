@@ -6,7 +6,8 @@
 //   POST /rename {from,to} merges/renames a player everywhere, GET /admin checks the password.
 // Elo is computed client-side by replaying the log, so edits stay consistent.
 
-const KEY = 'matches';
+// ?g=fifa selects a separate log (football allows draws); default is ping pong.
+const GAMES = { pong: { key: 'matches', draws: false }, fifa: { key: 'matches:fifa', draws: true } };
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -20,6 +21,7 @@ export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { headers: CORS });
     const url = new URL(request.url);
+    const G = GAMES[url.searchParams.get('g')] || GAMES.pong, KEY = G.key;
     const load = async () => JSON.parse((await env.PONG.get(KEY)) || '[]');
 
     const isAdmin = !!env.ADMIN_PASSWORD && request.headers.get('X-Admin') === env.ADMIN_PASSWORD;
@@ -29,7 +31,7 @@ export default {
     if (url.pathname === '/matches' && request.method === 'GET') return json(await load());
 
     if (url.pathname === '/matches' && request.method === 'POST') {
-      const v = await validate(request); if (v.error) return json(v, 400);
+      const v = await validate(request, G); if (v.error) return json(v, 400);
       const { a, b, sa, sb, body } = v;
       const list = await load();
       if (list.length >= 20000) return json({ error: 'log full' }, 507);
@@ -43,7 +45,7 @@ export default {
     const del = url.pathname.match(/^\/matches\/([\w-]+)$/);
     if (del && request.method === 'PUT') {
       if (!isAdmin) return json({ error: 'admin only' }, 401);
-      const v = await validate(request); if (v.error) return json(v, 400);
+      const v = await validate(request, G); if (v.error) return json(v, 400);
       const list = await load(), m = list.find(x => x.id === del[1]);
       if (!m) return json({ error: 'no such match' }, 404);
       Object.assign(m, { a: v.a, b: v.b, sa: v.sa, sb: v.sb });
@@ -82,7 +84,7 @@ export default {
   },
 };
 
-async function validate(request) {
+async function validate(request, G) {
   let body;
   try { body = await request.json(); } catch { return { error: 'bad json' }; }
   const a = cleanName(body.a), b = cleanName(body.b);
@@ -90,6 +92,6 @@ async function validate(request) {
   if (!a || !b) return { error: 'need two names' };
   if (a.toLowerCase() === b.toLowerCase()) return { error: 'players must differ' };
   if (![sa, sb].every(s => Number.isInteger(s) && s >= 0 && s <= 99)) return { error: 'scores must be 0–99' };
-  if (sa === sb) return { error: 'no ties in ping pong' };
+  if (sa === sb && !G.draws) return { error: 'no ties in ping pong' };
   return { a, b, sa, sb, body };
 }
