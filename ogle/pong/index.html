@@ -4,16 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow, noimageindex">
-<title>Ping pong &mdash; CJ Replogle</title>
+<title>UCCOM Ping Pong</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#f4f1ea; --card:#fff; --ink:#1b1b1f; --mute:#7a7770; --line:#e7e2d8;
-          --acc:#e8562a; --acc2:#ffb347; --up:#1f9d55; --dn:#d64545; --field:#f8f6f1;
+  :root { --bg:#f5f5f5; --card:#fff; --ink:#111; --mute:#6f6f6f; --line:#e4e4e4;
+          --acc:#e00122; --acc2:#ff5a6e; --up:#1f9d55; --dn:#d64545; --field:#f3f3f3;
           --gold:#f5b800; --silver:#aab2bd; --bronze:#cd7f32; --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06); }
   @media (prefers-color-scheme: dark) {
-    :root { --bg:#111214; --card:#1a1c1f; --ink:#f1efe9; --mute:#8d8a84; --line:#2a2c30;
-            --field:#222428; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35); }
+    :root { --bg:#0b0b0b; --card:#161616; --ink:#f2f2f2; --mute:#8f8f8f; --line:#262626;
+            --field:#202020; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35); }
   }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--ink);
@@ -23,12 +23,14 @@
   .back:hover { color:var(--ink); }
   header { display:flex; align-items:center; gap:14px; margin:18px 0 22px; }
   .ball { width:46px; height:46px; border-radius:50%; flex:none;
-          background:radial-gradient(circle at 32% 30%,#fff 0 18%,var(--acc2) 45%,var(--acc) 100%);
-          box-shadow:0 6px 16px rgba(232,86,42,.35); animation:bounce 2.4s ease-in-out infinite; }
+          background:radial-gradient(circle at 32% 30%,#fff 0 16%,var(--acc2) 42%,var(--acc) 72%,#000 100%);
+          box-shadow:0 6px 16px rgba(224,1,34,.35); animation:bounce 2.4s ease-in-out infinite; }
   @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
   @media (prefers-reduced-motion: reduce) { .ball { animation:none; } }
   h1 { font-size:1.9rem; font-weight:800; letter-spacing:-.02em; margin:0; }
   .sub { color:var(--mute); font-size:.9rem; margin:2px 0 0; }
+  body::before { content:""; display:block; height:6px; background:linear-gradient(90deg,var(--acc) 0 70%,#000 70%); }
+  h1 small { color:var(--acc); }
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px;
           padding:18px; margin-bottom:16px; box-shadow:var(--shadow); }
   h2 { font-size:.78rem; text-transform:uppercase; letter-spacing:.08em; color:var(--mute);
@@ -44,8 +46,8 @@
   .side.r input { text-align:right; } .side.r input.score { text-align:center; }
   .vs { font-weight:800; color:var(--mute); padding-bottom:14px; font-size:.85rem; }
   button.save { grid-column:1/-1; font:inherit; font-weight:700; color:#fff; border:none; cursor:pointer;
-          background:linear-gradient(135deg,var(--acc),#f07a3a); border-radius:12px; padding:12px;
-          box-shadow:0 4px 14px rgba(232,86,42,.3); transition:transform .1s, filter .15s; }
+          background:linear-gradient(135deg,var(--acc),#a50019); border-radius:12px; padding:12px;
+          box-shadow:0 4px 14px rgba(224,1,34,.3); transition:transform .1s, filter .15s; }
   button.save:hover { filter:brightness(1.05); } button.save:active { transform:scale(.98); }
   #msg { min-height:1.2em; margin:10px 0 0; font-size:.85rem; color:var(--mute); text-align:center; }
   .err { color:var(--dn); } .ok { color:var(--up); }
@@ -64,7 +66,7 @@
   td.n, th.n { text-align:right; }
   .rank { color:var(--mute); font-weight:600; width:2em; }
   .elo { font-weight:800; }
-  .tag { font-size:.68rem; font-weight:600; color:var(--acc); background:rgba(232,86,42,.12);
+  .tag { font-size:.68rem; font-weight:600; color:var(--acc); background:rgba(224,1,34,.12);
          border-radius:6px; padding:1px 6px; margin-left:6px; vertical-align:1px; }
   .d-up { color:var(--up); font-weight:600; } .d-dn { color:var(--dn); font-weight:600; }
   .muted { color:var(--mute); font-size:.85rem; }
@@ -81,15 +83,15 @@
 <body>
 <div class="wrap">
 <a class="back" href="/ogle/">&larr; back</a>
-<header><div class="ball"></div><div><h1>Ping Pong</h1><p class="sub">Class Elo ladder &middot; everyone starts at 1000</p></div></header>
+<header><div class="ball"></div><div><h1>UCCOM Ping Pong</h1><p class="sub">Bearcat Elo ladder &middot; everyone starts at 1000</p></div></header>
 
 <section class="card">
-<h2>Record a game</h2>
+<h2>Chart a game</h2>
 <form id="f" autocomplete="off">
-  <div class="side"><input id="a" placeholder="Player 1" list="names" required>
+  <div class="side"><input id="a" placeholder="Bearcat 1" list="names" required>
     <input class="score" id="sa" type="number" min="0" max="99" inputmode="numeric" placeholder="0" required></div>
   <div class="vs">VS</div>
-  <div class="side r"><input id="b" placeholder="Player 2" list="names" required>
+  <div class="side r"><input id="b" placeholder="Bearcat 2" list="names" required>
     <input class="score" id="sb" type="number" min="0" max="99" inputmode="numeric" placeholder="0" required></div>
   <button class="save" type="submit">Save game</button>
 </form>
@@ -98,17 +100,17 @@
 </section>
 
 <section class="card">
-<h2>Leaderboard <span id="lbnote"></span></h2>
+<h2>Rounds &mdash; the ladder <span id="lbnote"></span></h2>
 <div class="podium" id="podium"></div>
 <table id="lb"><thead><tr><th>#</th><th>Player</th><th class="n">Elo</th><th class="n">W&ndash;L</th><th class="n hide-sm">Last</th></tr></thead><tbody></tbody></table>
 </section>
 
 <section class="card">
-<h2>Recent games</h2>
+<h2>Case log</h2>
 <table id="hist"><tbody></tbody></table>
 </section>
 
-<details><summary>How the rating works</summary>
+<details><summary>Mechanism of action (how the rating works)</summary>
 <p>The winner takes points from the loser based on how surprising the win was. New players move fast (K&nbsp;=&nbsp;48 for their first 5 games, 32 until 20, then 24) so they find their level quickly, and a blowout counts more than a deuce (up to 1.5&times; for 11&ndash;0). Names aren&rsquo;t case-sensitive. Typo? Undo the latest game.</p></details>
 </div>
 <script>
@@ -162,9 +164,9 @@ function render() {
   const rest = players.slice(3);
   $('lb').style.display = rest.length || !players.length ? '' : 'none';
   $('lb').tBodies[0].innerHTML = players.length ? rest.map((p, i) =>
-    `<tr><td class="rank">${i + 4}</td><td>${esc(p.name)}${p.games < 5 ? '<span class="tag">new</span>' : ''}</td>
+    `<tr><td class="rank">${i + 4}</td><td>${esc(p.name)}${p.games < 5 ? '<span class="tag">MS1</span>' : ''}</td>
      <td class="n elo">${p.elo}</td><td class="n">${p.w}&ndash;${p.l}</td><td class="n hide-sm">${fmtD(p.last)}</td></tr>`).join('')
-    : '<tr><td colspan="5" class="empty">No games yet &mdash; go play!</td></tr>';
+    : '<tr><td colspan="5" class="empty">No games yet &mdash; go play between lectures!</td></tr>';
   $('lbnote').textContent = matches.length ? `${matches.length} game${matches.length > 1 ? 's' : ''} played.` : '';
   $('names').innerHTML = players.map(p => `<option value="${esc(p.name)}">`).join('');
   const rows = [];
