@@ -5,59 +5,112 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow, noimageindex">
 <title>Ping pong &mdash; CJ Replogle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  body { font-family:"Times New Roman",Times,serif; color:#000; background:#fff;
-         margin:12px; max-width:46em; line-height:1.4; }
-  h1 { font-size:1.9em; margin:0 0 0.1em; }
-  h2 { font-size:1.3em; margin:0.2em 0 0.4em; }
-  hr { border:none; border-top:1px solid #000; margin:1em 0; }
-  .top-back { margin:0 0 0.6em; font-size:0.9em; }
-  table { border-collapse:collapse; width:100%; }
-  th, td { text-align:left; padding:2px 8px 2px 0; }
-  th { border-bottom:1px solid #000; font-weight:bold; }
+  :root { --bg:#f4f1ea; --card:#fff; --ink:#1b1b1f; --mute:#7a7770; --line:#e7e2d8;
+          --acc:#e8562a; --acc2:#ffb347; --up:#1f9d55; --dn:#d64545; --field:#f8f6f1;
+          --gold:#f5b800; --silver:#aab2bd; --bronze:#cd7f32; --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06); }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#111214; --card:#1a1c1f; --ink:#f1efe9; --mute:#8d8a84; --line:#2a2c30;
+            --field:#222428; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35); }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font-family:Inter,system-ui,-apple-system,sans-serif; line-height:1.45; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:720px; margin:0 auto; padding:20px 16px 48px; }
+  .back { color:var(--mute); text-decoration:none; font-size:.85rem; }
+  .back:hover { color:var(--ink); }
+  header { display:flex; align-items:center; gap:14px; margin:18px 0 22px; }
+  .ball { width:46px; height:46px; border-radius:50%; flex:none;
+          background:radial-gradient(circle at 32% 30%,#fff 0 18%,var(--acc2) 45%,var(--acc) 100%);
+          box-shadow:0 6px 16px rgba(232,86,42,.35); animation:bounce 2.4s ease-in-out infinite; }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  @media (prefers-reduced-motion: reduce) { .ball { animation:none; } }
+  h1 { font-size:1.9rem; font-weight:800; letter-spacing:-.02em; margin:0; }
+  .sub { color:var(--mute); font-size:.9rem; margin:2px 0 0; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px;
+          padding:18px; margin-bottom:16px; box-shadow:var(--shadow); }
+  h2 { font-size:.78rem; text-transform:uppercase; letter-spacing:.08em; color:var(--mute);
+       font-weight:700; margin:0 0 14px; display:flex; justify-content:space-between; }
+  h2 span { text-transform:none; letter-spacing:0; font-weight:500; }
+  form { display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:end; }
+  .side { display:flex; flex-direction:column; gap:8px; }
+  .side.r { text-align:right; }
+  input { font:inherit; color:var(--ink); background:var(--field); border:1.5px solid transparent;
+          border-radius:10px; padding:10px 12px; width:100%; outline:none; transition:border-color .15s; }
+  input:focus { border-color:var(--acc); }
+  input.score { font-size:1.6rem; font-weight:800; text-align:center; padding:6px; }
+  .side.r input { text-align:right; } .side.r input.score { text-align:center; }
+  .vs { font-weight:800; color:var(--mute); padding-bottom:14px; font-size:.85rem; }
+  button.save { grid-column:1/-1; font:inherit; font-weight:700; color:#fff; border:none; cursor:pointer;
+          background:linear-gradient(135deg,var(--acc),#f07a3a); border-radius:12px; padding:12px;
+          box-shadow:0 4px 14px rgba(232,86,42,.3); transition:transform .1s, filter .15s; }
+  button.save:hover { filter:brightness(1.05); } button.save:active { transform:scale(.98); }
+  #msg { min-height:1.2em; margin:10px 0 0; font-size:.85rem; color:var(--mute); text-align:center; }
+  .err { color:var(--dn); } .ok { color:var(--up); }
+  .podium { display:grid; grid-template-columns:1fr 1.15fr 1fr; gap:10px; align-items:end; margin-bottom:14px; }
+  .pod { text-align:center; border-radius:14px; padding:14px 6px 12px; background:var(--field); position:relative; overflow:hidden; }
+  .pod.p1 { padding-top:22px; } .pod.p1::before,.pod.p2::before,.pod.p3::before { content:""; position:absolute; inset:0 0 auto; height:4px; }
+  .pod.p1::before { background:var(--gold); } .pod.p2::before { background:var(--silver); } .pod.p3::before { background:var(--bronze); }
+  .medal { font-size:1.5rem; line-height:1; } .pod.p1 .medal { font-size:2rem; }
+  .pname { font-weight:700; margin-top:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pelo { font-size:1.4rem; font-weight:800; letter-spacing:-.02em; } .pod.p1 .pelo { font-size:1.8rem; }
+  .prec { font-size:.75rem; color:var(--mute); }
+  table { border-collapse:collapse; width:100%; font-size:.93rem; }
+  th { font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--mute); font-weight:600;
+       text-align:left; padding:0 8px 8px; }
+  td { padding:10px 8px; border-top:1px solid var(--line); font-variant-numeric:tabular-nums; }
   td.n, th.n { text-align:right; }
-  form { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
-  input { font:inherit; padding:2px 4px; border:1px solid #000; }
-  input.name { width:9em; } input.score { width:3em; }
-  button { font:inherit; cursor:pointer; }
-  .d-up { color:#070; } .d-dn { color:#b00; }
-  .muted { color:#555; font-size:0.85em; }
-  .err { color:#b00; }
-  .link { color:#00e; text-decoration:underline; cursor:pointer; background:none; border:none; padding:0; }
+  .rank { color:var(--mute); font-weight:600; width:2em; }
+  .elo { font-weight:800; }
+  .tag { font-size:.68rem; font-weight:600; color:var(--acc); background:rgba(232,86,42,.12);
+         border-radius:6px; padding:1px 6px; margin-left:6px; vertical-align:1px; }
+  .d-up { color:var(--up); font-weight:600; } .d-dn { color:var(--dn); font-weight:600; }
+  .muted { color:var(--mute); font-size:.85rem; }
+  .game { display:flex; align-items:center; gap:8px; }
+  .game .w { font-weight:700; } .game .l { color:var(--mute); }
+  .sc { font-weight:800; background:var(--field); border-radius:6px; padding:1px 7px; font-size:.85rem; white-space:nowrap; }
+  .link { font:inherit; font-size:.8rem; color:var(--acc); background:none; border:none; padding:0 0 0 6px; cursor:pointer; }
+  details summary { cursor:pointer; color:var(--mute); font-size:.85rem; }
+  details p { color:var(--mute); font-size:.85rem; margin:8px 0 0; }
+  .empty { text-align:center; color:var(--mute); padding:18px 0; }
+  @media (max-width:480px) { .hide-sm { display:none; } input.score { font-size:1.3rem; } }
 </style>
 </head>
 <body>
-<p class="top-back"><a href="/ogle/">&larr; back</a></p>
-<h1>Ping pong</h1>
-<p class="muted">Elo for the class. Everyone starts at 1000.</p>
-<hr>
+<div class="wrap">
+<a class="back" href="/ogle/">&larr; back</a>
+<header><div class="ball"></div><div><h1>Ping Pong</h1><p class="sub">Class Elo ladder &middot; everyone starts at 1000</p></div></header>
 
+<section class="card">
 <h2>Record a game</h2>
 <form id="f" autocomplete="off">
-  <input class="name" id="a" placeholder="player" list="names" required>
-  <input class="score" id="sa" type="number" min="0" max="99" inputmode="numeric" placeholder="11" required>
-  <span>&ndash;</span>
-  <input class="score" id="sb" type="number" min="0" max="99" inputmode="numeric" placeholder="7" required>
-  <input class="name" id="b" placeholder="player" list="names" required>
-  <button type="submit">Save</button>
+  <div class="side"><input id="a" placeholder="Player 1" list="names" required>
+    <input class="score" id="sa" type="number" min="0" max="99" inputmode="numeric" placeholder="0" required></div>
+  <div class="vs">VS</div>
+  <div class="side r"><input id="b" placeholder="Player 2" list="names" required>
+    <input class="score" id="sb" type="number" min="0" max="99" inputmode="numeric" placeholder="0" required></div>
+  <button class="save" type="submit">Save game</button>
 </form>
 <datalist id="names"></datalist>
-<p id="msg" class="muted"></p>
-<hr>
+<p id="msg"></p>
+</section>
 
-<h2>Leaderboard</h2>
-<table id="lb"><thead><tr><th>#</th><th>Player</th><th class="n">Elo</th><th class="n">W&ndash;L</th><th class="n">Last</th></tr></thead><tbody></tbody></table>
-<p class="muted" id="lbnote"></p>
-<hr>
+<section class="card">
+<h2>Leaderboard <span id="lbnote"></span></h2>
+<div class="podium" id="podium"></div>
+<table id="lb"><thead><tr><th>#</th><th>Player</th><th class="n">Elo</th><th class="n">W&ndash;L</th><th class="n hide-sm">Last</th></tr></thead><tbody></tbody></table>
+</section>
 
+<section class="card">
 <h2>Recent games</h2>
-<table id="hist"><thead><tr><th>Game</th><th class="n">Elo change</th><th class="n">When</th></tr></thead><tbody></tbody></table>
-<hr>
-<p class="muted">How it works: winner takes points from loser based on how surprising the win was.
-It adapts &mdash; new players move fast (K&nbsp;=&nbsp;48 for the first 5 games, 32 until 20, then 24) so they
-find their level quickly, and a blowout counts a bit more than a deuce (up to 1.5&times; for 11&ndash;0).
-Names aren&rsquo;t case-sensitive. Typo? Undo the latest game.</p>
+<table id="hist"><tbody></tbody></table>
+</section>
 
+<details><summary>How the rating works</summary>
+<p>The winner takes points from the loser based on how surprising the win was. New players move fast (K&nbsp;=&nbsp;48 for their first 5 games, 32 until 20, then 24) so they find their level quickly, and a blowout counts more than a deuce (up to 1.5&times; for 11&ndash;0). Names aren&rsquo;t case-sensitive. Typo? Undo the latest game.</p></details>
+</div>
 <script>
 const API = 'https://pong-worker.cjreplogle.workers.dev';
 const $ = id => document.getElementById(id);
@@ -98,20 +151,31 @@ const fmtD = d => `<span class="${d >= 0 ? 'd-up' : 'd-dn'}">${d >= 0 ? '+' : '�
 function render() {
   const { P, deltas } = compute();
   const players = Object.values(P).sort((x, y) => y.elo - x.elo);
-  $('lb').tBodies[0].innerHTML = players.length ? players.map((p, i) =>
-    `<tr><td>${i + 1}${i === 0 ? ' 🏓' : ''}</td><td>${esc(p.name)}${p.games < 5 ? ' <span class="muted">(new)</span>' : ''}</td>
-     <td class="n"><b>${p.elo}</b></td><td class="n">${p.w}&ndash;${p.l}</td><td class="n">${fmtD(p.last)}</td></tr>`).join('')
-    : '<tr><td colspan="5" class="muted">No games yet.</td></tr>';
+  const medals = ['🥇', '🥈', '🥉'];
+  const pod = players.slice(0, 3).map((p, i) => ({ p, i }));
+  const order = pod.length === 3 ? [pod[1], pod[0], pod[2]] : pod;
+  $('podium').style.display = pod.length ? '' : 'none';
+  $('podium').style.gridTemplateColumns = pod.length === 3 ? '' : `repeat(${pod.length}, 1fr)`;
+  $('podium').innerHTML = order.map(({ p, i }) =>
+    `<div class="pod p${i + 1}"><div class="medal">${medals[i]}</div><div class="pname">${esc(p.name)}</div>
+     <div class="pelo">${p.elo}</div><div class="prec">${p.w}W &middot; ${p.l}L</div></div>`).join('');
+  const rest = players.slice(3);
+  $('lb').style.display = rest.length || !players.length ? '' : 'none';
+  $('lb').tBodies[0].innerHTML = players.length ? rest.map((p, i) =>
+    `<tr><td class="rank">${i + 4}</td><td>${esc(p.name)}${p.games < 5 ? '<span class="tag">new</span>' : ''}</td>
+     <td class="n elo">${p.elo}</td><td class="n">${p.w}&ndash;${p.l}</td><td class="n hide-sm">${fmtD(p.last)}</td></tr>`).join('')
+    : '<tr><td colspan="5" class="empty">No games yet &mdash; go play!</td></tr>';
   $('lbnote').textContent = matches.length ? `${matches.length} game${matches.length > 1 ? 's' : ''} played.` : '';
   $('names').innerHTML = players.map(p => `<option value="${esc(p.name)}">`).join('');
   const rows = [];
   for (let i = matches.length - 1; i >= Math.max(0, matches.length - 30); i--) {
     const m = matches[i], [da, db] = deltas[i], aWon = m.sa > m.sb;
     const undo = i === matches.length - 1 ? ` <button class="link" onclick="undo('${m.id}')">undo</button>` : '';
-    rows.push(`<tr><td>${aWon ? '<b>' + esc(m.a) + '</b>' : esc(m.a)} ${m.sa}&ndash;${m.sb} ${aWon ? esc(m.b) : '<b>' + esc(m.b) + '</b>'}</td>
-      <td class="n">${fmtD(da)} / ${fmtD(db)}</td><td class="n">${ago(m.t)}${undo}</td></tr>`);
+    rows.push(`<tr><td><div class="game"><span class="${aWon ? 'w' : 'l'}">${esc(m.a)}</span>
+      <span class="sc">${m.sa}&ndash;${m.sb}</span><span class="${aWon ? 'l' : 'w'}">${esc(m.b)}</span>${undo}</div></td>
+      <td class="n">${fmtD(da)} <span class="muted">/</span> ${fmtD(db)}</td><td class="n muted hide-sm">${ago(m.t)}</td></tr>`);
   }
-  $('hist').tBodies[0].innerHTML = rows.join('') || '<tr><td colspan="3" class="muted">Nothing yet.</td></tr>';
+  $('hist').tBodies[0].innerHTML = rows.join('') || '<tr><td colspan="3" class="empty">Nothing yet.</td></tr>';
 }
 
 // Snap typed names to an existing player's spelling so "cj" and "CJ" stay one person.
@@ -133,7 +197,7 @@ $('f').onsubmit = async e => {
   const r = await fetch(API + '/matches', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const d = await r.json();
   if (!r.ok) { $('msg').innerHTML = `<span class="err">${esc(d.error)}</span>`; return; }
-  $('msg').textContent = 'Saved.';
+  $('msg').innerHTML = '<span class="ok">Saved ✓</span>';
   $('sa').value = $('sb').value = '';
   await load();
 };
