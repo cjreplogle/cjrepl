@@ -31,6 +31,7 @@
   body { margin:0; background:var(--bg); color:var(--ink);
          font-family:Inter,system-ui,-apple-system,sans-serif; line-height:1.45; -webkit-font-smoothing:antialiased; }
   .wrap { max-width:720px; margin:0 auto; padding:20px 16px 48px; }
+  .back[hidden] { display:none; }
   .back { color:var(--mute); text-decoration:none; font-size:.85rem; }
   .back:hover { color:var(--ink); }
   header { display:flex; align-items:center; gap:14px; margin:18px 0 22px; }
@@ -193,7 +194,11 @@
 </head>
 <body>
 <div class="wrap">
-<a class="back" href="/ogle/elo/">&larr; back</a>
+<a class="back" href="/ogle/elo/" hidden>&larr; back</a>
+<script>
+// Only offer "back" when we came from the Elo chooser (cjre.pl/ogle/elo, or cjre.pl/elo which redirects there).
+try { const r = new URL(document.referrer); if (r.host === location.host && /^\/(ogle\/)?elo\/?$/.test(r.pathname)) document.querySelector('.back').hidden = false; } catch {}
+</script>
 <header><div class="ball"><img src="icon.svg" alt=""></div><div><h1>UCCOM FIFA</h1><p class="sub">Medcat Elo ladder &middot; everyone starts at 1000</p></div></header>
 
 <section class="card">
