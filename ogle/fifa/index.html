@@ -231,7 +231,7 @@
   .champ b { display:block; font-size:1.5rem; }
   .spoon { width:30px; height:30px; display:block; margin:-5px 0 -5px -6px; cursor:help; filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.4)); }
 
-  /* passcode gate */
+  /* passphrase gate */
   body.gated > :not(#gate) { filter:blur(10px); pointer-events:none; user-select:none; }
   #gate { position:fixed; inset:0; z-index:50; display:grid; place-items:center; padding:16px; background:rgba(0,0,0,.35); animation:fadeIn .3s ease both; }
   .gcard { width:min(340px, 100%); background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:18px; padding:24px 20px;
@@ -303,32 +303,37 @@ $$\Delta_A = 2\cdot\operatorname{round}\!\left(\frac{K\,(S_A - E_A)}{2}\right), 
 <script>
 const API = 'https://pong-worker.cjreplogle.workers.dev';
 
-// ---- optional viewing passcode (inactive unless the backend has VIEW_CODE set) ----
+// ---- optional viewing passphrase (inactive unless the backend has VIEW_CODE set) ----
 let viewCode = ''; try { viewCode = localStorage.getItem('eloView') || ''; } catch {}
 const rawFetch = window.fetch.bind(window);
 window.fetch = async (u, o = {}) => {
   if (!String(u).startsWith(API)) return rawFetch(u, o);
   const r = await rawFetch(u, { ...o, headers: { ...(o.headers || {}), ...(viewCode ? { 'X-View': viewCode } : {}) } });
-  if (r.status === 401 && (await r.clone().json().catch(() => ({}))).gate) { showGate(); throw new Error('passcode required'); }
+  if (r.status === 401 && (await r.clone().json().catch(() => ({}))).gate) { showGate(); throw new Error('passphrase required'); }
   return r;
 };
 function showGate(wrong) {
   let g = document.getElementById('gate');
   if (!g) {
     g = document.createElement('div'); g.id = 'gate';
-    g.innerHTML = `<form class="gcard" autocomplete="off"><div class="glock">🔒</div><h2>Passcode</h2>
-      <p>Enter the class passcode to see the ladder.</p><input id="gcode" type="password" inputmode="text" placeholder="Passcode" required>
-      <p class="gerr" id="gerr"></p><button>Unlock</button></form>`;
+    g.innerHTML = `<form class="gcard" autocomplete="off"><div class="glock">🔒</div><h2>Passphrase</h2>
+      <p>Enter the class passphrase to see the ladder.</p><input id="gcode" type="password" inputmode="text" placeholder="Passphrase" required autocapitalize="off" autocorrect="off" spellcheck="false">
+      <p class="gerr" id="gerr"></p></form>`;
     document.body.append(g);
-    g.querySelector('form').onsubmit = async e => {
-      e.preventDefault();
-      const code = document.getElementById('gcode').value.trim();
+    // Unlock as soon as the right passphrase is typed; Enter on a wrong one says so.
+    let t, tries = 0;
+    const attempt = async loud => {
+      const code = document.getElementById('gcode').value.trim(), n = ++tries;
+      if (!code) return;
       const r = await rawFetch(API + '/players', { headers: { 'X-View': code } });
-      if (!r.ok) { document.getElementById('gerr').textContent = 'That’s not it.'; g.querySelector('.gcard').animate([{ transform: 'translateX(-8px)' }, { transform: 'translateX(8px)' }, { transform: 'none' }], { duration: 250 }); return; }
+      if (n !== tries) return;   // a newer keystroke superseded this check
+      if (!r.ok) { if (!loud) return; document.getElementById('gerr').textContent = 'That’s not it.'; g.querySelector('.gcard').animate([{ transform: 'translateX(-8px)' }, { transform: 'translateX(8px)' }, { transform: 'none' }], { duration: 250 }); return; }
       viewCode = code; try { localStorage.setItem('eloView', code); } catch {}
       g.remove(); document.body.classList.remove('gated');
       typeof load === 'function' ? load() : (leader('pong'), leader('fifa'));
     };
+    g.querySelector('form').onsubmit = e => { e.preventDefault(); attempt(true); };
+    document.getElementById('gcode').addEventListener('input', () => { document.getElementById('gerr').textContent = ''; clearTimeout(t); t = setTimeout(() => attempt(false), 250); });
   }
   document.body.classList.add('gated');
   setTimeout(() => document.getElementById('gcode')?.focus(), 50);
