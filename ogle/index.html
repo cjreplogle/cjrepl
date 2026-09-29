@@ -94,6 +94,12 @@
       right: 24px;
       font-size: 0.85rem;
       opacity: 0.4;
+      /* Own GPU layer + fixed anti-aliasing so the small fixed text doesn't
+         shimmer when other parts of the page animate. */
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      will-change: transform;
+      -webkit-font-smoothing: antialiased;
     }
     #mandelbrot {
       font-family: monospace;
