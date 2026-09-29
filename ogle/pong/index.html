@@ -156,6 +156,10 @@
   .muted { color:var(--mute); font-size:.85rem; }
   .game { display:flex; align-items:center; gap:8px; }
   .game .w { font-weight:700; } .game .l { color:var(--mute); }
+  .more[hidden] { display:none; }
+  .more { display:block; margin:12px auto 0; font:inherit; font-size:.85rem; font-weight:600; color:var(--acc); background:var(--field);
+          border:1.5px solid transparent; border-radius:10px; padding:8px 16px; cursor:pointer; transition:border-color .15s; }
+  .more:hover { border-color:var(--acc); }
   .gs { font-size:.75rem; color:var(--mute); margin-top:2px; font-variant-numeric:tabular-nums; }
   .sc { font-weight:800; background:var(--field); border-radius:6px; padding:1px 7px; font-size:.85rem; white-space:nowrap; }
   .link { font:inherit; font-size:.8rem; color:var(--acc); background:none; border:none; padding:0 0 0 6px; cursor:pointer; }
@@ -282,6 +286,7 @@ try { const r = new URL(document.referrer); if (r.host === location.host && /^\/
 <section class="card">
 <h2>Case log</h2>
 <table id="hist"><tbody></tbody></table>
+<button type="button" class="more" id="more" hidden onclick="showAllHist = true; render()">Show more</button>
 </section>
 
 <dialog id="pdlg"><div id="pd"></div></dialog>
@@ -339,6 +344,7 @@ function ago(t) {
 }
 const fmtD = d => `<span class="${d >= 0 ? 'd-up' : 'd-dn'}">${d >= 0 ? '+' : '−'}${Math.abs(d)}</span>`;
 
+let showAllHist = false;   // case log shows the latest 5 until "Show more"
 function render() {
   const { P, deltas } = compute();
   lastP = P;
@@ -364,7 +370,7 @@ function render() {
   fitSub();
   $('names').innerHTML = players.map(p => `<option value="${esc(p.name)}">`).join('');
   const rows = [];
-  for (let i = matches.length - 1; i >= (adminPw ? 0 : Math.max(0, matches.length - 30)); i--) {
+  for (let i = matches.length - 1; i >= (showAllHist ? 0 : Math.max(0, matches.length - 5)); i--) {
     const m = matches[i], [da, db] = deltas[i], aWon = m.sa > m.sb;
     const undo = adminPw ? ` <button class="link" onclick="editMatch('${m.id}')">edit</button><button class="link" onclick="delMatch('${m.id}')">delete</button>`
       : i === matches.length - 1 ? ` <button class="link" onclick="undo('${m.id}')">undo</button>` : '';
@@ -373,6 +379,8 @@ function render() {
       <td class="n">${fmtD(da)} <span class="muted">/</span> ${fmtD(db)}</td><td class="n muted hide-sm">${ago(m.t)}</td></tr>`);
   }
   $('hist').tBodies[0].innerHTML = rows.join('') || '<tr><td colspan="3" class="empty">Nothing yet.</td></tr>';
+  $('more').hidden = showAllHist || matches.length <= 5;
+  $('more').textContent = `Show ${matches.length - 5} more`;
 }
 
 // Snap typed names to an existing player's spelling so "cj" and "CJ" stay one person.
