@@ -188,6 +188,47 @@
   .moa .katex-display { margin:10px 0; padding:10px 12px; background:var(--card); border:1px solid var(--line); border-radius:10px; overflow-x:auto; overflow-y:hidden; }
   .moa .katex-display > .katex { font-size:1.05em; }
   .disclaim { text-align:center; font-size:.72rem; color:var(--mute); opacity:.7; margin:10px auto 0; max-width:34em; }
+
+  /* ---- tournament ---- */
+  .tbar { display:flex; justify-content:flex-end; margin:-6px 0 12px; }
+  .tbtn { font:inherit; font-size:.85rem; font-weight:700; color:var(--acc); background:var(--field); border:1.5px solid transparent;
+          border-radius:10px; padding:7px 12px; cursor:pointer; transition:border-color .15s, transform .1s; }
+  .tbtn:hover { border-color:var(--acc); } .tbtn:active { transform:scale(.97); }
+  #tdlg { width:min(900px, calc(100vw - 24px)); }
+  #tdlg[open] { animation:pdIn .4s var(--ease, ease) both; } #tdlg[open]::backdrop { animation:bdIn .25s ease both; }
+  #td { padding:20px; position:relative; }
+  #td h3 { margin:0 0 4px; font-size:1.4rem; font-weight:800; border-left:5px solid var(--acc); padding-left:10px; }
+  #td .muted { margin:0 0 12px; }
+  .tpick { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:6px; margin:10px 0; max-height:40vh; overflow:auto; }
+  .tpick label { display:flex; align-items:center; gap:8px; background:var(--field); border-radius:10px; padding:8px 10px; cursor:pointer;
+                 border:1.5px solid transparent; transition:border-color .15s, background .15s; font-size:.9rem; }
+  .tpick label:has(input:checked) { border-color:var(--acc); }
+  .tpick input { accent-color:var(--acc); width:auto; }
+  .tpick .e { margin-left:auto; color:var(--mute); font-size:.75rem; font-variant-numeric:tabular-nums; }
+  .tadd { display:flex; gap:8px; } .tadd input { flex:1; }
+  .tact { display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; margin-top:14px; }
+  .tact button { font:inherit; font-weight:600; border-radius:10px; padding:9px 14px; cursor:pointer; border:none; background:var(--field); color:var(--ink); }
+  .tact .go { background:var(--acc); color:#fff; }
+  .bracket { display:flex; gap:22px; overflow-x:auto; padding:6px 2px 14px; }
+  .round { display:flex; flex-direction:column; min-width:170px; flex:1; }
+  .rcol { display:flex; flex-direction:column; justify-content:space-around; gap:12px; flex:1; }
+  .bm.bye { opacity:.45; }
+  .round h4 { margin:0 0 10px; font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:var(--mute); }
+  .bm { background:var(--field); border-radius:10px; overflow:hidden; border:1.5px solid transparent; animation:fadeUp .35s ease both; }
+  .bm.ready { border-color:var(--acc); }
+  .bs { display:flex; align-items:center; gap:8px; padding:7px 10px; font-size:.88rem; min-height:34px; }
+  .bs + .bs { border-top:1px solid var(--line); }
+  .bs .sd { font-size:.7rem; color:var(--mute); width:1.4em; text-align:right; font-variant-numeric:tabular-nums; }
+  .bs .nm { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bs.win { font-weight:800; } .bs.win .nm::after { content:" ✓"; color:var(--up); }
+  .bs.lose { color:var(--mute); text-decoration:line-through; text-decoration-color:rgba(127,127,127,.5); }
+  .bs.tbd .nm { color:var(--mute); font-style:italic; }
+  .bs .sc2 { font-size:.75rem; color:var(--mute); font-variant-numeric:tabular-nums; }
+  .play { display:block; width:100%; font:inherit; font-size:.78rem; font-weight:700; color:#fff; background:var(--acc); border:none; padding:6px; cursor:pointer; }
+  .champ { text-align:center; padding:14px; margin-bottom:10px; border-radius:14px; background:var(--field); animation:popIn .5s ease both; }
+  .champ b { display:block; font-size:1.5rem; }
+  .spoon { display:inline-block; margin-left:4px; animation:wobble 2.8s ease-in-out infinite; transform-origin:50% 90%; cursor:help; }
+  @keyframes wobble { 0%,86%,100% { transform:rotate(0); } 90% { transform:rotate(-14deg); } 95% { transform:rotate(10deg); } }
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css" media="print" onload="this.media='all'">
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script>
@@ -220,6 +261,7 @@ try { const r = new URL(document.referrer); if (r.host === location.host && /^\/
 
 <section class="card">
 <h2>Rounds &mdash; the ladder <span id="lbnote"></span></h2>
+<div class="tbar"><button type="button" class="tbtn" onclick="openTourney()">🏆 Tournament</button></div>
 <div class="podium" id="podium"></div>
 <table id="lb"><thead><tr><th>#</th><th>Player</th><th class="n">Elo</th><th class="n">W&ndash;D&ndash;L</th><th class="n hide-sm">Last</th></tr></thead><tbody></tbody></table>
 </section>
@@ -230,6 +272,7 @@ try { const r = new URL(document.referrer); if (r.host === location.host && /^\/
 </section>
 
 <dialog id="pdlg"><div id="pd"></div></dialog>
+<dialog id="tdlg"><div id="td"></div></dialog>
 <details class="moa-d"><summary>Mechanism of action (how you are ranked)</summary>
 <div class="moa">
 <p>Everyone starts at \(R_0 = 1000\). Before a game, player \(A\)&rsquo;s expected score against \(B\) is</p>
@@ -302,7 +345,7 @@ function render() {
   const rest = players.slice(3);
   $('lb').style.display = rest.length || !players.length ? '' : 'none';
   $('lb').tBodies[0].innerHTML = players.length ? rest.map((p, i) =>
-    `<tr class="prow" data-k="${esc(p.key)}" tabindex="0"><td class="rank">${i + 4}</td><td>${esc(p.name)}${clsTag(p.key)}</td>
+    `<tr class="prow" data-k="${esc(p.key)}" tabindex="0"><td class="rank">${i + 4}</td><td>${esc(p.name)}${clsTag(p.key)}${i === rest.length - 1 && players.length > 3 ? ' <span class="spoon" title="Wooden spoon — last place">🥄</span>' : ''}</td>
      <td class="n elo">${p.elo}</td><td class="n">${p.w}&ndash;${p.d}&ndash;${p.l}</td><td class="n hide-sm">${fmtD(p.last)}</td></tr>`).join('')
     : '<tr><td colspan="5" class="empty">No games yet &mdash; grab a controller between lectures!</td></tr>';
   $('lbnote').textContent = matches.length ? `${matches.length} game${matches.length > 1 ? 's' : ''} played · tap a name for history & class` : '';
@@ -483,6 +526,109 @@ window.renamePlayer = async () => {
   $('pdlg').close(); render(); showPlayer(to.toLowerCase());
 };
 syncAdmin();
+
+
+// ---- tournament: seed a single-elimination bracket by current Elo ----
+// Results aren't stored separately: a bracket match is decided by the first logged game
+// between those two players after the bracket was created, so it's shareable by link.
+let tourney = null;   // { t: createdAt, seeds: [names in seed order] }
+const TKEY = location.pathname.includes('fifa') ? 'fifaTourney' : 'pongTourney';
+try { tourney = JSON.parse(localStorage.getItem(TKEY)); } catch {}
+try { const h = location.hash.match(/#t=([^&]+)/); if (h) { tourney = JSON.parse(decodeURIComponent(escape(atob(h[1])))); saveT(); } } catch {}
+function saveT() { try { tourney ? localStorage.setItem(TKEY, JSON.stringify(tourney)) : localStorage.removeItem(TKEY); } catch {} }
+function seedOrder(n) {             // standard bracket order: 1 v n, then halves mirrored
+  let o = [1];
+  while (o.length < n) { const m = o.length * 2 + 1; o = o.flatMap(s => [s, m - s]); }
+  return o;
+}
+function tResult(a, b) {            // winner name (canonical) of first game a vs b since bracket start
+  const ka = a.toLowerCase(), kb = b.toLowerCase();
+  const m = matches.find(m => m.t >= tourney.t && m.sa !== m.sb &&
+    ((m.a.toLowerCase() === ka && m.b.toLowerCase() === kb) || (m.a.toLowerCase() === kb && m.b.toLowerCase() === ka)));
+  if (!m) return null;
+  const w = m.sa > m.sb ? m.a : m.b;
+  return { w: w.toLowerCase() === ka ? a : b, m };
+}
+function buildRounds() {
+  const seeds = tourney.seeds, size = 2 ** Math.ceil(Math.log2(Math.max(2, seeds.length)));
+  const order = seedOrder(size);
+  let slots = order.map(s => s <= seeds.length ? { name: seeds[s - 1], seed: s } : null);   // null = bye
+  const rounds = [];
+  while (slots.length > 1) {
+    const games = [], next = [];
+    for (let i = 0; i < slots.length; i += 2) {
+      const x = slots[i], y = slots[i + 1];
+      const g = { x, y, res: null };
+      if (x && y && x.name && y.name) g.res = tResult(x.name, y.name);
+      const adv = g.res ? (g.res.w === x.name ? x : y) : (x && !y ? x : y && !x ? y : x === null && y === null ? null : { tbd: true });
+      g.bye = !!(x && !y) || !!(y && !x);
+      games.push(g); next.push(adv);
+    }
+    rounds.push(games); slots = next;
+  }
+  return { rounds, champ: slots[0] && slots[0].name ? slots[0] : null };
+}
+const roundName = (i, n) => n - i === 1 ? 'Final' : n - i === 2 ? 'Semis' : n - i === 3 ? 'Quarters' : `Round ${i + 1}`;
+function tSetup() {
+  const players = Object.values(lastP).sort((x, y) => y.elo - x.elo);
+  $('td').innerHTML = `<button class="x" onclick="$('tdlg').close()" aria-label="close">&times;</button>
+    <h3>Tournament</h3><p class="muted">Pick who's playing. Seeds follow current Elo; top seeds get byes if the numbers are uneven.</p>
+    <div class="tpick" id="tpick">${players.map(p => `<label><input type="checkbox" value="${esc(p.name)}"> ${esc(p.name)}<span class="e">${p.elo}</span></label>`).join('')}</div>
+    <div class="tadd"><input id="tnew" placeholder="Add new names, comma separated"><button type="button" class="tbtn" onclick="tAddNames()">Add</button></div>
+    <div class="tact"><button type="button" onclick="document.querySelectorAll('#tpick input').forEach(i => i.checked = true)">Select all</button>
+      ${tourney ? '<button type="button" onclick="tShow()">Back to bracket</button>' : ''}
+      <button type="button" class="go" onclick="tSeed()">Seed bracket</button></div>`;
+}
+window.tAddNames = () => {
+  for (const raw of $('tnew').value.split(',')) {
+    const n = canon(raw); if (!n) continue;
+    const ex = [...document.querySelectorAll('#tpick input')].find(i => i.value.toLowerCase() === n.toLowerCase());
+    if (ex) { ex.checked = true; continue; }
+    $('tpick').insertAdjacentHTML('beforeend', `<label><input type="checkbox" value="${esc(n)}" checked> ${esc(n)}<span class="e">new</span></label>`);
+  }
+  $('tnew').value = '';
+};
+window.tSeed = () => {
+  const names = [...document.querySelectorAll('#tpick input:checked')].map(i => i.value);
+  if (names.length < 2) return;
+  const elo = n => lastP[n.toLowerCase()]?.elo ?? 1000;
+  tourney = { t: Date.now(), seeds: names.sort((a, b) => elo(b) - elo(a)) };
+  saveT(); tShow();
+};
+function tShow() {
+  if (!tourney) return tSetup();
+  const { rounds, champ } = buildRounds();
+  const slot = (s, g, side) => {
+    if (!s) return `<div class="bs tbd"><span class="sd"></span><span class="nm">bye</span></div>`;
+    if (s.tbd) return `<div class="bs tbd"><span class="sd"></span><span class="nm">TBD</span></div>`;
+    const st = g.res ? (g.res.w === s.name ? 'win' : 'lose') : '';
+    const m = g.res?.m, sc = m ? (m.a.toLowerCase() === s.name.toLowerCase() ? m.sa : m.sb) : '';
+    return `<div class="bs ${st}"><span class="sd">${s.seed ?? ''}</span><span class="nm">${esc(s.name)}</span><span class="sc2">${m && !m.wl ? sc : ''}</span></div>`;
+  };
+  $('td').innerHTML = `<button class="x" onclick="$('tdlg').close()" aria-label="close">&times;</button>
+    <h3>Tournament</h3><p class="muted">${tourney.seeds.length} players · started ${ago(tourney.t)}. Tap <b>Play</b>, then save the game as usual — winners advance automatically.</p>
+    ${champ ? `<div class="champ">🏆<b>${esc(champ.name)}</b>Champion</div>` : ''}
+    <div class="bracket">${rounds.map((games, i) => `<div class="round"><h4>${roundName(i, rounds.length)}</h4><div class="rcol">${games.map((g, j) => {
+      const ready = !g.res && g.x?.name && g.y?.name;
+      return `<div class="bm ${ready ? 'ready' : ''} ${g.bye ? 'bye' : ''}" style="animation-delay:${i * 60 + j * 20}ms">${slot(g.x, g)}${slot(g.y, g)}${ready ? `<button class="play" onclick="tPlay('${esc(g.x.name).replace(/'/g, '&#39;')}','${esc(g.y.name).replace(/'/g, '&#39;')}')">Play</button>` : ''}</div>`;
+    }).join('')}</div></div>`).join('')}</div>
+    <div class="tact"><button type="button" onclick="tCopy(this)">Copy link</button><button type="button" onclick="tSetup()">New bracket</button>
+      <button type="button" onclick="if (confirm('End this tournament?')) { tourney = null; saveT(); tSetup(); }">End</button></div>`;
+}
+window.tShow = tShow; window.tSetup = tSetup;
+window.tPlay = (a, b) => {
+  $('tdlg').close();
+  $('a').value = a; $('b').value = b;
+  setTimeout(() => { $('f').scrollIntoView({ behavior: 'smooth', block: 'center' }); $('sa').focus({ preventScroll: true }); if (typeof updateTally === 'function') updateTally(); }, 220);
+};
+window.tCopy = btn => {
+  const url = location.origin + location.pathname + '#t=' + btoa(unescape(encodeURIComponent(JSON.stringify(tourney))));
+  navigator.clipboard?.writeText(url).then(() => { btn.textContent = 'Copied ✓'; setTimeout(() => btn.textContent = 'Copy link', 1500); });
+};
+window.openTourney = () => { tourney ? tShow() : tSetup(); $('tdlg').showModal(); };
+// keep an open bracket current as games come in
+{ const base = render; render = function () { base.apply(this, arguments); if ($('tdlg').open && tourney && $('td').querySelector('.bracket')) tShow(); }; }
+if (location.hash.startsWith('#t=')) setTimeout(() => openTourney(), 600);
 
 // ---- motion layer: animate only what changed, not every 30s refresh ----
 (() => {
