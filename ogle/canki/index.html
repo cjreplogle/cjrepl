@@ -327,6 +327,7 @@
     <div class="tabs" id="tabs" hidden>
       <button class="tab" data-go="decks">Decks</button>
       <button class="tab" data-go="stats">Stats</button>
+      <button class="tab practice" data-go="practice">Practice</button>
     </div>
     <button class="set-btn" id="setBtn" title="Appearance">Aa</button>
     <button class="focus-btn" id="focusBtn" hidden title="Focus Mode (Tab+F)">Focus</button>
@@ -648,7 +649,8 @@
   document.addEventListener("click", (e) => {
     const go = e.target.closest("[data-go]");
     if (!go) return;
-    if (go.dataset.go === "decks") loadDecks();
+    if (go.dataset.go === "decks") loadDecks("decks");
+    if (go.dataset.go === "practice") loadDecks("practice");
     if (go.dataset.go === "stats") loadStats();
   });
 
@@ -663,12 +665,17 @@
 
   // ---------------------------------------------------------------- decks
   const collapsed = new Set(JSON.parse(LS.get("collapsed") || "[]"));
-  let decks = [];
-  async function loadDecks() {
-    try { decks = (await api("/api/decks")).decks; }
+  let decks = [], deckMode = "decks";
+  async function loadDecks(mode) {
+    if (mode === "decks" || mode === "practice") deckMode = mode;
+    let r;
+    try { r = await api("/api/decks"); }
     catch (e) { return lost(e); }
+    decks = deckMode === "practice" ? (r.practice || []) : r.decks;
     renderDecks();
     show("decks");
+    // Decks and Practice share the list view; light the right tab.
+    for (const t of document.querySelectorAll(".tab")) t.classList.toggle("on", t.dataset.go === deckMode);
   }
   function renderDecks() {
     const out = [];
@@ -684,7 +691,9 @@
         <span class="nm" style="padding-left:${d.depth * 1.1}em"><span class="tw" data-tw="${d.id}">${d.hasChildren ? (isCol ? "▸" : "▾") : ""}</span><b title="${esc(d.name)}"><span class="t">${esc(leaf)}</span></b></span>
         ${n(d.new, "new")}${n(d.learn, "learn")}${n(d.review, "due")}</div>`);
     }
-    $("deckList").innerHTML = out.join("") || `<p style="color:var(--muted);text-align:center">No decks.</p>`;
+    $("deckList").innerHTML = out.join("") || (deckMode === "practice"
+      ? `<p style="color:var(--muted);text-align:center;margin-top:2em">No practice banks yet — import one in Janki (Settings → Practice → Question Bank).</p>`
+      : `<p style="color:var(--muted);text-align:center">No decks.</p>`);
   }
   $("deckList").addEventListener("click", (e) => {
     const tw = e.target.closest("[data-tw]");
@@ -741,7 +750,7 @@
       window.pycmd = window.bridgeCommand = function(){};
       addEventListener("keydown", function(e){
         if (e.target.closest && e.target.closest("input,textarea,[contenteditable]")) return;
-        if (e.key === "Tab" || e.key === " ") e.preventDefault();
+        if (e.key === "Tab" || e.key === " " || e.key.toLowerCase() === ${JSON.stringify(bindings().leader)}) e.preventDefault();
         parent.postMessage({ck:"key", t:"down", key:e.key, meta:e.metaKey, ctrl:e.ctrlKey, alt:e.altKey}, "*");
       });
       addEventListener("keyup", function(e){ parent.postMessage({ck:"key", t:"up", key:e.key}, "*"); });
@@ -771,6 +780,7 @@
         body { margin: 0; padding: 20px 20px 30px; color: ${cssVar("--text")};
                font-family: "Lora", Georgia, serif; font-size: 20px; }
         ${hello && hello.cardCss ? hello.cardCss.base + (d ? hello.cardCss.dark : "") : cardLookCss()}
+        ${zoomMul !== 1 ? `#qa { zoom: ${zoomMul}; }` : ""}
         .card { background: transparent !important; }
         img { max-width: 100%; height: auto; }
         hr#answer { border: 0; border-top: 1px solid ${cssVar("--edge")}; margin: 1.2em 0; }
@@ -846,6 +856,7 @@
 
   async function startReview(did) {
     deckId = did;
+    LS.set("lastDeck", String(did));
     await nextCard(true);
   }
 
@@ -1117,23 +1128,77 @@
   $("pairModal").onclick = (e) => { if (e.target.id === "pairModal") $("pairModal").classList.remove("on"); };
 
   // ---------------------------------------------------------------- keys (Janki bindings)
+  // ---- Janki hotkeys: the chord actions (leader + key, default Tab) use the desktop's own
+  // bindings from Settings → Hotkeys; Anki's plain keys (Space, 1–4, U…) work as usual.
+  const JANKI_KEYS = {
+    leader: "Tab", again: "Z", hard: "X", good: "C", easy: "V", show_or_good: "Space", undo: "Esc",
+    practice: "Q", reword: "R", focus_mode: "F", open_deck: "O",
+  };
+  const NAME_TO_KEY = { Space: " ", Esc: "Escape", Return: "Enter", Enter: "Enter", Delete: "Backspace",
+    "↑": "ArrowUp", "↓": "ArrowDown", "←": "ArrowLeft", "→": "ArrowRight", "Page Up": "PageUp", "Page Down": "PageDown" };
+  const keyOf = (name) => (NAME_TO_KEY[name] || name || "").toLowerCase();
+  function bindings() {
+    const hk = (prefs && prefs.hotkeys) || {}, out = {};
+    for (const [id, def] of Object.entries(JANKI_KEYS)) out[id] = keyOf((hk[id] && hk[id].key) || def);
+    const seq = (id, def) => ((hk[id] && hk[id].seq) || def).toLowerCase();
+    out.zoom_in = seq("zoom_in", "Ctrl+="); out.zoom_out = seq("zoom_out", "Ctrl+-");
+    return out;
+  }
+  function comboName(e) {
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key.toLowerCase();
+    return (e.ctrlKey ? "ctrl+" : "") + (e.metaKey ? "meta+" : "") + (e.altKey ? "alt+" : "") + (k === "+" ? "=" : k === "_" ? "-" : k);
+  }
+
+  // Card zoom (Ctrl/⌘ +/−), remembered per browser like Janki's card_zoom.
+  let zoomMul = +(LS.get("zoom") || 1);
+  function zoomBy(d) {
+    zoomMul = Math.max(0.5, Math.min(2.5, Math.round((zoomMul + d) * 10) / 10));
+    LS.set("zoom", String(zoomMul));
+    toast("Card zoom " + Math.round(zoomMul * 100) + "%");
+    if (cur && view === "review" && !mcqOpen) renderCard();
+  }
+
+  function grade(ease) {
+    if (view !== "review" || !cur || mcqOpen) return;
+    if (!revealed) return reveal();
+    answer(ease);
+  }
+  function openLastDeck() {
+    const d = +(LS.get("lastDeck") || 0);
+    if (d) startReview(d); else toast("No deck studied yet in Canki");
+  }
+  const CHORDS = {
+    again: () => grade(1), hard: () => grade(2), good: () => grade(3), easy: () => grade(4),
+    show_or_good: () => { if (view === "review" && cur && !mcqOpen) revealed ? answer(3) : reveal(); },
+    undo: () => undo(),
+    practice: () => view === "review" ? (mcqOpen ? closeMcq() : openPractice()) : toast("Open a card, then Tab+Q pulls a related question"),
+    reword: () => { if (cur && (cur.qOrig || cur.aOrig)) { showOrig = !showOrig; renderCard(); } else toast("No rephrasing for this card"); },
+    focus_mode: () => setFocus(!focusOn),
+    open_deck: () => openLastDeck(),
+  };
+
   let tabHeld = false, tabUsed = false;
   function onKeyDown(e) {
     if (e.target.closest && e.target.closest("input, textarea")) return;
-    if (e.key === "Tab") { e.preventDefault(); tabHeld = true; tabUsed = false; return; }
+    const B = bindings(), k = e.key.toLowerCase();
+    if (k === B.leader && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); tabHeld = true; tabUsed = false; return; }
     if (tabHeld) {
-      const k = e.key.toLowerCase();
-      if (k === "f") { tabUsed = true; e.preventDefault(); return setFocus(!focusOn); }
-      if (k === "q") { tabUsed = true; e.preventDefault(); return view === "review" ? openPractice() : toast("Open a card, then Tab+Q pulls a related question"); }
-      if (k === "r") { tabUsed = true; e.preventDefault(); if (cur && (cur.qOrig || cur.aOrig)) { showOrig = !showOrig; renderCard(); } return; }
+      for (const id of Object.keys(CHORDS)) {
+        if (B[id] === k) { e.preventDefault(); tabUsed = true; return CHORDS[id](); }
+      }
+      return;
     }
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") { e.preventDefault(); return undo(); }
+    const combo = comboName(e).replace("meta+", "ctrl+");
+    if (combo === B.zoom_in.replace("meta+", "ctrl+")) { e.preventDefault(); return zoomBy(0.1); }
+    if (combo === B.zoom_out.replace("meta+", "ctrl+")) { e.preventDefault(); return zoomBy(-0.1); }
+    if ((e.metaKey || e.ctrlKey) && k === "0") { e.preventDefault(); zoomMul = 1.1; return zoomBy(-0.1); }
+    if ((e.metaKey || e.ctrlKey) && k === "z") { e.preventDefault(); return undo(); }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (mcqOpen) {
       if (e.key === "Escape") return closeMcq();
       const i = "12345".indexOf(e.key);
       if (i >= 0) return pickMcq(i);
-      const L = "abcde".indexOf(e.key.toLowerCase());
+      const L = "abcde".indexOf(k);
       if (L >= 0) return pickMcq(L);
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const g = $("mcqGo"); if (g && g.classList.contains("on")) g.click(); }
       return;
@@ -1141,13 +1206,18 @@
     if (view === "review") {
       if (e.key === " " || e.key === "Enter") { e.preventDefault(); return revealed ? answer(3) : reveal(); }
       if ("1234".includes(e.key) && e.key.length === 1) return answer(+e.key);
-      if (e.key.toLowerCase() === "u") return undo();
-      if (e.key === "Escape" || e.key.toLowerCase() === "d") return loadDecks();
-    } else if (e.key.toLowerCase() === "s" && view === "decks") {
-      loadStats();
+      // Janki's grade keys also work on their own (no chord) — nothing else uses them here.
+      const gi = [B.again, B.hard, B.good, B.easy].indexOf(k);
+      if (gi >= 0 && k.length === 1) return grade(gi + 1);
+      if (k === "u") return undo();
+      if (e.key === "Escape" || k === "d") return loadDecks();
+    } else if (view === "decks" || view === "done" || view === "stats") {
+      if (k === "s") return loadStats();
+      if (k === "d") return loadDecks();
+      if (e.key === "Enter" && view === "decks") return openLastDeck();
     }
   }
-  function onKeyUp(e) { if (e.key === "Tab") tabHeld = false; }
+  function onKeyUp(e) { if (e.key.toLowerCase() === bindings().leader) tabHeld = false; }
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("keyup", onKeyUp);
   window.addEventListener("blur", () => { tabHeld = false; });
