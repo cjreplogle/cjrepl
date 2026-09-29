@@ -68,22 +68,18 @@
 // Show each ladder's current #1 (same Elo rules as the game pages, top player only).
 const API = 'https://pong-worker.cjreplogle.workers.dev';
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const kF = g => g < 5 ? 48 : g < 20 ? 32 : 24;
-const mults = {
-  pong: (a, b) => Math.min(1.5, Math.max(0.8, 0.8 + Math.log(Math.abs(a - b) + 1) / Math.log(12) * 0.7)),
-  fifa: (a, b) => { const g = Math.abs(a - b); return g <= 1 ? 1 : g === 2 ? 1.5 : Math.min(2.25, (11 + g) / 8); },
-};
+// Same math as the game pages (group's spreadsheet): K = 40, MROUND to 2, zero-sum; draws score 0.5.
+const mround2 = x => Math.sign(x) * Math.round(Math.abs(x) / 2) * 2;   // like Sheets MROUND (half away from 0)
 async function leader(g) {
   const el = document.getElementById('l-' + g);
   try {
     const ms = await (await fetch(API + '/matches' + (g === 'fifa' ? '?g=fifa' : ''))).json();
-    const P = {}, get = n => P[n.toLowerCase()] ||= { name: n, elo: 1000, games: 0 };
+    const P = {}, get = n => P[n.toLowerCase()] ||= { name: n, elo: 1000 };
     for (const m of ms) {
       const A = get(m.a), B = get(m.b);
       const res = m.sa > m.sb ? 1 : m.sa < m.sb ? 0 : 0.5, e = 1 / (1 + 10 ** ((B.elo - A.elo) / 400));
-      const mult = m.wl ? 1 : mults[g](m.sa, m.sb);
-      const dA = Math.round(kF(A.games) * (res - e) * mult), dB = -Math.round(kF(B.games) * (res - e) * mult);
-      A.elo += dA; B.elo += dB; A.games++; B.games++;
+      const dA = mround2(40 * (res - e)), dB = -dA;
+      A.elo += dA; B.elo += dB;
     }
     const top = Object.values(P).sort((x, y) => y.elo - x.elo)[0];
     el.innerHTML = top ? `🥇 <b>${esc(top.name)}</b> &middot; ${top.elo} &middot; ${ms.length} game${ms.length === 1 ? '' : 's'}` : 'No games yet';

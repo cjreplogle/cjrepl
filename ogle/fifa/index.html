@@ -183,7 +183,7 @@
 
 <dialog id="pdlg"><div id="pd"></div></dialog>
 <details><summary>Mechanism of action (how the rating works)</summary>
-<p>You gain points for beating (or drawing) someone better than expected and lose them for the reverse. New players move fast (K&nbsp;=&nbsp;48 for their first 5 games, 32 until 20, then 24) so they find their level quickly. Goal difference matters: a 1-goal win counts 1&times;, 2 goals 1.5&times;, and bigger thrashings up to 2.25&times;. Draws count too. Games logged as just an outcome count 1&times;. Names aren&rsquo;t case-sensitive. Typo? Undo the latest game.</p></details>
+<p>Same math as the ping pong ladder (our Match Log spreadsheet). Everyone starts at 1000. Each game moves <b>40&nbsp;&times;&nbsp;(result&nbsp;&minus;&nbsp;expected)</b> points from one player to the other, rounded to the nearest 2, using the standard 400-point Elo scale. A win counts as 1 and a draw as &frac12;, so drawing someone better than you still gains points. The margin doesn&rsquo;t change the rating. Players tagged <span class="tag" style="margin:0">MS1</span> are provisional until they&rsquo;ve played 5 games against 3+ different people. Names aren&rsquo;t case-sensitive. Typo? Undo the latest game.</p></details>
 <p class="foot"><button class="link" id="admbtn" onclick="adminToggle()">admin</button></p>
 <dialog id="adlg"><form id="adf" method="dialog"><div id="ad"></div></form></dialog>
 </div>
@@ -194,20 +194,22 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let matches = [];
 
-const kFactor = games => games < 5 ? 48 : games < 20 ? 32 : 24;
-const marginMult = (a, b) => { const g = Math.abs(a - b); return g <= 1 ? 1 : g === 2 ? 1.5 : Math.min(2.25, (11 + g) / 8); };
+// Same math as the ping pong Match Log spreadsheet: start 1000, K = 40, scale 400,
+// transfer = MROUND(K × (result − expected), 2), zero-sum. A draw scores 0.5.
+const K = 40, SCALE = 400;
+const mround2 = x => Math.sign(x) * Math.round(Math.abs(x) / 2) * 2;   // like Sheets MROUND (half away from 0)
+const established = p => p.games >= 5 && p.opps.size >= 3;
 
 function compute() {
   const P = {};            // key -> {name, elo, w, l, games, last}
-  const get = n => { const k = n.toLowerCase(); return P[k] ||= { key: k, name: n, elo: 1000, w: 0, d: 0, l: 0, games: 0, last: 0, hist: [] }; };
+  const get = n => { const k = n.toLowerCase(); return P[k] ||= { key: k, name: n, elo: 1000, w: 0, d: 0, l: 0, games: 0, last: 0, hist: [], opps: new Set() }; };
   const deltas = [];
   for (const m of matches) {
     const A = get(m.a), B = get(m.b);
     const res = m.sa > m.sb ? 1 : m.sa < m.sb ? 0 : 0.5;          // A's result
-    const expA = 1 / (1 + 10 ** ((B.elo - A.elo) / 400));
-    const mult = m.wl ? 1 : marginMult(m.sa, m.sb);
-    const dA = Math.round(kFactor(A.games) * (res - expA) * mult);
-    const dB = -Math.round(kFactor(B.games) * (res - expA) * mult);
+    const expA = 1 / (1 + 10 ** ((B.elo - A.elo) / SCALE));
+    const dA = mround2(K * (res - expA)), dB = -dA;
+    A.opps.add(B.key); B.opps.add(A.key);
     A.elo += dA; B.elo += dB; A.games++; B.games++;
     if (res === 1) { A.w++; B.l++; } else if (res === 0) { B.w++; A.l++; } else { A.d++; B.d++; }
     A.last = dA; B.last = dB;
@@ -245,7 +247,7 @@ function render() {
   const rest = players.slice(3);
   $('lb').style.display = rest.length || !players.length ? '' : 'none';
   $('lb').tBodies[0].innerHTML = players.length ? rest.map((p, i) =>
-    `<tr class="prow" data-k="${esc(p.key)}" tabindex="0"><td class="rank">${i + 4}</td><td>${esc(p.name)}${p.games < 5 ? '<span class="tag">MS1</span>' : ''}</td>
+    `<tr class="prow" data-k="${esc(p.key)}" tabindex="0"><td class="rank">${i + 4}</td><td>${esc(p.name)}${established(p) ? '' : '<span class="tag" title="Provisional: needs 5 matches vs 3+ different opponents">MS1</span>'}</td>
      <td class="n elo">${p.elo}</td><td class="n">${p.w}&ndash;${p.d}&ndash;${p.l}</td><td class="n hide-sm">${fmtD(p.last)}</td></tr>`).join('')
     : '<tr><td colspan="5" class="empty">No games yet &mdash; grab a controller between lectures!</td></tr>';
   $('lbnote').textContent = matches.length ? `${matches.length} game${matches.length > 1 ? 's' : ''} played.` : '';

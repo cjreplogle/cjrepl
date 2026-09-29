@@ -36,6 +36,7 @@ export default {
       const list = await load();
       if (list.length >= 20000) return json({ error: 'log full' }, 507);
       const m = { id: crypto.randomUUID().slice(0, 8), a, b, sa, sb, t: Date.now() };
+      if (v.games) m.games = v.games;
       if (body.wl === true) m.wl = true;
       list.push(m);
       await env.PONG.put(KEY, JSON.stringify(list));
@@ -49,6 +50,7 @@ export default {
       const list = await load(), m = list.find(x => x.id === del[1]);
       if (!m) return json({ error: 'no such match' }, 404);
       Object.assign(m, { a: v.a, b: v.b, sa: v.sa, sb: v.sb });
+      if (v.games) m.games = v.games; else delete m.games;
       if (v.body.wl === true) m.wl = true; else delete m.wl;
       await save(list);
       return json(m);
@@ -93,5 +95,12 @@ async function validate(request, G) {
   if (a.toLowerCase() === b.toLowerCase()) return { error: 'players must differ' };
   if (![sa, sb].every(s => Number.isInteger(s) && s >= 0 && s <= 99)) return { error: 'scores must be 0–99' };
   if (sa === sb && !G.draws) return { error: 'no ties in ping pong' };
-  return { a, b, sa, sb, body };
+  // optional per-game scores for a best-of match: [[p1, p2], ...]
+  let games = null;
+  if (Array.isArray(body.games) && body.games.length) {
+    if (body.games.length > 7 || !body.games.every(g => Array.isArray(g) && g.length === 2 && g.every(x => Number.isInteger(x) && x >= 0 && x <= 99) && g[0] !== g[1]))
+      return { error: 'bad game scores' };
+    games = body.games;
+  }
+  return { a, b, sa, sb, body, games };
 }
