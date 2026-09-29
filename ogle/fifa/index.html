@@ -182,7 +182,14 @@
   dialog.closing { animation:dlgOut .2s ease forwards !important; } dialog.closing::backdrop { animation:bdOut .2s ease forwards !important; }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after, *::backdrop { animation:none !important; transition:none !important; }
     .chart .ln { stroke-dasharray:none; stroke-dashoffset:0; } }
+  .moa { color:var(--mute); font-size:.85rem; }
+  .moa p { margin:8px 0 0; } .moa .katex { color:var(--ink); font-size:1.02em; }
+  .moa .katex-display { margin:10px 0; padding:10px 12px; background:var(--card); border:1px solid var(--line); border-radius:10px; overflow-x:auto; overflow-y:hidden; }
+  .moa .katex-display > .katex { font-size:1.05em; }
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css" media="print" onload="this.media='all'">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/contrib/auto-render.min.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -217,8 +224,15 @@
 </section>
 
 <dialog id="pdlg"><div id="pd"></div></dialog>
-<details><summary>Mechanism of action (how the rating works)</summary>
-<p>Same math as the ping pong ladder (our Match Log spreadsheet). Everyone starts at 1000. Each game moves <b>40&nbsp;&times;&nbsp;(result&nbsp;&minus;&nbsp;expected)</b> points from one player to the other, rounded to the nearest 2, using the standard 400-point Elo scale. A win counts as 1 and a draw as &frac12;, so drawing someone better than you still gains points. The margin doesn&rsquo;t change the rating. Names aren&rsquo;t case-sensitive. Typo? Undo the latest game.</p></details>
+<details class="moa-d"><summary>Mechanism of action (how you are ranked)</summary>
+<div class="moa">
+<p>Everyone starts at \(R_0 = 1000\). Before a game, player \(A\)&rsquo;s expected score against \(B\) is</p>
+$$E_A = \frac{1}{1 + 10^{(R_B - R_A)/400}}, \qquad E_B = 1 - E_A$$
+<p>With actual score \(S_A \in \{1, \tfrac12, 0\}\) for a win, draw or loss, \(K = 40\), and rounding to the nearest 2:</p>
+$$\Delta_A = 2\cdot\operatorname{round}\!\left(\frac{K\,(S_A - E_A)}{2}\right), \qquad R_A' = R_A + \Delta_A, \qquad R_B' = R_B - \Delta_A$$
+<p>So drawing someone better than you still gains points, and an upset win is worth more. The margin doesn&rsquo;t change the rating, and total points are conserved.</p>
+<p>Names aren&rsquo;t case-sensitive. Typo? Undo the latest game.</p>
+</div></details>
 <p class="foot"><button class="link" id="admbtn" onclick="adminToggle()">admin</button></p>
 <dialog id="adlg"><form id="adf" method="dialog"><div id="ad"></div></form></dialog>
 </div>
@@ -512,6 +526,13 @@ syncAdmin();
     document.querySelectorAll('#pd .stats div').forEach((d, i) => d.style.setProperty('--i', i));
   };
 })();
+
+// Typeset the rating math only when someone opens it.
+document.querySelector('details.moa-d')?.addEventListener('toggle', function once() {
+  const go = () => window.renderMathInElement ? renderMathInElement(document.querySelector('.moa'), {
+    delimiters: [{ left: '$$', right: '$$', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false }) : setTimeout(go, 150);
+  go(); this.removeEventListener('toggle', once);
+});
 
 load();
 setInterval(load, 30000);
