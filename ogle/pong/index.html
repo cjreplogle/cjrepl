@@ -271,7 +271,7 @@ try { const r = new URL(document.referrer); if (r.host === location.host && /^\/
 
 <section class="card">
 <h2>Chart a game</h2>
-<div class="seg fmt" role="tablist" aria-label="Match format"><button type="button" data-mode="game" class="on">Single</button><button type="button" data-mode="bo3">Best of 3</button><button type="button" data-mode="wl">Outcome</button><button type="button" data-mode="tour">Tournament</button></div>
+<div class="seg fmt" role="tablist" aria-label="Match format"><button type="button" data-mode="bo3" class="on">Best of 3</button><button type="button" data-mode="wl">Outcome</button><button type="button" data-mode="tour">Tournament</button></div>
 <p class="fmt-hint" id="fmthint"></p>
 <form id="f" autocomplete="off">
   <div class="side"><input id="a" placeholder="Bearcat 1" list="names" required>
@@ -514,9 +514,9 @@ function pickWinner(w) {
   });
 }
 document.querySelectorAll('.winbtn').forEach(b => b.onclick = () => pickWinner(winner === b.dataset.w ? null : b.dataset.w));
-let mode = 'game', lastScore = 'game';
+let mode = 'bo3', lastScore = 'bo3';
 const inTour = () => mode === 'tour', scoreMode = () => lastScore;
-const HINTS = { game: 'One game to 11.', bo3: 'First to win 2 games. Game 3 is only needed if it’s 1–1.', wl: 'Don’t remember the score? Just tap who won.', tour: 'Bracket seeded by Elo. Winners advance when their game is saved.' };
+const HINTS = { bo3: 'First to win 2 games. Game 3 is only needed if it’s 1–1.', wl: 'Don’t remember the score? Just tap who won.', tour: 'Bracket seeded by Elo. Winners advance when their game is saved.' };
 function setMode(m) {
   if (m !== 'tour') lastScore = m;
   mode = m; wlMode = m === 'wl';
@@ -762,7 +762,7 @@ window.tCopy = btn => {
 };
 // keep an open bracket current as games come in
 { const base = render; render = function () { base.apply(this, arguments); if (inTour()) { if (tourney && $('tview').querySelector('.bracket')) tShow(); else if (!tourney && !$('tview').querySelector('#tpick input')) tSetup(); } }; }
-try { const saved = localStorage.getItem('pongMode'); setMode(['wl', 'bo3', 'tour'].includes(saved) ? saved : 'game'); } catch { setMode('game'); }
+try { const saved = localStorage.getItem('pongMode'); setMode(['wl', 'tour'].includes(saved) ? saved : 'bo3'); } catch { setMode('bo3'); }
 if (location.hash.startsWith('#t=')) setMode('tour');
 
 // ---- motion layer: animate only what changed, not every 30s refresh ----
