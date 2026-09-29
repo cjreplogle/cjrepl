@@ -194,7 +194,7 @@
 
 <dialog id="pdlg"><div id="pd"></div></dialog>
 <details><summary>Mechanism of action (how the rating works)</summary>
-<p>Same math as our Match Log spreadsheet. Everyone starts at 1000. Each match (a single game or a best of 3) is one result: the winner takes <b>40&nbsp;&times;&nbsp;(chance they were expected to lose)</b> points from the loser, rounded to the nearest 2, using the standard 400-point Elo scale. So beating an equal player is &plusmn;20, an upset is worth more, and a win you were expected to get is worth less. The margin doesn&rsquo;t change the rating. Players tagged <span class="tag" style="margin:0">MS1</span> are provisional until they&rsquo;ve played 5 matches against 3+ different people. Names aren&rsquo;t case-sensitive. Typo? Undo the latest game.</p></details>
+<p>Same math as our Match Log spreadsheet. Everyone starts at 1000. Each match (a single game or a best of 3) is one result: the winner takes <b>40&nbsp;&times;&nbsp;(chance they were expected to lose)</b> points from the loser, rounded to the nearest 2, using the standard 400-point Elo scale. So beating an equal player is &plusmn;20, an upset is worth more, and a win you were expected to get is worth less. The margin doesn&rsquo;t change the rating. Names aren&rsquo;t case-sensitive. Typo? Undo the latest game.</p></details>
 <p class="foot"><button class="link" id="admbtn" onclick="adminToggle()">admin</button></p>
 <dialog id="adlg"><form id="adf" method="dialog"><div id="ad"></div></form></dialog>
 </div>
@@ -208,8 +208,6 @@ let matches = [];
 // one best-of match = one result, transfer = MROUND(K × (1 − E_winner), 2), zero-sum.
 const K = 40, SCALE = 400;
 const mround2 = x => Math.round(x / 2) * 2;
-// Established after 5 matches against 3+ different opponents (spreadsheet's "down the line" rule).
-const established = p => p.games >= 5 && p.opps.size >= 3;
 
 function compute() {
   const P = {};            // key -> {name, elo, w, l, games, last}
@@ -257,7 +255,7 @@ function render() {
   const rest = players.slice(3);
   $('lb').style.display = rest.length || !players.length ? '' : 'none';
   $('lb').tBodies[0].innerHTML = players.length ? rest.map((p, i) =>
-    `<tr class="prow" data-k="${esc(p.key)}" tabindex="0"><td class="rank">${i + 4}</td><td>${esc(p.name)}${established(p) ? '' : '<span class="tag" title="Provisional: needs 5 matches vs 3+ different opponents">MS1</span>'}</td>
+    `<tr class="prow" data-k="${esc(p.key)}" tabindex="0"><td class="rank">${i + 4}</td><td>${esc(p.name)}<span class="tag">MS1</span></td>
      <td class="n elo">${p.elo}</td><td class="n">${p.w}&ndash;${p.l}</td><td class="n hide-sm">${fmtD(p.last)}</td></tr>`).join('')
     : '<tr><td colspan="5" class="empty">No games yet &mdash; go play between lectures!</td></tr>';
   $('lbnote').textContent = matches.length ? `${matches.length} game${matches.length > 1 ? 's' : ''} played.` : '';
