@@ -41,7 +41,8 @@
   @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
   @media (prefers-reduced-motion: reduce) { .ball { animation:none; } }
   h1 { font-size:1.9rem; font-weight:800; letter-spacing:-.02em; margin:0; }
-  .sub { color:var(--mute); font-size:.9rem; margin:2px 0 0; }
+  .sub { color:var(--mute); font-size:.9rem; margin:2px 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  header > div:last-child { min-width:0; }
   h1 small { color:var(--acc); }
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px;
           padding:18px; margin-bottom:16px; box-shadow:var(--shadow); }
@@ -198,7 +199,7 @@
 <header><div class="ball"><svg viewBox="0 0 64 64" aria-hidden="true"><g transform="translate(5 5)">
 <line x1="27" y1="10" x2="27" y2="46" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/>
 <path d="M24 42 C 18 40, 19 35, 27 34 C 35 33, 36 28, 27 27 C 19 26, 19 21, 27 20 C 33 19.5, 34 16, 31 14.5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-<ellipse cx="30" cy="13.6" rx="3.4" ry="2.3" fill="#fff" transform="rotate(-20 30 13.6)"/></g></svg></div><div><h1>UCCOM Ping Pong</h1><p class="sub">Medcat Elo ladder &middot; everyone starts at 1000</p></div></header>
+<ellipse cx="30" cy="13.6" rx="3.4" ry="2.3" fill="#fff" transform="rotate(-20 30 13.6)"/></g></svg></div><div><h1>UCCOM Ping Pong</h1><p class="sub" id="sub">Medcat Elo ladder<span id="gcount"></span></p></div></header>
 
 <section class="card">
 <h2>Chart a game</h2>
@@ -296,7 +297,10 @@ function render() {
     `<tr class="prow" data-k="${esc(p.key)}" tabindex="0"><td class="rank">${i + 4}</td><td>${esc(p.name)}${clsTag(p.key)}</td>
      <td class="n elo">${p.elo}</td><td class="n">${p.w}&ndash;${p.l}</td><td class="n hide-sm">${fmtD(p.last)}</td></tr>`).join('')
     : '<tr><td colspan="5" class="empty">No games yet &mdash; go play between lectures!</td></tr>';
-  $('lbnote').textContent = matches.length ? `${matches.length} game${matches.length > 1 ? 's' : ''} played · tap a name for history & class` : '';
+  $('lbnote').textContent = matches.length ? 'tap a name for history & class' : '';
+  const n = matches.length;
+  $('gcount').innerHTML = n ? ` &middot; ${n} game${n === 1 ? '' : 's'} played<span id="rr"> in the R&amp;R</span>` : '';
+  fitSub();
   $('names').innerHTML = players.map(p => `<option value="${esc(p.name)}">`).join('');
   const rows = [];
   for (let i = matches.length - 1; i >= (adminPw ? 0 : Math.max(0, matches.length - 30)); i--) {
@@ -325,6 +329,15 @@ window.setClass = async cls => {
   if (!r.ok) return;
   profiles[k] = await r.json(); render(); showPlayer(k);
 };
+// Drop "in the R&R" from the subtitle when it would overflow the line.
+function fitSub() {
+  const rr = $('rr'); if (!rr) return;
+  const sub = $('sub'), over = () => sub.scrollWidth > sub.clientWidth;
+  rr.style.display = ''; sub.style.whiteSpace = '';
+  if (over()) rr.style.display = 'none';
+  if (over()) sub.style.whiteSpace = 'normal';   // still too long on a tiny screen: wrap, never cut off
+}
+addEventListener('resize', fitSub);
 async function load() {
   try {
     const [ms, pr] = await Promise.all([fetch(API + '/matches').then(r => r.json()), fetch(API + '/players').then(r => r.json()).catch(() => ({}))]);
