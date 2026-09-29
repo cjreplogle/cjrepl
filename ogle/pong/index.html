@@ -76,6 +76,9 @@
   .fmt-hint { font-size:.8rem; color:var(--mute); margin:-4px 0 12px; min-height:1.1em; }
   .grow { grid-column:1/-1; display:none; } .grow.show { display:grid; animation:rowIn .25s ease both; }
   @keyframes rowIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+  .grow.dim { opacity:.4; transition:opacity .2s; } .grow.dim:focus-within { opacity:.8; }
+  .grow .vs small { display:block; font-size:.6rem; font-weight:600; line-height:1.1; margin-top:2px; }
+  .grow:not(.dim) .vs small { display:none; }
   .tally { grid-column:1/-1; text-align:center; font-weight:700; font-size:.9rem; min-height:0; }
   .tally:empty { display:none; } .tally .lead { color:var(--acc); }
   form.wl .stepper { display:none; } form.wl .winbtn { display:block; }
@@ -177,7 +180,7 @@
   <div class="side r"><input id="b" placeholder="Bearcat 2" list="names" required>
     <div class="stepper"><button type="button" class="step" data-t="sb" data-d="-1" aria-label="minus">&minus;</button><input class="score" id="sb" type="number" min="0" max="99" inputmode="numeric" placeholder="0" required><button type="button" class="step" data-t="sb" data-d="1" aria-label="plus">+</button></div><button type="button" class="winbtn" data-w="b">Won</button></div>
   <div class="grow g2"><div class="stepper"><button type="button" class="step" data-t="sa2" data-d="-1" aria-label="minus">&minus;</button><input class="score" id="sa2" type="number" min="0" max="99" inputmode="numeric" placeholder="0"><button type="button" class="step" data-t="sa2" data-d="1" aria-label="plus">+</button></div><div class="vs">G2</div><div class="stepper"><button type="button" class="step" data-t="sb2" data-d="-1" aria-label="minus">&minus;</button><input class="score" id="sb2" type="number" min="0" max="99" inputmode="numeric" placeholder="0"><button type="button" class="step" data-t="sb2" data-d="1" aria-label="plus">+</button></div></div>
-  <div class="grow g3"><div class="stepper"><button type="button" class="step" data-t="sa3" data-d="-1" aria-label="minus">&minus;</button><input class="score" id="sa3" type="number" min="0" max="99" inputmode="numeric" placeholder="0"><button type="button" class="step" data-t="sa3" data-d="1" aria-label="plus">+</button></div><div class="vs">G3</div><div class="stepper"><button type="button" class="step" data-t="sb3" data-d="-1" aria-label="minus">&minus;</button><input class="score" id="sb3" type="number" min="0" max="99" inputmode="numeric" placeholder="0"><button type="button" class="step" data-t="sb3" data-d="1" aria-label="plus">+</button></div></div>
+  <div class="grow g3"><div class="stepper"><button type="button" class="step" data-t="sa3" data-d="-1" aria-label="minus">&minus;</button><input class="score" id="sa3" type="number" min="0" max="99" inputmode="numeric" placeholder="0"><button type="button" class="step" data-t="sa3" data-d="1" aria-label="plus">+</button></div><div class="vs">G3<small>if needed</small></div><div class="stepper"><button type="button" class="step" data-t="sb3" data-d="-1" aria-label="minus">&minus;</button><input class="score" id="sb3" type="number" min="0" max="99" inputmode="numeric" placeholder="0"><button type="button" class="step" data-t="sb3" data-d="1" aria-label="plus">+</button></div></div>
   <div class="tally" id="tally"></div>
   <button class="save" type="submit">Save game</button>
 </form>
@@ -340,7 +343,7 @@ let wlMode = false, winner = null;
 function pickWinner(w) { winner = w; document.querySelectorAll('.winbtn').forEach(b => b.classList.toggle('on', b.dataset.w === w)); }
 document.querySelectorAll('.winbtn').forEach(b => b.onclick = () => pickWinner(winner === b.dataset.w ? null : b.dataset.w));
 let mode = 'game';
-const HINTS = { game: 'One game to 11.', bo3: 'First to win 2 games. Game 3 appears if it’s 1–1.', wl: 'Don’t remember the score? Just tap who won.' };
+const HINTS = { game: 'One game to 11.', bo3: 'First to win 2 games. Game 3 is only needed if it’s 1–1.', wl: 'Don’t remember the score? Just tap who won.' };
 function setMode(m) {
   mode = m; wlMode = m === 'wl';
   $('f').classList.toggle('wl', wlMode); $('f').classList.toggle('bo3', m === 'bo3');
@@ -356,7 +359,7 @@ function bo3Games() {
   const g = [];
   for (const [x, y] of [['sa', 'sb'], ['sa2', 'sb2'], ['sa3', 'sb3']]) {
     if ($(x).value === '' && $(y).value === '') continue;
-    if (x === 'sa3' && !$('f').querySelector('.g3').classList.contains('show')) continue;
+    if (x === 'sa3' && $('f').querySelector('.g3').classList.contains('dim')) continue;
     g.push([+$(x).value, +$(y).value]);
   }
   return g;
@@ -367,7 +370,8 @@ function updateTally() {
   const played = g => g[0] !== g[1];
   const split = played(g1) && played(g2) && (g1[0] > g1[1]) !== (g2[0] > g2[1]);
   $('f').querySelector('.g2').classList.toggle('show', bo3);
-  $('f').querySelector('.g3').classList.toggle('show', bo3 && split);
+  $('f').querySelector('.g3').classList.toggle('show', bo3);
+  $('f').querySelector('.g3').classList.toggle('dim', bo3 && !split);
   $('sa2').required = $('sb2').required = bo3;
   $('sa3').required = $('sb3').required = bo3 && split;
   if (!bo3) { $('tally').innerHTML = ''; return; }
