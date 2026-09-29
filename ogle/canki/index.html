@@ -770,7 +770,7 @@
         html, body { background: transparent !important; }
         body { margin: 0; padding: 20px 20px 30px; color: ${cssVar("--text")};
                font-family: "Lora", Georgia, serif; font-size: 20px; }
-        ${cardLookCss()}
+        ${hello && hello.cardCss ? hello.cardCss.base + (d ? hello.cardCss.dark : "") : cardLookCss()}
         .card { background: transparent !important; }
         img { max-width: 100%; height: auto; }
         hr#answer { border: 0; border-top: 1px solid ${cssVar("--edge")}; margin: 1.2em 0; }
