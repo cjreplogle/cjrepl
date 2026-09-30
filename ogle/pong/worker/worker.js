@@ -88,6 +88,8 @@ export default {
       if (list.length >= 20000) return json({ error: 'log full' }, 507);
       const m = { id: crypto.randomUUID().slice(0, 8), a, b, sa, sb, t: Date.now() };
       if (v.games) m.games = v.games;
+      if (v.a2) m.a2 = v.a2;
+      if (v.b2) m.b2 = v.b2;
       if (body.wl === true) m.wl = true;
       list.push(m);
       await env.PONG.put(KEY, JSON.stringify(list));
@@ -102,6 +104,7 @@ export default {
       if (!m) return json({ error: 'no such match' }, 404);
       Object.assign(m, { a: v.a, b: v.b, sa: v.sa, sb: v.sb });
       if (v.games) m.games = v.games; else delete m.games;
+      for (const k of ['a2', 'b2']) if (k in v.body) { if (v[k]) m[k] = v[k]; else delete m[k]; }
       if (v.body.wl === true) m.wl = true; else delete m.wl;
       await save(list);
       return json(m);
@@ -119,10 +122,9 @@ export default {
       if (!from || !to) return json({ error: 'need names' }, 400);
       const list = await load(); let n = 0;
       for (const m of list) {
-        if (m.a.toLowerCase() === from) { m.a = to; n++; }
-        if (m.b.toLowerCase() === from) { m.b = to; n++; }
+        for (const k of ['a', 'b', 'a2', 'b2']) if (m[k] && m[k].toLowerCase() === from) { m[k] = to; n++; }
       }
-      if (list.some(m => m.a.toLowerCase() === m.b.toLowerCase())) return json({ error: 'that would make someone play themselves' }, 409);
+      if (list.some(m => { const e = [m.a, m.b, m.a2, m.b2].filter(Boolean).map(x => x.toLowerCase()); return new Set(e).size !== e.length; })) return json({ error: 'that would make someone play themselves' }, 409);
       await save(list);
       return json({ ok: true, changed: n });
     }
@@ -143,7 +145,9 @@ async function validate(request, G) {
   const a = cleanName(body.a), b = cleanName(body.b);
   const sa = Number(body.sa), sb = Number(body.sb);
   if (!a || !b) return { error: 'need two names' };
-  if (a.toLowerCase() === b.toLowerCase()) return { error: 'players must differ' };
+  const a2 = cleanName(body.a2), b2 = cleanName(body.b2);
+  const everyone = [a, b, a2, b2].filter(Boolean).map(n => n.toLowerCase());
+  if (new Set(everyone).size !== everyone.length) return { error: 'players must differ' };
   if (![sa, sb].every(s => Number.isInteger(s) && s >= 0 && s <= 99)) return { error: 'scores must be 0–99' };
   if (sa === sb && !G.draws) return { error: 'no ties in ping pong' };
   // optional per-game scores for a best-of match: [[p1, p2], ...]
@@ -153,7 +157,7 @@ async function validate(request, G) {
       return { error: 'bad game scores' };
     games = body.games;
   }
-  return { a, b, sa, sb, body, games };
+  return { a, b, a2, b2, sa, sb, body, games };
 }
 
 // ---- Google Sheet (Match Log tab) → pending review queue ----

@@ -129,11 +129,12 @@ async function leader(g) {
     const ms = await (await fetch(API + '/matches' + (g === 'fifa' ? '?g=fifa' : ''))).json();
     const P = {}, get = n => P[n.toLowerCase()] ||= { name: n, elo: 1000 };
     for (const m of ms) {
-      const A = get(m.a), B = get(m.b);
+      const TA = [m.a, m.a2].filter(Boolean).map(get), TB = [m.b, m.b2].filter(Boolean).map(get);   // teams: average rating
+      const avg = T => T.reduce((s, p) => s + p.elo, 0) / T.length, A = { elo: avg(TA) }, B = { elo: avg(TB) };
       const res = m.sa > m.sb ? 1 : m.sa < m.sb ? 0 : 0.5, e = 1 / (1 + 10 ** ((B.elo - A.elo) / 400));
       const single = g === 'pong' && (m.games ? m.games.length === 1 : !m.wl && Math.max(m.sa, m.sb) > 2);
       const dA = mround2((single ? 20 : 40) * (res - e)), dB = -dA;
-      A.elo += dA; B.elo += dB;
+      TA.forEach(p => p.elo += dA); TB.forEach(p => p.elo += dB);
     }
     const top = Object.values(P).sort((x, y) => y.elo - x.elo)[0];
     el.innerHTML = top ? `🥇 <b>${esc(top.name)}</b> &middot; ${top.elo} &middot; ${ms.length} game${ms.length === 1 ? '' : 's'}` : 'No games yet';

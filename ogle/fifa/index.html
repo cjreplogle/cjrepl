@@ -58,7 +58,11 @@
           border-radius:10px; padding:10px 12px; width:100%; outline:none; transition:border-color .15s; }
   input:focus { border-color:var(--acc); }
   input.score { font-size:1.6rem; font-weight:800; text-align:center; padding:6px; }
-  .side input#a, .side input#b { text-align:center; } .side.r input.score { text-align:center; }
+  .side input#a, .side input#b, .side input.mate { text-align:center; }
+  .segrow { display:flex; gap:8px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; }
+  .seg.teams button { min-width:3.2em; }
+  .mate { display:none; } form.duo .mate { display:block; animation:fadeIn .25s ease both; }
+  .card.tour .seg.teams { display:none; } .side.r input.score { text-align:center; }
   .stepper { display:flex; align-items:stretch; background:var(--field); border-radius:10px; border:1.5px solid transparent; transition:border-color .15s; }
   .stepper:focus-within { border-color:var(--acc); }
   .stepper input.score { background:none; border:none; will-change:transform; min-width:0; flex:1; -moz-appearance:textfield; appearance:textfield; }
@@ -258,12 +262,12 @@ try { const r = new URL(document.referrer); if (r.host === location.host && /^\/
 
 <section class="card">
 <h2>Chart a game</h2>
-<div class="seg" role="tablist"><button type="button" id="m-score" class="on">Score</button><button type="button" id="m-wl">Outcome</button><button type="button" id="m-tour">Tournament</button></div>
+<div class="segrow"><div class="seg" role="tablist"><button type="button" id="m-score" class="on">Score</button><button type="button" id="m-wl">Outcome</button><button type="button" id="m-tour">Tournament</button></div><div class="seg teams" role="tablist" aria-label="Team size"><button type="button" data-team="1" class="on">1v1</button><button type="button" data-team="2">2v2</button></div></div>
 <form id="f" autocomplete="off">
-  <div class="side"><input id="a" placeholder="Medcat 1" list="names" required>
+  <div class="side"><input id="a" placeholder="Medcat 1" list="names" required><input id="a2" class="mate" placeholder="Teammate" list="names">
     <div class="stepper"><button type="button" class="step" data-t="sa" data-d="-1" aria-label="minus">&minus;</button><input class="score" id="sa" type="number" min="0" max="20" inputmode="numeric" placeholder="0" required><button type="button" class="step" data-t="sa" data-d="1" aria-label="plus">+</button></div><button type="button" class="winbtn" data-w="a">Won</button></div>
   <div class="vs">VS</div>
-  <div class="side r"><input id="b" placeholder="Medcat 2" list="names" required>
+  <div class="side r"><input id="b" placeholder="Medcat 2" list="names" required><input id="b2" class="mate" placeholder="Teammate (blank = 2v1)" list="names">
     <div class="stepper"><button type="button" class="step" data-t="sb" data-d="-1" aria-label="minus">&minus;</button><input class="score" id="sb" type="number" min="0" max="20" inputmode="numeric" placeholder="0" required><button type="button" class="step" data-t="sb" data-d="1" aria-label="plus">+</button></div><button type="button" class="winbtn" data-w="b">Won</button></div>
   <button type="button" class="winbtn drawbtn" data-w="draw">Draw</button>
   <button class="save" type="submit">Save game</button>
@@ -353,19 +357,23 @@ function compute() {
   const get = n => { const k = n.toLowerCase(); return P[k] ||= { key: k, name: n, elo: 1000, w: 0, d: 0, l: 0, games: 0, last: 0, hist: [], opps: new Set() }; };
   const deltas = [];
   for (const m of matches) {
-    const A = get(m.a), B = get(m.b);
-    const res = m.sa > m.sb ? 1 : m.sa < m.sb ? 0 : 0.5;          // A's result
-    const expA = 1 / (1 + 10 ** ((B.elo - A.elo) / SCALE));
+    // 1v1, 2v2 or 2v1: a side's strength is its average rating; every member moves by the same delta
+    const TA = [m.a, m.a2].filter(Boolean).map(get), TB = [m.b, m.b2].filter(Boolean).map(get);
+    const avg = T => T.reduce((s, p) => s + p.elo, 0) / T.length;
+    const res = m.sa > m.sb ? 1 : m.sa < m.sb ? 0 : 0.5;          // side A's result
+    const expA = 1 / (1 + 10 ** ((avg(TB) - avg(TA)) / SCALE));
     const dA = mround2(K * (res - expA)), dB = -dA;
-    A.opps.add(B.key); B.opps.add(A.key);
-    A.elo += dA; B.elo += dB; A.games++; B.games++;
-    if (res === 1) { A.w++; B.l++; } else if (res === 0) { B.w++; A.l++; } else { A.d++; B.d++; }
-    A.last = dA; B.last = dB;
+    for (const p of TA) { p.elo += dA; p.games++; p.last = dA; TB.forEach(o => p.opps.add(o.key)); }
+    for (const p of TB) { p.elo += dB; p.games++; p.last = dB; TA.forEach(o => p.opps.add(o.key)); }
+    const [W, L] = res === 1 ? [TA, TB] : res === 0 ? [TB, TA] : [null, null];
+    if (W) { W.forEach(p => p.w++); L.forEach(p => p.l++); } else [...TA, ...TB].forEach(p => p.d++);
     deltas.push([dA, dB]);
     // snapshot everyone's rank after this game, for the history chart
     const ranked = Object.values(P).sort((x, y) => y.elo - x.elo);
-    for (const p of [A, B]) p.hist.push({ i: p.hist.length, m, elo: p.elo, rank: ranked.indexOf(p) + 1, of: ranked.length,
-      d: p === A ? dA : dB, opp: p === A ? B.name : A.name, r: res === 0.5 ? 'D' : (res === 1) === (p === A) ? 'W' : 'L' });
+    const names = T => T.map(p => p.name).join(' & ');
+    for (const [T, side, d, opp] of [[TA, 'a', dA, TB], [TB, 'b', dB, TA]]) for (const p of T) p.hist.push({ i: p.hist.length, m, side, elo: p.elo,
+      rank: ranked.indexOf(p) + 1, of: ranked.length, d, opp: names(opp) + (T.length > 1 ? ` (w/ ${T.filter(x => x !== p).map(x => x.name).join(', ')})` : ''),
+      r: res === 0.5 ? 'D' : (res === 1) === (side === 'a') ? 'W' : 'L' });
   }
   return { P, deltas };
 }
@@ -380,6 +388,7 @@ function ago(t) {
 const fmtD = d => d === 0 ? '<span class="muted">±0</span>' : `<span class="${d > 0 ? 'd-up' : 'd-dn'}">${d > 0 ? '+' : '−'}${Math.abs(d)}</span>`;
 
 let showAllHist = false, showAllLb = false;   // case log shows the latest 5 until "Show more"
+const team = (m, s) => [m[s], m[s + '2']].filter(Boolean).join(' & ');
 function render() {
   const { P, deltas } = compute();
   lastP = P;
@@ -406,8 +415,8 @@ function render() {
     const m = matches[i], [da, db] = deltas[i], aWon = m.sa > m.sb, draw = m.sa === m.sb;
     const undo = adminPw ? ` <button class="link" onclick="editMatch('${m.id}')">edit</button><button class="link" onclick="delMatch('${m.id}')">delete</button>`
       : i === matches.length - 1 ? ` <button class="link" onclick="undo('${m.id}')">undo</button>` : '';
-    rows.push(`<tr><td><div class="game"><span class="${draw ? '' : aWon ? 'w' : 'l'}">${esc(m.a)}</span>
-      <span class="sc">${m.wl ? (draw ? 'Draw' : aWon ? 'W&ndash;L' : 'L&ndash;W') : m.sa + '&ndash;' + m.sb}</span><span class="${draw ? '' : aWon ? 'l' : 'w'}">${esc(m.b)}</span>${undo}</div></td>
+    rows.push(`<tr><td><div class="game"><span class="${draw ? '' : aWon ? 'w' : 'l'}">${esc(team(m, 'a'))}</span>
+      <span class="sc">${m.wl ? (draw ? 'Draw' : aWon ? 'W&ndash;L' : 'L&ndash;W') : m.sa + '&ndash;' + m.sb}</span><span class="${draw ? '' : aWon ? 'l' : 'w'}">${esc(team(m, 'b'))}</span>${undo}</div></td>
       <td class="n">${fmtD(da)} <span class="muted">/</span> ${fmtD(db)}</td><td class="n muted hide-sm">${ago(m.t)}</td></tr>`);
   }
   $('hist').tBodies[0].innerHTML = rows.join('') || '<tr><td colspan="3" class="empty">Nothing yet.</td></tr>';
@@ -420,7 +429,7 @@ function render() {
 // Snap typed names to an existing player's spelling so "cj" and "CJ" stay one person.
 function canon(n) {
   n = n.replace(/\s+/g, ' ').trim();
-  const hit = matches.flatMap(m => [m.a, m.b]).find(x => x.toLowerCase() === n.toLowerCase());
+  const hit = matches.flatMap(m => [m.a, m.b, m.a2, m.b2].filter(Boolean)).find(x => x.toLowerCase() === n.toLowerCase());
   return hit || n;
 }
 
@@ -443,6 +452,11 @@ async function load() {
 $('f').onsubmit = async e => {
   e.preventDefault();
   let body = { a: canon($('a').value), b: canon($('b').value), sa: +$('sa').value, sb: +$('sb').value };
+  if (duo) {
+    const a2 = canon($('a2').value), b2 = canon($('b2').value);
+    if (!a2 && !b2) { $('msg').innerHTML = '<span class="err">Add at least one teammate (or switch to 1v1).</span>'; return; }
+    body = { ...body, a2, b2 };
+  }
   if (wlMode) {
     if (!winner) { $('msg').innerHTML = '<span class="err">Tap who won (or Draw).</span>'; return; }
     body = { ...body, sa: winner === 'a' ? 1 : 0, sb: winner === 'b' ? 1 : 0, wl: true };
@@ -533,7 +547,7 @@ function showPlayer(k) {
     <div class="seg"><button type="button" class="${chartMode === 'elo' ? 'on' : ''}" onclick="chartMode='elo';showPlayer(openKey)">Elo</button><button type="button" class="${chartMode === 'rank' ? 'on' : ''}" onclick="chartMode='rank';showPlayer(openKey)">Rank</button></div>
     ${chart(p.hist, chartMode)}
     ${adminPw ? `<div class="rename"><input id="rn" value="${esc(p.name)}" aria-label="new name"><button type="button" onclick="renamePlayer()">Rename / merge</button></div><p class="muted">Renaming to an existing player merges their games.</p>` : ''}
-    <table class="ph">${p.hist.slice().reverse().slice(0, 15).map(h => `<tr><td><span class="${{ W: 'w', L: 'l', D: 'dr' }[h.r]}">${h.r}</span> vs ${esc(h.opp)} <span class="sc">${h.m.wl ? '' : (h.m.a === p.name || h.m.a.toLowerCase() === k ? h.m.sa + '&ndash;' + h.m.sb : h.m.sb + '&ndash;' + h.m.sa)}</span></td><td class="n">${fmtD(h.d)}</td><td class="n">${h.elo}</td><td class="n muted">#${h.rank}</td></tr>`).join('')}</table>`;
+    <table class="ph">${p.hist.slice().reverse().slice(0, 15).map(h => `<tr><td><span class="${{ W: 'w', L: 'l', D: 'dr' }[h.r]}">${h.r}</span> vs ${esc(h.opp)} <span class="sc">${h.m.wl ? '' : (h.side === 'a' ? h.m.sa + '&ndash;' + h.m.sb : h.m.sb + '&ndash;' + h.m.sa)}</span></td><td class="n">${fmtD(h.d)}</td><td class="n">${h.elo}</td><td class="n muted">#${h.rank}</td></tr>`).join('')}</table>`;
   if (!$('pdlg').open) $('pdlg').showModal();
 }
 document.addEventListener('click', e => { const t = e.target.closest('[data-k]'); if (t) showPlayer(t.dataset.k); });
@@ -580,7 +594,7 @@ window.editMatch = id => {
 };
 window.delMatch = id => {
   const m = matches.find(x => x.id === id); if (!m) return;
-  adDialog(`<h3>Delete game?</h3><p>${esc(m.a)} ${m.sa}&ndash;${m.sb} ${esc(m.b)} &middot; ${ago(m.t)}</p>`, async () => {
+  adDialog(`<h3>Delete game?</h3><p>${esc(team(m, 'a'))} ${m.sa}&ndash;${m.sb} ${esc(team(m, 'b'))} &middot; ${ago(m.t)}</p>`, async () => {
     const r = await fetch(api('/matches/' + id), { method: 'DELETE', headers: adminHdr() });
     if (!r.ok) return (await r.json()).error;
     matches = matches.filter(x => x.id !== id); render();
@@ -592,7 +606,7 @@ window.renamePlayer = async () => {
   const r = await fetch(api('/rename'), { method: 'POST', headers: adminHdr(), body: JSON.stringify({ from, to }) });
   const d = await r.json();
   if (!r.ok) { $('msg').innerHTML = `<span class="err">${esc(d.error)}</span>`; return; }
-  for (const m of matches) { if (m.a.toLowerCase() === from) m.a = to; if (m.b.toLowerCase() === from) m.b = to; }
+  for (const m of matches) for (const k of ['a', 'b', 'a2', 'b2']) if (m[k] && m[k].toLowerCase() === from) m[k] = to;
   $('pdlg').close(); render(); showPlayer(to.toLowerCase());
 };
 syncAdmin();
@@ -613,7 +627,7 @@ function seedOrder(n) {             // standard bracket order: 1 v n, then halve
 }
 function tResult(a, b) {            // winner name (canonical) of first game a vs b since bracket start
   const ka = a.toLowerCase(), kb = b.toLowerCase();
-  const m = matches.find(m => m.t >= tourney.t && m.sa !== m.sb &&
+  const m = matches.find(m => m.t >= tourney.t && m.sa !== m.sb && !m.a2 && !m.b2 &&
     ((m.a.toLowerCase() === ka && m.b.toLowerCase() === kb) || (m.a.toLowerCase() === kb && m.b.toLowerCase() === ka)));
   if (!m) return null;
   const w = m.sa > m.sb ? m.a : m.b;
@@ -715,6 +729,17 @@ document.addEventListener('click', e => {
   b.animate([{ transform: 'scale(.85)' }, { transform: 'scale(1)' }], { duration: 180, easing: 'ease-out' });
 });
 document.addEventListener('input', e => { if (e.target.classList?.contains('score')) e.target.dataset.prev = e.target.value; });
+
+// 1v1 / 2v2 (a blank teammate on one side = 2v1)
+let duo = false;
+function setTeams(two) {
+  duo = two; $('f').classList.toggle('duo', two);
+  document.querySelectorAll('.seg.teams button').forEach(b => b.classList.toggle('on', (b.dataset.team === '2') === two));
+  if (!two) $('a2').value = $('b2').value = '';
+  try { localStorage.setItem('fifaTeams', two ? '2' : '1'); } catch {}
+}
+document.querySelectorAll('.seg.teams button').forEach(b => b.onclick = () => setTeams(b.dataset.team === '2'));
+try { if (localStorage.getItem('fifaTeams') === '2') setTeams(true); } catch {}
 
 // ---- motion layer: animate only what changed, not every 30s refresh ----
 (() => {
