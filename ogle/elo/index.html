@@ -131,7 +131,8 @@ async function leader(g) {
     for (const m of ms) {
       const A = get(m.a), B = get(m.b);
       const res = m.sa > m.sb ? 1 : m.sa < m.sb ? 0 : 0.5, e = 1 / (1 + 10 ** ((B.elo - A.elo) / 400));
-      const dA = mround2(40 * (res - e)), dB = -dA;
+      const single = g === 'pong' && (m.games ? m.games.length === 1 : !m.wl && Math.max(m.sa, m.sb) > 2);
+      const dA = mround2((single ? 20 : 40) * (res - e)), dB = -dA;
       A.elo += dA; B.elo += dB;
     }
     const top = Object.values(P).sort((x, y) => y.elo - x.elo)[0];

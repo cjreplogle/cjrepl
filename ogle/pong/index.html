@@ -315,9 +315,9 @@ try { const r = new URL(document.referrer); if (r.host === location.host && /^\/
 <dialog id="pdlg"><div id="pd"></div></dialog>
 <details class="moa-d"><summary>Mechanism of action (how you are ranked)</summary>
 <div class="moa">
-<p>Everyone starts at \(R_0 = 1000\). Each match (a single game or a best of 3) counts as one result. Before it, player \(A\)&rsquo;s expected score against \(B\) is</p>
+<p>Everyone starts at \(R_0 = 1000\). Each match counts as one result. Before it, player \(A\)&rsquo;s expected score against \(B\) is</p>
 $$E_A = \frac{1}{1 + 10^{(R_B - R_A)/400}}, \qquad E_B = 1 - E_A$$
-<p>The winner \(W\) takes points from the loser \(L\), with \(K = 40\) and the result rounded to the nearest 2:</p>
+<p>The winner \(W\) takes points from the loser \(L\), with \(K = 40\) for a best of 3 (\(K = 20\) for a single game) and the result rounded to the nearest 2:</p>
 $$\Delta = 2\cdot\operatorname{round}\!\left(\frac{K\,(1 - E_W)}{2}\right), \qquad R_W' = R_W + \Delta, \qquad R_L' = R_L - \Delta$$
 <p>So beating an equal player (\(E_W = \tfrac12\)) is \(\pm 20\), an upset is worth more, and a win you were expected to get is worth less. The margin doesn&rsquo;t change the rating, and total points are conserved.</p>
 <p>Names aren&rsquo;t case-sensitive. Typo? Undo the latest game.</p>
@@ -372,6 +372,9 @@ let matches = [];
 // one best-of match = one result, transfer = MROUND(K × (1 − E_winner), 2), zero-sum.
 const K = 40, SCALE = 400;
 const mround2 = x => Math.round(x / 2) * 2;
+// A lone game (not a best of 3) moves half as much: K = 20.
+const isSingle = m => m.games ? m.games.length === 1 : !m.wl && Math.max(m.sa, m.sb) > 2;
+const kFor = m => isSingle(m) ? K / 2 : K;
 
 function compute() {
   const P = {};            // key -> {name, elo, w, l, games, last}
@@ -382,7 +385,7 @@ function compute() {
     const aWon = m.sa > m.sb;
     const W = aWon ? A : B, L = aWon ? B : A;
     const exp = 1 / (1 + 10 ** ((L.elo - W.elo) / SCALE));
-    const dW = mround2(K * (1 - exp)), dL = dW;
+    const dW = mround2(kFor(m) * (1 - exp)), dL = dW;
     W.elo += dW; L.elo -= dL; A.opps.add(B.key); B.opps.add(A.key); W.w++; L.l++; W.games++; L.games++;
     W.last = dW; L.last = -dL;
     deltas.push(aWon ? [dW, -dL] : [-dL, dW]);
@@ -481,10 +484,10 @@ $('f').onsubmit = async e => {
   let body = { a: canon($('a').value), b: canon($('b').value), sa: +$('sa').value, sb: +$('sb').value };
   if (mode === 'bo3') {
     const games = bo3Games();
-    if (games.length < 2) { $('msg').innerHTML = '<span class="err">Enter at least two games.</span>'; return; }
+    if (!games.length) { $('msg').innerHTML = '<span class="err">Enter a score.</span>'; return; }
     if (games.some(g => g[0] === g[1])) { $('msg').innerHTML = '<span class="err">A game can’t be tied.</span>'; return; }
     const wa = games.filter(g => g[0] > g[1]).length, wb = games.length - wa;
-    if (Math.max(wa, wb) < 2) { $('msg').innerHTML = '<span class="err">Split 1–1 — enter game 3.</span>'; return; }
+    if (games.length > 1 && Math.max(wa, wb) < 2) { $('msg').innerHTML = '<span class="err">Split 1–1 — enter game 3.</span>'; return; }
     body = { ...body, sa: wa, sb: wb, games };
   }
   if (wlMode) {
@@ -526,7 +529,7 @@ function pickWinner(w) {
 document.querySelectorAll('.winbtn').forEach(b => b.onclick = () => pickWinner(winner === b.dataset.w ? null : b.dataset.w));
 let mode = 'bo3', lastScore = 'bo3';
 const inTour = () => mode === 'tour', scoreMode = () => lastScore;
-const HINTS = { bo3: 'First to win 2 games. Game 3 is only needed if it’s 1–1.', wl: 'Don’t remember the score? Just tap who won.', tour: 'Bracket seeded by Elo. Winners advance when their game is saved.' };
+const HINTS = { bo3: 'First to win 2 games; G3 only if it’s 1–1. Just one game? Leave G2 blank (counts half).', wl: 'Don’t remember the score? Just tap who won.', tour: 'Bracket seeded by Elo. Winners advance when their game is saved.' };
 function setMode(m) {
   if (m !== 'tour') lastScore = m;
   mode = m; wlMode = m === 'wl';
@@ -559,12 +562,13 @@ function updateTally() {
   $('f').querySelector('.g2').classList.toggle('show', bo3);
   $('f').querySelector('.g3').classList.toggle('show', bo3);
   $('f').querySelector('.g3').classList.toggle('dim', bo3 && !split);
-  $('sa2').required = $('sb2').required = bo3;
+  $('sa2').required = $('sb2').required = false;   // leave G2 blank to log a single game
   $('sa3').required = $('sb3').required = bo3 && split;
   if (!bo3) { $('tally').innerHTML = ''; return; }
   const gs = bo3Games().filter(played), wa = gs.filter(g => g[0] > g[1]).length, wb = gs.length - wa;
   const na = esc($('a').value.trim() || 'Player 1'), nb = esc($('b').value.trim() || 'Player 2');
-  $('tally').innerHTML = !gs.length ? '' : wa === wb ? `Tied ${wa}–${wb}` :
+  const lone = gs.length === 1 && $('sa2').value === '' && $('sb2').value === '';
+  $('tally').innerHTML = !gs.length ? '' : lone ? `<span class="lead">${gs[0][0] > gs[0][1] ? na : nb}</span> wins a single game <span class="muted">(half Elo)</span>` : wa === wb ? `Tied ${wa}–${wb}` :
     `<span class="lead">${wa > wb ? na : nb}</span> ${Math.max(wa, wb) >= 2 ? 'wins' : 'leads'} ${Math.max(wa, wb)}–${Math.min(wa, wb)}`;
 }
 $('f').addEventListener('input', updateTally);
