@@ -61,7 +61,7 @@
   .side input#a, .side input#b { text-align:center; } .side.r input.score { text-align:center; }
   .stepper { display:flex; align-items:stretch; background:var(--field); border-radius:10px; border:1.5px solid transparent; transition:border-color .15s; }
   .stepper:focus-within { border-color:var(--acc); }
-  .stepper input.score { background:none; border:none; min-width:0; flex:1; -moz-appearance:textfield; appearance:textfield; }
+  .stepper input.score { background:none; border:none; will-change:transform; min-width:0; flex:1; -moz-appearance:textfield; appearance:textfield; }
   .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
   .step { flex:none; width:40px; font:inherit; font-size:1.3rem; font-weight:700; color:var(--acc); background:none; border:none;
           cursor:pointer; border-radius:8px; margin:4px; transition:background .15s, transform .1s; user-select:none; touch-action:manipulation; }
@@ -697,6 +697,24 @@ window.tCopy = btn => {
 { const base = render; render = function () { base.apply(this, arguments); if (inTour()) { if (tourney && $('tview').querySelector('.bracket')) tShow(); else if (!tourney && !$('tview').querySelector('#tpick input')) tSetup(); } }; }
 try { const sv = localStorage.getItem('fifaMode'); if (sv === 'wl' || sv === 'tour') setMode(sv); } catch {}
 if (location.hash.startsWith('#t=')) setMode('tour');
+
+
+// Score steppers: roll the number in the direction it moved; nudge if it hit a limit.
+document.addEventListener('click', e => {
+  const b = e.target.closest('.step'); if (!b) return;
+  const i = document.getElementById(b.dataset.t); if (!i) return;
+  const prev = i.dataset.prev ?? '', now = i.value, up = +b.dataset.d > 0;
+  i.dataset.prev = now;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (now === prev && prev !== '') {
+    i.animate([{ transform: 'translateX(0)' }, { transform: `translateX(${up ? 4 : -4}px)` }, { transform: 'translateX(0)' }], { duration: 160, easing: 'ease-out' });
+    return;
+  }
+  i.animate([{ transform: `translateY(${up ? -14 : 14}px)`, opacity: 0, filter: 'blur(2px)' },
+             { transform: 'none', opacity: 1, filter: 'none' }], { duration: 220, easing: 'cubic-bezier(.2,.8,.2,1)' });
+  b.animate([{ transform: 'scale(.85)' }, { transform: 'scale(1)' }], { duration: 180, easing: 'ease-out' });
+});
+document.addEventListener('input', e => { if (e.target.classList?.contains('score')) e.target.dataset.prev = e.target.value; });
 
 // ---- motion layer: animate only what changed, not every 30s refresh ----
 (() => {
