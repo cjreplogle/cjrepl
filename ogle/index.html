@@ -300,7 +300,18 @@
 </head>
 <body>
   <div class="url-tag">cjre.pl/ogle</div>
-  <img class="profile-photo" alt="CJ Replogle" style="cursor:pointer" onclick="(function(){const photos=['me2.jpg','me4.jpg','me5.jpg','me6.jpg'];const current=document.querySelector('.profile-photo').src.split('/').pop();const others=photos.filter(p=>p!==current);this.src=others[Math.floor(Math.random()*others.length)];}).call(this)">
+  <img class="profile-photo" alt="CJ Replogle" style="cursor:pointer" fetchpriority="high" decoding="async" onclick="(function(){const photos=['me2.webp','me4.webp','me5.webp','me6.webp'];const current=this.src.split('/').pop();const others=photos.filter(p=>p!==current);this.src=others[Math.floor(Math.random()*others.length)];}).call(this)">
+  <script>
+    // Pick the photo here (not at the end of the page) so it starts downloading right away.
+    (function () {
+      const photos = ['me2.webp', 'me4.webp', 'me5.webp', 'me6.webp'];
+      let done = null; try { done = localStorage.getItem('animDone'); } catch {}
+      const img = document.querySelector('.profile-photo');
+      img.src = done ? photos[Math.floor(Math.random() * photos.length)] : 'me.webp';
+      // Warm the cache with the others once the page is idle, so clicking to swap is instant.
+      addEventListener('load', () => (window.requestIdleCallback || setTimeout)(() => photos.forEach(p => { if (!img.src.endsWith(p)) new Image().src = p; })));
+    })();
+  </script>
   <div class="intro">
     <p id="typed" spellcheck="false"></p>
   </div>
@@ -833,12 +844,6 @@
       return text;
     }
 
-    // Pick one photo at random and load only that one
-    (function() {
-      const photos = ['me2.jpg','me4.jpg','me5.jpg','me6.jpg'];
-      const pick = _animDone ? photos[Math.floor(Math.random() * photos.length)] : 'me.jpg';
-      document.querySelector('.profile-photo').src = pick;
-    })();
 
     const topBtns = Array.from(document.querySelectorAll('.tabs > .tab-btn'));
     function revealTab(i, fast) {
