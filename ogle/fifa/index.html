@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow, noimageindex">
 <title>UCCOM FIFA</title>
-<meta name="description" content="MedCat Elo Ladder — log games, climb the leaderboard.">
+<meta name="description" content="Medcat Elo Ladder — log games, climb the leaderboard.">
 <meta property="og:title" content="UCCOM FIFA">
-<meta property="og:description" content="MedCat Elo Ladder — log games, climb the leaderboard.">
+<meta property="og:description" content="Medcat Elo Ladder — log games, climb the leaderboard.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://cjre.pl/ogle/fifa/">
 <meta property="og:image" content="https://cjre.pl/ogle/fifa/og.png">
@@ -254,16 +254,16 @@
 // Only offer "back" when we came from the Elo chooser (cjre.pl/ogle/elo, or cjre.pl/elo which redirects there).
 try { const r = new URL(document.referrer); if (r.host === location.host && /^\/(ogle\/)?elo\/?$/.test(r.pathname)) document.querySelector('.back').hidden = false; } catch {}
 </script>
-<header><div class="ball"><img src="icon.svg" alt=""></div><div><h1>UCCOM FIFA</h1><p class="sub">MedCat Elo Ladder &middot; everyone starts at 1000</p></div></header>
+<header><div class="ball"><img src="icon.svg" alt=""></div><div><h1>UCCOM FIFA</h1><p class="sub">Medcat Elo Ladder &middot; everyone starts at 1000</p></div></header>
 
 <section class="card">
 <h2>Chart a game</h2>
 <div class="seg" role="tablist"><button type="button" id="m-score" class="on">Score</button><button type="button" id="m-wl">Outcome</button><button type="button" id="m-tour">Tournament</button></div>
 <form id="f" autocomplete="off">
-  <div class="side"><input id="a" placeholder="MedCat 1" list="names" required>
+  <div class="side"><input id="a" placeholder="Medcat 1" list="names" required>
     <div class="stepper"><button type="button" class="step" data-t="sa" data-d="-1" aria-label="minus">&minus;</button><input class="score" id="sa" type="number" min="0" max="20" inputmode="numeric" placeholder="0" required><button type="button" class="step" data-t="sa" data-d="1" aria-label="plus">+</button></div><button type="button" class="winbtn" data-w="a">Won</button></div>
   <div class="vs">VS</div>
-  <div class="side r"><input id="b" placeholder="MedCat 2" list="names" required>
+  <div class="side r"><input id="b" placeholder="Medcat 2" list="names" required>
     <div class="stepper"><button type="button" class="step" data-t="sb" data-d="-1" aria-label="minus">&minus;</button><input class="score" id="sb" type="number" min="0" max="20" inputmode="numeric" placeholder="0" required><button type="button" class="step" data-t="sb" data-d="1" aria-label="plus">+</button></div><button type="button" class="winbtn" data-w="b">Won</button></div>
   <button type="button" class="winbtn drawbtn" data-w="draw">Draw</button>
   <button class="save" type="submit">Save game</button>
