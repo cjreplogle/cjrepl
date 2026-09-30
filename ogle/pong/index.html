@@ -157,6 +157,11 @@
   .game { display:flex; align-items:center; gap:8px; }
   .game .w { font-weight:700; } .game .l { color:var(--mute); }
   .more[hidden] { display:none; }
+  .sheetq[hidden] { display:none; }
+  .sqrow { display:flex; align-items:center; gap:10px; padding:10px 0; border-top:1px solid var(--line); }
+  .sqrow:first-child { border-top:none; } .sqrow > div:first-child { flex:1; min-width:0; }
+  .sqbtns { display:flex; gap:6px; } .sqbtns button { font:inherit; font-size:.8rem; font-weight:700; border:none; border-radius:8px; padding:6px 10px; cursor:pointer; background:var(--field); color:var(--ink); }
+  .sqbtns .ok { background:var(--acc); color:#fff; }
   .more { display:block; margin:12px auto 0; font:inherit; font-size:.85rem; font-weight:600; color:var(--acc); background:var(--field);
           border:1.5px solid transparent; border-radius:10px; padding:8px 16px; cursor:pointer; transition:border-color .15s; }
   .more:hover { border-color:var(--acc); }
@@ -294,6 +299,11 @@ try { const r = new URL(document.referrer); if (r.host === location.host && /^\/
 <div class="podium" id="podium"></div>
 <table id="lb"><thead><tr><th>#</th><th>Player</th><th class="n">Elo</th><th class="n">W&ndash;L</th><th class="n hide-sm">Last</th></tr></thead><tbody></tbody></table>
 <button type="button" class="more" id="lbmore" hidden onclick="showAllLb = true; render()">Show more</button>
+</section>
+
+<section class="card sheetq" id="sheetq" hidden>
+<h2>From the spreadsheet <span><button type="button" class="link" onclick="sheetCheck()">check now</button></span></h2>
+<div id="sq"></div>
 </section>
 
 <section class="card">
@@ -608,7 +618,28 @@ $('pdlg').addEventListener('close', () => { openKey = null; });
 let adminPw = null;
 try { adminPw = sessionStorage.getItem('pongAdmin'); } catch {}
 const adminHdr = () => ({ 'Content-Type': 'application/json', 'X-Admin': adminPw });
-function syncAdmin() { document.body.classList.toggle('admin-on', !!adminPw); $('admbtn').textContent = adminPw ? 'admin on · log out' : 'admin'; render(); }
+function syncAdmin() { document.body.classList.toggle('admin-on', !!adminPw); $('admbtn').textContent = adminPw ? 'admin on · log out' : 'admin'; render(); loadPending(); }
+// Spreadsheet review queue: the backend checks the Match Log sheet every 15 min; admins approve/reject here.
+async function loadPending() {
+  $('sheetq').hidden = !adminPw; if (!adminPw) return;
+  try {
+    const list = await (await fetch(API + '/pending', { headers: adminHdr() })).json();
+    $('sq').innerHTML = !list.length ? '<p class="muted" style="margin:0">Nothing new in the sheet.</p>' : list.map(p => {
+      const wa = p.games.filter(g => g[0] > g[1]).length, aWon = wa * 2 > p.games.length;
+      return `<div class="sqrow"><div><div class="game"><span class="${aWon ? 'w' : 'l'}">${esc(p.a)}</span><span class="sc">${wa}&ndash;${p.games.length - wa}</span><span class="${aWon ? 'l' : 'w'}">${esc(p.b)}</span></div>
+        <div class="gs">${esc(p.date)} &middot; ${p.games.map(g => g[0] + '&ndash;' + g[1]).join(' &middot; ')} &middot; row ${p.row}</div></div>
+        <div class="sqbtns"><button type="button" class="ok" onclick="sheetAct('${encodeURIComponent(p.key)}','approve')">Approve</button><button type="button" onclick="sheetAct('${encodeURIComponent(p.key)}','reject')">Reject</button></div></div>`;
+    }).join('');
+  } catch {}
+}
+window.sheetAct = async (key, act) => {
+  await fetch(API + '/pending/' + key + '/' + act, { method: 'POST', headers: adminHdr() });
+  await loadPending(); if (act === 'approve') await load();
+};
+window.sheetCheck = async () => {
+  $('sq').innerHTML = '<p class="muted" style="margin:0">Checking the sheet…</p>';
+  await fetch(API + '/sync', { method: 'POST', headers: adminHdr() }); await loadPending();
+};
 function adDialog(html, onGo) {
   $('ad').innerHTML = html + '<div class="btns"><button value="cancel" class="cancel" formnovalidate>Cancel</button><button value="go" class="go">OK</button></div>';
   $('adf').onsubmit = async e => {
