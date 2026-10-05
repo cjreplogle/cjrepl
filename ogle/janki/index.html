@@ -2735,7 +2735,7 @@ Anki's source.
         if (t.closest(".mk-bar")) return;
         if (win.dataset.view === "cal") {
           const ev = t.closest("[data-cal-ev]");
-          if (ev) { renderCal(+ev.dataset.calEv); return; }
+          if (ev) { renderCal(+ev.dataset.calEv); tourEvent("calclass"); return; }
           if (t.closest("[data-cal-back]")) { renderCal(); return; }
           if (t.closest("[data-cal-study]")) { open(decks[0]); return; }
           return;
@@ -3162,6 +3162,8 @@ Anki's source.
           text: "<b>Practice.</b> Import and automatically process your own practice question banks from .pptx, .docx, or .qb. Open it and answer a question." },
         { sel: "[data-lec]", prep: () => { setFocus(false); setView("decks"); }, on: "lecdone",
           text: "<b>Load Lectures.</b> Reads your class calendar and unsuspends just today’s lecture cards. Open it, then <b>Apply</b>." },
+        { sel: '.mk-bar [data-go="cal"]', prep: () => { setFocus(false); setView("decks"); }, on: "calclass",
+          text: `<b>Calendar.</b> Your week of classes, straight from your lecture calendar — dress codes on top, ★ mandatory. ${Click} the calendar icon, then a class to study its cards or practice questions.` },
         { sel: '.mk-bar [data-go="stats"]', prep: () => setFocus(false), on: "stats", last: true,
           text: "<b>Stats.</b> Open it to see what you just studied. That’s the tour!" },
       ];
