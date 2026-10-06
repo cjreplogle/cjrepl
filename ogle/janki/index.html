@@ -1336,14 +1336,14 @@
       padding: 10px 28px;
       font-size: 1rem;
       font-weight: 600;
-      color: #1b1d22;
+      color: var(--mk-text);          /* white in dark mode, dark in light mode */
       text-decoration: none;
-      background: #d9dce2;
-      border: none;
+      background: transparent;
+      border: 1.5px solid currentColor;
       border-radius: 999px;
-      transition: filter 0.15s ease, transform 0.15s ease;
+      transition: background-color 0.15s ease, transform 0.15s ease;
     }
-    .mk-dl:hover { filter: brightness(1.15); transform: translateY(-1px); }
+    .mk-dl:hover { background: var(--mk-hover); transform: translateY(-1px); }
     .mk-caption {
       margin-top: 8px;
       font-size: 0.8rem;
