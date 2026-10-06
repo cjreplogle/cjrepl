@@ -302,7 +302,7 @@ try { const r = new URL(document.referrer); if (r.host === location.host && /^\/
 </section>
 
 <section class="card sheetq" id="sheetq" hidden>
-<h2>From the spreadsheet <span><button type="button" class="link" onclick="sheetCheck()">check now</button></span></h2>
+<h2>From the spreadsheet <span><button type="button" class="link" onclick="sheetCheck()">pull from sheet</button></span></h2>
 <div id="sq"></div>
 </section>
 
@@ -612,7 +612,7 @@ function showPlayer(k) {
     <div class="seg"><button type="button" class="${chartMode === 'elo' ? 'on' : ''}" onclick="chartMode='elo';showPlayer(openKey)">Elo</button><button type="button" class="${chartMode === 'rank' ? 'on' : ''}" onclick="chartMode='rank';showPlayer(openKey)">Rank</button></div>
     ${chart(p.hist, chartMode)}
     ${adminPw ? `<div class="rename"><input id="rn" value="${esc(p.name)}" aria-label="new name"><button type="button" onclick="renamePlayer()">Rename / merge</button></div><p class="muted">Renaming to an existing player merges their games.</p>` : ''}
-    <table class="ph">${p.hist.slice().reverse().slice(0, 15).map(h => `<tr><td><span class="${h.won ? 'w' : 'l'}">${h.won ? 'W' : 'L'}</span> vs ${esc(h.opp)} <span class="sc">${h.m.wl ? '' : (h.m.a === p.name || h.m.a.toLowerCase() === k ? h.m.sa + '&ndash;' + h.m.sb : h.m.sb + '&ndash;' + h.m.sa)}</span></td><td class="n">${fmtD(h.d)}</td><td class="n">${h.elo}</td><td class="n muted">#${h.rank}</td></tr>`).join('')}</table>`;
+    <table class="ph">${p.hist.slice().reverse().slice(0, 15).map(h => `<tr><td><span class="${h.won ? 'w' : 'l'}">${h.won ? 'W' : 'L'}</span> vs ${esc(h.opp)} <span class="sc">${h.m.wl ? '' : (h.m.a === p.name || h.m.a.toLowerCase() === k ? h.m.sa + '&ndash;' + h.m.sb : h.m.sb + '&ndash;' + h.m.sa)}</span></td><td class="n">${fmtD(h.d)}</td><td class="n">${h.elo}</td><td class="n muted">#${h.rank}</td>${adminPw ? `<td class="n"><button class="link" onclick="delMatch('${h.m.id}')">delete</button></td>` : ''}</tr>`).join('')}</table>`;
   if (!$('pdlg').open) $('pdlg').showModal();
 }
 document.addEventListener('click', e => { const t = e.target.closest('[data-k]'); if (t) showPlayer(t.dataset.k); });
@@ -628,7 +628,7 @@ async function loadPending() {
   $('sheetq').hidden = !adminPw; if (!adminPw) return;
   try {
     const list = await (await fetch(API + '/pending', { headers: adminHdr() })).json();
-    $('sq').innerHTML = !list.length ? '<p class="muted" style="margin:0">Nothing new in the sheet.</p>' : list.map(p => {
+    $('sq').innerHTML = !list.length ? '<p class="muted" style="margin:0">Form entries are added automatically every 15 min.</p>' : list.map(p => {
       const wa = p.games.filter(g => g[0] > g[1]).length, aWon = wa * 2 > p.games.length;
       return `<div class="sqrow"><div><div class="game"><span class="${aWon ? 'w' : 'l'}">${esc(p.a)}</span><span class="sc">${wa}&ndash;${p.games.length - wa}</span><span class="${aWon ? 'l' : 'w'}">${esc(p.b)}</span></div>
         <div class="gs">${esc(p.date)} &middot; ${p.games.map(g => g[0] + '&ndash;' + g[1]).join(' &middot; ')} &middot; row ${p.row}</div></div>
@@ -642,7 +642,12 @@ window.sheetAct = async (key, act) => {
 };
 window.sheetCheck = async () => {
   $('sq').innerHTML = '<p class="muted" style="margin:0">Checking the sheet…</p>';
-  await fetch(API + '/sync', { method: 'POST', headers: adminHdr() }); await loadPending();
+  try {
+    const d = await (await fetch(API + '/sync', { method: 'POST', headers: adminHdr() })).json();
+    if (d.error) throw new Error(d.error);
+    if (d.approved) await load();   // new games went straight onto the ladder
+    $('sq').innerHTML = `<p class="muted" style="margin:0">${d.approved ? `Added ${d.approved} new game${d.approved === 1 ? '' : 's'} from the sheet ✓` : 'Up to date — nothing new in the sheet.'}</p>`;
+  } catch (e) { $('sq').innerHTML = `<p class="err" style="margin:0">Couldn’t check the sheet${e.message ? ' (' + esc(e.message) + ')' : ''}.</p>`; }
 };
 function adDialog(html, onGo) {
   $('ad').innerHTML = html + '<div class="btns"><button value="cancel" class="cancel" formnovalidate>Cancel</button><button value="go" class="go">OK</button></div>';
@@ -686,6 +691,7 @@ window.delMatch = id => {
     const r = await fetch(API + '/matches/' + id, { method: 'DELETE', headers: adminHdr() });
     if (!r.ok) return (await r.json()).error;
     matches = matches.filter(x => x.id !== id); render();
+    if ($('pdlg').open && openKey) lastP[openKey] ? showPlayer(openKey) : $('pdlg').close();   // refresh the person view
   });
 };
 window.renamePlayer = async () => {

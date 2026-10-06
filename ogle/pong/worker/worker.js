@@ -160,7 +160,7 @@ async function validate(request, G) {
   return { a, b, a2, b2, sa, sb, body, games };
 }
 
-// ---- Google Sheet (Match Log tab) → pending review queue ----
+// ---- Google Sheet (Match Log tab) → auto-approved onto the ladder ----
 const SHEET_CSV = 'https://docs.google.com/spreadsheets/d/1z5pIZXwxFKOTSYqgqK-tqGzqGMFdB3-vCdXDBBdZYss/gviz/tq?tqx=out:csv&sheet=Match%20Log';
 function parseCSV(text) {
   const rows = []; let row = [], cell = '', q = false;
@@ -183,6 +183,7 @@ async function syncSheet(env, seed) {
   const rows = parseCSV(await r.text()).slice(2);   // two header rows
   const seen = new Set(JSON.parse((await env.PONG.get('sheetSeen')) || '[]'));
   const pending = JSON.parse((await env.PONG.get('sheetPending')) || '[]');
+  const seenBefore = seen.size, hadPending = pending.length > 0;
   const matches = JSON.parse((await env.PONG.get('matches')) || '[]');
   const onSite = new Set(matches.filter(m => m.games).map(m => pairKey(m.a, m.b, m.games)));
   let added = 0, skipped = 0;
@@ -198,8 +199,16 @@ async function syncSheet(env, seed) {
     pending.push({ key, date: (c[0] || '').trim(), a, b, games, row: i + 3, found: Date.now() });
     added++;
   });
-  await env.PONG.put('sheetSeen', JSON.stringify([...seen]));
-  await env.PONG.put('sheetPending', JSON.stringify(pending));
-  await env.PONG.put('sheetChecked', String(Date.now()));
-  return { added, skipped, pending: pending.length };
+  // Auto-approve: move everything queued (incl. any older backlog) straight onto the ladder, in sheet order.
+  pending.sort((x, y) => x.row - y.row);
+  for (const p of pending) {
+    const sa = p.games.filter(g => g[0] > g[1]).length, sb = p.games.length - sa;
+    matches.push({ id: crypto.randomUUID().slice(0, 8), a: p.a, b: p.b, sa, sb, games: p.games, t: Date.now(), src: 'sheet' });
+    seen.add(p.key);
+  }
+  // Only write when something changed (KV free tier: 1,000 writes/day; this runs 96×/day).
+  if (pending.length) await env.PONG.put('matches', JSON.stringify(matches));
+  if (seen.size !== seenBefore) await env.PONG.put('sheetSeen', JSON.stringify([...seen]));
+  if (hadPending) await env.PONG.put('sheetPending', '[]');
+  return { added, skipped, approved: pending.length, pending: 0 };
 }
