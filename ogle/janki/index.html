@@ -588,9 +588,11 @@
       --mk-g3: #2b6cc4; --mk-g3b: #dde9fa;
       container-type: inline-size;
       /* Shrink on short windows so the mock + the preview arrow fit on screen
-         (≈430px of title, tagline, caption and arrow around a 1800:1130 window). */
-      max-width: min(900px, max(500px, (100svh - 430px) * 1.593));
-      margin: 0 auto 24px;
+         (≈500px of title, tagline, caption + tour/download buttons and arrow around
+         a 1800:1130 window — 430 left the arrow below the fold once the Download
+         button joined the caption). */
+      max-width: min(900px, max(500px, (100svh - 500px) * 1.593));
+      margin: 0 auto 12px;
     }
     @media (prefers-color-scheme: dark) {
       .anki-mock {
