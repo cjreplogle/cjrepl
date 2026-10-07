@@ -118,6 +118,13 @@
   .clsrow select:focus { border-color:var(--acc); outline:none; }
   .ph td { padding:7px 6px; font-size:.88rem; } .ph .w { color:var(--up); font-weight:800; } .ph .l { color:var(--dn); font-weight:800; }
   .foot { text-align:center; margin-top:18px; } .foot .link { color:var(--mute); }
+  .src { font-size:.68em; font-weight:600; text-transform:uppercase; letter-spacing:.04em; padding:1px 6px; border-radius:6px; margin:0 6px; vertical-align:middle;
+         border:1px solid currentColor; opacity:.7; }
+  .src.sheet { color:#2e9d5b; } .src.web { color:var(--mute); }
+  .dup { font-size:.68em; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:1px 6px; border-radius:6px; margin:0 6px; color:#fff; background:#d9822b; vertical-align:middle; }
+  #hist tr.isdup td { opacity:.75; } #hist tr.isdup .game > span:not(.dup):not(.src) { text-decoration:line-through; }
+  .grip { cursor:grab; touch-action:none; user-select:none; color:var(--mute); padding:0 8px 0 0; font-size:1.1em; }
+  #hist tr.dragging { opacity:.6; background:color-mix(in srgb, var(--acc) 12%, transparent); }
   .admin-on .foot .link { color:var(--acc); font-weight:700; }
   #ad { padding:20px; display:grid; gap:10px; } #ad h3 { margin:0; font-size:1.2rem; }
   #ad .row { display:grid; grid-template-columns:1fr 70px; gap:8px; }
@@ -376,11 +383,42 @@ const mround2 = x => Math.round(x / 2) * 2;
 const isSingle = m => m.games ? m.games.length === 1 : !m.wl && Math.max(m.sa, m.sb) > 2;
 const kFor = m => isSingle(m) ? K / 2 : K;
 
+// ---- possible repeat entries ----
+// A game is flagged when one of the 8 games before it has the same two players (fuzzy names) and the same score.
+// Flagged games don't count toward Elo and are hidden unless you're admin; admin can mark "not a repeat" (m.notDup).
+const normName = n => String(n).toLowerCase().replace(/[^a-z0-9]/g, '');
+function lev(a, b) {
+  if (Math.abs(a.length - b.length) > 1) return 2;
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+    d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] !== b[j - 1]));
+  return d[a.length][b.length];
+}
+const sameName = (x, y) => { x = normName(x); y = normName(y); return x === y || (Math.min(x.length, y.length) >= 3 && (x.startsWith(y) || y.startsWith(x))) || (Math.min(x.length, y.length) >= 4 && lev(x, y) <= 1); };
+const scoreOf = (m, flip) => (m.games ? m.games.map(g => flip ? [g[1], g[0]] : g) : [flip ? [m.sb, m.sa] : [m.sa, m.sb]]).map(g => g.join('-')).join(',');
+function findDups(list) {
+  const dup = new Set();
+  list.forEach((m, i) => {
+    if (m.notDup) return;
+    for (let j = i - 1; j >= Math.max(0, i - 8); j--) {
+      const o = list[j]; if (dup.has(o.id)) continue;
+      const same = sameName(m.a, o.a) && sameName(m.b, o.b) && scoreOf(m) === scoreOf(o);
+      const swap = sameName(m.a, o.b) && sameName(m.b, o.a) && scoreOf(m) === scoreOf(o, true);
+      if (same || swap) { dup.add(m.id); return; }
+    }
+  });
+  return dup;
+}
+let dups = new Set();
+
 function compute() {
   const P = {};            // key -> {name, elo, w, l, games, last}
   const get = n => { const k = n.toLowerCase(); return P[k] ||= { key: k, name: n, elo: 1000, w: 0, l: 0, games: 0, last: 0, hist: [], opps: new Set() }; };
   const deltas = [];
+  dups = findDups(matches);
   for (const m of matches) {
+    if (dups.has(m.id)) { deltas.push([0, 0]); continue; }   // possible repeat: doesn't count
     const A = get(m.a), B = get(m.b);
     const aWon = m.sa > m.sb;
     const W = aWon ? A : B, L = aWon ? B : A;
@@ -427,18 +465,20 @@ function render() {
      <td class="n elo">${p.elo}</td><td class="n">${p.w}&ndash;${p.l}</td><td class="n hide-sm">${fmtD(p.last)}</td></tr>`).join('')
     : '<tr><td colspan="5" class="empty">No games yet &mdash; go play between lectures!</td></tr>';
   $('lbnote').textContent = matches.length ? 'tap a name for history & class' : '';
-  const n = matches.length;
+  const n = matches.length - dups.size;
   $('gcount').innerHTML = n ? ` &middot; <em>${n} game${n === 1 ? '' : 's'} played<span id="rr"> in the R&amp;R</span></em>` : '';
   fitSub();
   $('names').innerHTML = players.map(p => `<option value="${esc(p.name)}">`).join('');
   const rows = [];
   for (let i = matches.length - 1; i >= (showAllHist ? 0 : Math.max(0, matches.length - 5)); i--) {
-    const m = matches[i], [da, db] = deltas[i], aWon = m.sa > m.sb;
+    const m = matches[i], [da, db] = deltas[i], aWon = m.sa > m.sb, isDup = dups.has(m.id);
+    if (isDup && !adminPw) continue;
     const undo = adminPw ? ` <button class="link" onclick="editMatch('${m.id}')">edit</button><button class="link" onclick="delMatch('${m.id}')">delete</button>`
       : i === matches.length - 1 ? ` <button class="link" onclick="undo('${m.id}')">undo</button>` : '';
-    rows.push(`<tr><td><div class="game"><span class="${aWon ? 'w' : 'l'}">${esc(m.a)}</span>
-      <span class="sc">${m.wl ? (aWon ? 'W&ndash;L' : 'L&ndash;W') : m.sa + '&ndash;' + m.sb}</span><span class="${aWon ? 'l' : 'w'}">${esc(m.b)}</span>${undo}</div>${m.games && m.games.length > 1 ? `<div class="gs">${m.games.map(g => g[0] + '&ndash;' + g[1]).join(' &middot; ')}</div>` : ''}</td>
-      <td class="n">${fmtD(da)} <span class="muted">/</span> ${fmtD(db)}</td><td class="n muted hide-sm">${ago(m.t)}</td></tr>`);
+    const dupTag = isDup ? ` <span class="dup" title="Same players and score as a game just before it — not counted toward Elo">possible repeat</span><button class="link" onclick="notDup('${m.id}')">not a repeat</button>` : '';
+    rows.push(`<tr data-id="${m.id}"${isDup ? ' class="isdup"' : ''}><td><div class="game">${adminPw ? '<span class="grip" title="drag to reorder" aria-hidden="true">⠿</span>' : ''}<span class="${aWon ? 'w' : 'l'}">${esc(m.a)}</span>
+      <span class="sc">${m.wl ? (aWon ? 'W&ndash;L' : 'L&ndash;W') : m.sa + '&ndash;' + m.sb}</span><span class="${aWon ? 'l' : 'w'}">${esc(m.b)}</span>${srcTag(m)}${dupTag}${undo}</div>${m.games && m.games.length > 1 ? `<div class="gs">${m.games.map(g => g[0] + '&ndash;' + g[1]).join(' &middot; ')}</div>` : ''}</td>
+      <td class="n">${isDup ? '<span class="muted">not counted</span>' : `${fmtD(da)} <span class="muted">/</span> ${fmtD(db)}`}</td><td class="n muted hide-sm">${ago(m.t)}</td></tr>`);
   }
   $('hist').tBodies[0].innerHTML = rows.join('') || '<tr><td colspan="3" class="empty">Nothing yet.</td></tr>';
   $('lbmore').hidden = showAllLb || players.length <= 10;
@@ -612,7 +652,7 @@ function showPlayer(k) {
     <div class="seg"><button type="button" class="${chartMode === 'elo' ? 'on' : ''}" onclick="chartMode='elo';showPlayer(openKey)">Elo</button><button type="button" class="${chartMode === 'rank' ? 'on' : ''}" onclick="chartMode='rank';showPlayer(openKey)">Rank</button></div>
     ${chart(p.hist, chartMode)}
     ${adminPw ? `<div class="rename"><input id="rn" value="${esc(p.name)}" aria-label="new name"><button type="button" onclick="renamePlayer()">Rename / merge</button></div><p class="muted">Renaming to an existing player merges their games.</p>` : ''}
-    <table class="ph">${p.hist.slice().reverse().slice(0, 15).map(h => `<tr><td><span class="${h.won ? 'w' : 'l'}">${h.won ? 'W' : 'L'}</span> vs ${esc(h.opp)} <span class="sc">${h.m.wl ? '' : (h.m.a === p.name || h.m.a.toLowerCase() === k ? h.m.sa + '&ndash;' + h.m.sb : h.m.sb + '&ndash;' + h.m.sa)}</span></td><td class="n">${fmtD(h.d)}</td><td class="n">${h.elo}</td><td class="n muted">#${h.rank}</td>${adminPw ? `<td class="n"><button class="link" onclick="delMatch('${h.m.id}')">delete</button></td>` : ''}</tr>`).join('')}</table>`;
+    <table class="ph">${p.hist.slice().reverse().slice(0, 15).map(h => `<tr><td><span class="${h.won ? 'w' : 'l'}">${h.won ? 'W' : 'L'}</span> vs ${esc(h.opp)} ${srcTag(h.m)}<span class="sc">${h.m.wl ? '' : (h.m.a === p.name || h.m.a.toLowerCase() === k ? h.m.sa + '&ndash;' + h.m.sb : h.m.sb + '&ndash;' + h.m.sa)}</span></td><td class="n">${fmtD(h.d)}</td><td class="n">${h.elo}</td><td class="n muted">#${h.rank}</td>${adminPw ? `<td class="n"><button class="link" onclick="delMatch('${h.m.id}')">delete</button></td>` : ''}</tr>`).join('')}</table>`;
   if (!$('pdlg').open) $('pdlg').showModal();
 }
 document.addEventListener('click', e => { const t = e.target.closest('[data-k]'); if (t) showPlayer(t.dataset.k); });
@@ -684,6 +724,39 @@ window.editMatch = id => {
     const upd = await r.json(); Object.assign(matches.find(x => x.id === id), upd); if (!upd.wl) delete matches.find(x => x.id === id).wl;
     render();
   });
+};
+// Admin: drag a game by its ⠿ handle to change the order games are counted in (Elo is order-dependent).
+$('hist').addEventListener('pointerdown', e => {
+  const grip = e.target.closest('.grip'); if (!grip || !adminPw) return;
+  e.preventDefault();
+  const row = grip.closest('tr'), body = row.parentNode, before = [...body.rows].map(r => r.dataset.id);
+  row.classList.add('dragging'); grip.setPointerCapture(e.pointerId);
+  const move = ev => {
+    const over = [...body.rows].find(r => r !== row && (b => ev.clientY > b.top && ev.clientY < b.bottom)(r.getBoundingClientRect()));
+    if (!over) return;
+    const mid = (b => b.top + b.height / 2)(over.getBoundingClientRect());
+    body.insertBefore(row, ev.clientY < mid ? over : over.nextSibling);
+  };
+  const up = async () => {
+    grip.removeEventListener('pointermove', move); grip.removeEventListener('pointerup', up); grip.removeEventListener('pointercancel', up);
+    row.classList.remove('dragging');
+    const after = [...body.rows].map(r => r.dataset.id);
+    if (after.join() === before.join()) return;
+    // Shown rows are newest first; put them back into the same slots of the full list in their new order.
+    const slots = before.map(id => matches.findIndex(m => m.id === id)).sort((a, b) => a - b), shown = after.slice().reverse();
+    const next = matches.slice(); slots.forEach((s, i) => next[s] = matches.find(m => m.id === shown[i]));
+    const r = await fetch(API + '/reorder', { method: 'POST', headers: adminHdr(), body: JSON.stringify({ ids: next.map(m => m.id) }) });
+    if (!r.ok) { $('msg').innerHTML = `<span class="err">${esc((await r.json().catch(() => ({}))).error || 'Couldn’t reorder.')}</span>`; return load(); }
+    matches = next; render(); $('msg').innerHTML = '<span class="ok">Order saved ✓</span>';
+  };
+  grip.addEventListener('pointermove', move); grip.addEventListener('pointerup', up); grip.addEventListener('pointercancel', up);
+});
+// Where a game came from: the Google Form sheet or this site (older site games have no src).
+const srcTag = m => `<span class="src ${m.src === 'sheet' ? 'sheet' : 'web'}" title="${m.src === 'sheet' ? 'Imported from the Google Form sheet' : 'Entered on this site'}">${m.src === 'sheet' ? 'sheet' : 'site'}</span>`;
+window.notDup = async id => {
+  const r = await fetch(API + '/matches/' + id + '/notdup', { method: 'POST', headers: adminHdr(), body: JSON.stringify({ notDup: true }) });
+  if (!r.ok) { $('msg').innerHTML = `<span class="err">${esc((await r.json().catch(() => ({}))).error || 'Couldn’t update.')}</span>`; return; }
+  const m = matches.find(x => x.id === id); if (m) m.notDup = true; render();
 };
 window.delMatch = id => {
   const m = matches.find(x => x.id === id); if (!m) return;

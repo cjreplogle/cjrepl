@@ -86,7 +86,7 @@ export default {
       const { a, b, sa, sb, body } = v;
       const list = await load();
       if (list.length >= 20000) return json({ error: 'log full' }, 507);
-      const m = { id: crypto.randomUUID().slice(0, 8), a, b, sa, sb, t: Date.now() };
+      const m = { id: crypto.randomUUID().slice(0, 8), a, b, sa, sb, t: Date.now(), src: 'web' };   // src: 'web' (site form) | 'sheet' (Google Form import)
       if (v.games) m.games = v.games;
       if (v.a2) m.a2 = v.a2;
       if (v.b2) m.b2 = v.b2;
@@ -113,6 +113,27 @@ export default {
       const list = await load(), i = list.findIndex(x => x.id === del[1]);
       if (i < 0) return json({ error: 'no such match' }, 404);
       list.splice(i, 1); await save(list);
+      return json({ ok: true });
+    }
+    // Admin: POST /matches/:id/notdup { notDup: true|false } — clear a "possible repeat" flag
+    const nd = url.pathname.match(/^\/matches\/([^/]+)\/notdup$/);
+    if (nd && request.method === 'POST') {
+      if (!isAdmin) return json({ error: 'admin only' }, 401);
+      let body = {}; try { body = await request.json(); } catch {}
+      const list = await load(), m = list.find(x => x.id === nd[1]);
+      if (!m) return json({ error: 'no such match' }, 404);
+      if (body.notDup === false) delete m.notDup; else m.notDup = true;
+      await save(list);
+      return json(m);
+    }
+    // Admin: POST /reorder { ids: [...] } — the full match list's ids in their new order (oldest first)
+    if (url.pathname === '/reorder' && request.method === 'POST') {
+      if (!isAdmin) return json({ error: 'admin only' }, 401);
+      let body; try { body = await request.json(); } catch { return json({ error: 'bad json' }, 400); }
+      const list = await load(), byId = new Map(list.map(m => [m.id, m])), ids = Array.isArray(body.ids) ? body.ids : [];
+      if (ids.length !== list.length || new Set(ids).size !== ids.length || !ids.every(id => byId.has(id)))
+        return json({ error: 'games changed — reload and try again' }, 409);
+      await save(ids.map(id => byId.get(id)));
       return json({ ok: true });
     }
     if (url.pathname === '/rename' && request.method === 'POST') {

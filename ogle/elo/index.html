@@ -123,12 +123,39 @@ function showGate(wrong) {
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // Same math as the game pages (group's spreadsheet): K = 40, MROUND to 2, zero-sum; draws score 0.5.
 const mround2 = x => Math.sign(x) * Math.round(Math.abs(x) / 2) * 2;   // like Sheets MROUND (half away from 0)
+// Possible repeat entries (same as the pong page): skipped for Elo.
+const normName = n => String(n).toLowerCase().replace(/[^a-z0-9]/g, '');
+function lev(a, b) {
+  if (Math.abs(a.length - b.length) > 1) return 2;
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+    d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] !== b[j - 1]));
+  return d[a.length][b.length];
+}
+const sameName = (x, y) => { x = normName(x); y = normName(y); return x === y || (Math.min(x.length, y.length) >= 3 && (x.startsWith(y) || y.startsWith(x))) || (Math.min(x.length, y.length) >= 4 && lev(x, y) <= 1); };
+const scoreOf = (m, flip) => (m.games ? m.games.map(g => flip ? [g[1], g[0]] : g) : [flip ? [m.sb, m.sa] : [m.sa, m.sb]]).map(g => g.join('-')).join(',');
+function findDups(list) {
+  const dup = new Set();
+  list.forEach((m, i) => {
+    if (m.notDup) return;
+    for (let j = i - 1; j >= Math.max(0, i - 8); j--) {
+      const o = list[j]; if (dup.has(o.id)) continue;
+      const same = sameName(m.a, o.a) && sameName(m.b, o.b) && scoreOf(m) === scoreOf(o);
+      const swap = sameName(m.a, o.b) && sameName(m.b, o.a) && scoreOf(m) === scoreOf(o, true);
+      if (same || swap) { dup.add(m.id); return; }
+    }
+  });
+  return dup;
+}
 async function leader(g) {
   const el = document.getElementById('l-' + g);
   try {
     const ms = await (await fetch(API + '/matches' + (g === 'fifa' ? '?g=fifa' : ''))).json();
     const P = {}, get = n => P[n.toLowerCase()] ||= { name: n, elo: 1000 };
+    const dup = g === 'pong' ? findDups(ms) : new Set();
     for (const m of ms) {
+      if (dup.has(m.id)) continue;
       const TA = [m.a, m.a2].filter(Boolean).map(get), TB = [m.b, m.b2].filter(Boolean).map(get);   // teams: average rating
       const avg = T => T.reduce((s, p) => s + p.elo, 0) / T.length, A = { elo: avg(TA) }, B = { elo: avg(TB) };
       const res = m.sa > m.sb ? 1 : m.sa < m.sb ? 0 : 0.5, e = 1 / (1 + 10 ** ((B.elo - A.elo) / 400));
@@ -137,7 +164,7 @@ async function leader(g) {
       TA.forEach(p => p.elo += dA); TB.forEach(p => p.elo += dB);
     }
     const top = Object.values(P).sort((x, y) => y.elo - x.elo)[0];
-    el.innerHTML = top ? `🥇 <b>${esc(top.name)}</b> &middot; ${top.elo} &middot; ${ms.length} game${ms.length === 1 ? '' : 's'}` : 'No games yet';
+    el.innerHTML = top ? `🥇 <b>${esc(top.name)}</b> &middot; ${top.elo} &middot; ${ms.length - dup.size} game${ms.length - dup.size === 1 ? '' : 's'}` : 'No games yet';
   } catch { el.textContent = ''; }
 }
 leader('pong'); leader('fifa');

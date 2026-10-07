@@ -6,6 +6,6 @@ compatibility_date = "2024-01-01"
 binding = "PONG"
 id = "678db6c3160b44338a3ad117ad83694e"
 
-# check the Match Log sheet for new rows every 15 minutes
+# check the Match Log sheet for new rows every 15 minutes (auto-approved; repeats are flagged on the page)
 [triggers]
 crons = ["*/15 * * * *"]
