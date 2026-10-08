@@ -1836,6 +1836,22 @@ Anki's source.
 
         container.innerHTML = html;
 
+        // GitHub can't embed players, so the README links a YouTube thumbnail;
+        // on the site, swap each one for the real player.
+        container.querySelectorAll('a[href*="youtu.be/"], a[href*="youtube.com/watch"]').forEach(a => {
+          const img = a.querySelector('img[src*="img.youtube.com/vi/"]');
+          const m = a.href.match(/(?:youtu\.be\/|[?&]v=)([\w-]{11})/);
+          if (!img || !m) return;
+          const f = document.createElement("iframe");
+          f.src = "https://www.youtube-nocookie.com/embed/" + m[1];
+          f.title = img.alt || "Video";
+          f.loading = "lazy";
+          f.allow = "accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen";
+          f.allowFullscreen = true;
+          f.style.cssText = "width:100%;max-width:720px;aspect-ratio:16/9;border:0;border-radius:10px";
+          a.replaceWith(f);
+        });
+
         // The README embeds several autoplay+loop videos streamed from GitHub.
         // Left as-is they all download and decode at once (100s of MB of memory),
         // even while off-screen or in collapsed sections. Instead: don't preload,
