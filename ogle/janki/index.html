@@ -1349,7 +1349,7 @@
       align-items: center;
       justify-content: center;
       gap: 0.55em;
-      width: 12.75rem;                 /* identical widths: the pair reads as a set */
+      width: 14rem;                    /* identical widths: the pair reads as a set */
       min-height: 44px;
       padding: 0 22px;
       font: inherit;
@@ -1370,11 +1370,8 @@
       box-shadow: 0 4px 14px -6px var(--mk-btn);
     }
     .mk-dl { position: relative; }
-    .mk-os {                          /* tiny OS mark at the pill's right end */
-      position: absolute;
-      top: 50%;
-      right: 15px;
-      transform: translateY(-50%);
+    .mk-os {                          /* OS mark, trailing the label */
+      display: block;                 /* in the centred row: arrow · label · mark */
       color: #fff;
       opacity: 0.75;
       pointer-events: none;
@@ -1513,6 +1510,40 @@
       .feat-key code { padding: 1px 5px; }
     }
 
+    /* Card Rephrasing viewer: two stacked shots, crossfading back and forth. */
+    .rw-view { max-width: 460px; margin: 12px auto 16px; }
+    .rw-stack { display: grid; }
+    .rw-stack img {
+      grid-area: 1 / 1;
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+    .rw-stack img.on { opacity: 1; }
+    @media (prefers-reduced-motion: reduce) { .rw-stack img { transition: none; } }
+
+    .shot-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin: 12px 0 16px;
+    }
+    .shot-row.shot-one { grid-template-columns: 1fr; max-width: 640px; margin-left: auto; margin-right: auto; }
+    .shot-row a { display: block; }
+    .shot-row img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      transition: transform 0.15s ease;
+    }
+    .shot-row a:hover img { transform: translateY(-2px); }
+    @media (max-width: 640px) { .shot-row { grid-template-columns: 1fr; } }
+
     /* "Why the restart?": plain grey fine print that drops in under the toggle
        (grid-rows 0fr→1fr animates to its natural height). */
     .why-note {
@@ -1547,6 +1578,7 @@
     .alert-fine .markdown-alert-title { font-size: 1.05em; }
 
     /* About Janki: lead line, three cards, full essay behind a toggle. */
+    .about-intro { margin: 0 0 -6px; color: var(--muted); }
     .about-cards {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -2818,6 +2850,7 @@ self-heal patches Anki's own files locally at runtime and does not redistribute
 Anki's source.
 
 [cjre.pl/ogle](https://cjre.pl/ogle/plain)
+
 <!--README:END--></script>
 
   <script>
@@ -3247,6 +3280,53 @@ Anki's source.
           note.before(btn);
         });
 
+        // Load Today's Lectures: a lecture's page + the lecture window instead of the
+        // README's single image; the week view goes under Lecture Card Manager.
+        const lecImg = [...container.querySelectorAll("img")]
+          .find(i => /load-todays-lectures\.jpg$/.test(i.getAttribute("src") || ""));
+        const shotRow = (shots, cls) => {
+          const g = document.createElement("div");
+          g.className = "shot-row " + cls;
+          shots.forEach(([src, alt]) => {
+            const a = document.createElement("a");
+            a.href = src; a.target = "_blank"; a.rel = "noopener";
+            a.innerHTML = `<img src="${src}" alt="${alt}" loading="lazy">`;
+            g.appendChild(a);
+          });
+          return g;
+        };
+        const mgr = [...container.querySelectorAll(".feat-head")]
+          .find(h => /lecture card manager/i.test(h.textContent));
+        const mgrBody = mgr && mgr.parentElement.querySelector(":scope > .feat-body");
+        if (mgrBody) mgrBody.appendChild(shotRow([["media/lectures-week.jpg", "Week view of your lectures"]], "shot-one"));
+        // Card Rephrasing: the original and reworded card, alternating on their own.
+        const rw = [...container.querySelectorAll(".feat-head")]
+          .find(h => /rephras/i.test(h.textContent));
+        const rwBody = rw && rw.parentElement.querySelector(":scope > .feat-body");
+        if (rwBody) {
+          const v = document.createElement("div");
+          v.className = "rw-view";
+          v.innerHTML =
+            '<div class="rw-stack">' +
+              '<img class="on" src="media/rephrase-original.jpg" alt="A card in its original wording" loading="lazy">' +
+              '<img src="media/rephrase-reworded.jpg" alt="The same card, reworded" loading="lazy">' +
+            '</div>';
+          const imgs = v.querySelectorAll(".rw-stack img");
+          let cur = 0;
+          setInterval(() => {
+            if (!v.isConnected) return;
+            cur = 1 - cur;
+            imgs.forEach((im, k) => im.classList.toggle("on", k === cur));
+          }, 2800);
+          rwBody.appendChild(v);
+        }
+        if (lecImg) {
+          const g = shotRow([
+           ["media/lectures-detail.jpg", "A lecture's page: its cards, study and practice"],
+           ["media/lectures-window.jpg", "Load today's lectures window"]], "shot-two");
+          (lecImg.closest("p") || lecImg).replaceWith(g);
+        }
+
         // Hide the README's "features are experimental" warning on the site.
         container.querySelectorAll("blockquote").forEach(bq => {
           if (/\[!WARNING\]|markdown-alert-warning/i.test(bq.outerHTML) &&
@@ -3407,8 +3487,15 @@ Anki's source.
       // The full essay lives on its own page (story/, currently unlinked); drop it here.
       nodes.filter(n => n !== lead && n !== quote).forEach(n => n.remove());
 
-      lead.after(grid);
-      if (quote) { quote.classList.add("about-quote"); grid.after(quote); }
+      const intro = document.createElement("p");
+      intro.className = "about-intro";
+      intro.textContent = "It was built off these core principles:";
+      lead.after(intro, grid);
+      if (quote) {
+        quote.classList.add("about-quote");
+        quote.innerHTML = "<em>\u201CI sincerely hope this tool helps you succeed.\u201D</em>";
+        grid.after(quote);
+      }
 
       // Show About before Features (the README keeps it near the end).
       const feat = [...root.querySelectorAll("h2")].find(h => /^\s*features\s*$/i.test(h.textContent));
@@ -3431,6 +3518,7 @@ Anki's source.
         "Rephrase": ["Tab+R"],
         "Practice questions": ["Tab+Q"],
         "Caption Mode": ["Tab+\\"],
+        "Load today's lectures": ["Cmd+L"],
         "Global hotkeys & remote": ["Cmd+Opt+A"],
         "Quick Zoom": ["Cmd+", "Cmd−"],
       };

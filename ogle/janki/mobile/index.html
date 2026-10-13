@@ -944,8 +944,10 @@ taps, no reaching for the answer buttons.
 
         // The cjre.pl/ogle mark lives fixed at the top-right (see .corner-mark),
         // so drop the baked footer copy from the bottom of the content.
+        // Only the footer's own "cjre.pl/ogle" link, not other links into the site.
         const footerLink =
-          container.querySelector('a[href*="cjre.pl/ogle"]');
+          [...container.querySelectorAll('a[href*="cjre.pl/ogle"]')]
+            .find(a => /^\s*cjre\.pl\/ogle\s*$/i.test(a.textContent));
 
         if (footerLink && footerLink.parentElement) {
           footerLink.parentElement.remove();
