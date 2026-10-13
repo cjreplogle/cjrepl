@@ -3296,7 +3296,7 @@ Anki's source.
           return g;
         };
         const mgr = [...container.querySelectorAll(".feat-head")]
-          .find(h => /lecture card manager/i.test(h.textContent));
+          .find(h => /lecture (card manager|schedule card viewer)/i.test(h.textContent));
         const mgrBody = mgr && mgr.parentElement.querySelector(":scope > .feat-body");
         if (mgrBody) mgrBody.appendChild(shotRow([["media/lectures-week.jpg", "Week view of your lectures"]], "shot-one"));
         // Card Rephrasing: the original and reworded card, alternating on their own.
@@ -3325,6 +3325,16 @@ Anki's source.
            ["media/lectures-detail.jpg", "A lecture's page: its cards, study and practice"],
            ["media/lectures-window.jpg", "Load today's lectures window"]], "shot-two");
           (lecImg.closest("p") || lecImg).replaceWith(g);
+        }
+
+        // Support note: trim "/features you think will be helpful to other people".
+        {
+          const w = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+          while (w.nextNode()) {
+            const n = w.currentNode;
+            if (/\/features you think will be helpful to other people/i.test(n.nodeValue))
+              n.nodeValue = n.nodeValue.replace(/\/features you think will be helpful to other people/i, "");
+          }
         }
 
         // Hide the README's "features are experimental" warning on the site.
@@ -3469,9 +3479,9 @@ Anki's source.
 
       const CARDS = [
         ["Understand, don't just memorize",
-         "Rephrased cards and mapped question banks make you reason, not pattern-match."],
+         "Rephrased cards and mapped question banks force you to reason through new concepts."],
         ["Built around your schedule",
-         "Your class calendar organizes your cards, and your review history shows where you're weakest."],
+         "Your class calendar organizes your cards and your review history identifies weak areas."],
         ["Effortless to use",
          "Focus mode, hotkeys and a faster, modern Anki that just gets out of your way."],
       ];
@@ -3511,6 +3521,7 @@ Anki's source.
       const RENAME = {   // site-only display names
         "Rephrase": "Card Rephrasing",
         "Practice questions": "Import Question Banks",
+        "Lecture Card Manager": "Lecture Schedule Card Viewer",
       };
       // Shortcuts the README only mentions inside the description; shown next to
       // the name like the ones it puts in parentheses (Focus / Lockdown).
