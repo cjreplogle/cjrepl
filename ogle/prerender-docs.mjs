@@ -39,6 +39,11 @@ const PAGES = [
     file: new URL("./janki/jank/index.html", import.meta.url),
     raw: "https://raw.githubusercontent.com/cjreplogle/janki/master/docs/jank.md",
   },
+  {
+    // Full README; the page shows only its "About Janki" section.
+    file: new URL("./janki/story/index.html", import.meta.url),
+    raw: "https://raw.githubusercontent.com/cjreplogle/janki/master/README.md",
+  },
 ];
 
 const START = "<!--README:START-->";

@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Janki</title>
   <meta name="description" content="A feature rich Anki client designed around you.">
   <meta property="og:type" content="website">
@@ -87,6 +87,10 @@
     body {
       margin: 0;
       padding: 10px;
+      /* viewport-fit=cover (for the edge-to-edge tap flare): keep content clear
+         of the notch / home indicator. */
+      padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
+               max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
       background: var(--bg);
       color: var(--text);
       font-family:
@@ -183,7 +187,7 @@
       position: fixed;
       left: 0;
       right: 0;
-      bottom: 26px;
+      bottom: calc(26px + env(safe-area-inset-bottom));
       text-align: center;
       font-size: 0.8rem;
       opacity: 0.4;
@@ -195,16 +199,25 @@
     .grade-flare {
       position: fixed;
       inset: 0;
+      /* Fade out toward the top and bottom so the glow never meets Safari's
+         status bar / toolbar (which clip fixed layers and paint a flat colour). */
+      -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
+      mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
       z-index: 60;
       pointer-events: none;
       opacity: 0;
-      animation: gradeFlare 0.6s ease-out forwards;
+      animation: cardFlare 0.6s ease-out forwards;
       /* background (a radial glow in the grade colour, from the tap point) is set
          inline per tap; emulates the janki reviewer's grade glow. */
     }
+    @keyframes cardFlare {   /* phone intro: a bit stronger than the mock's */
+      0% { opacity: 0; }
+      22% { opacity: 0.8; }
+      100% { opacity: 0; }
+    }
     @keyframes gradeFlare {
       0% { opacity: 0; }
-      22% { opacity: 0.55; }
+      22% { opacity: 0.45; }
       100% { opacity: 0; }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -527,8 +540,8 @@
 
     .corner-mark {
       position: fixed;
-      top: 8px;
-      right: 12px;
+      top: calc(8px + env(safe-area-inset-top));
+      right: calc(12px + env(safe-area-inset-right));
       z-index: 10;
       font-size: 0.72em;
       color: var(--muted);
@@ -1315,43 +1328,90 @@
       outline-offset: 0.3em;
       border-radius: 0.4em;
     }
-    .mk-tour-replay {
-      margin-top: 6px;
-      padding: 7px 18px;
-      font: inherit;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #fff;
-      background: var(--mk-btn);
-      border: none;
-      border-radius: 999px;
-      cursor: pointer;
-      transition: filter 0.15s ease, transform 0.15s ease;
-    }
-    .mk-tour-replay:hover { filter: brightness(1.12); transform: translateY(-1px); }
-    .mk-tour-replay:focus-visible { outline: 2px solid var(--mk-cloze); outline-offset: 3px; }
-    @keyframes mkTourIn { from { opacity: 0; transform: translateY(-4px); } }
-    .mk-dl {
-      display: block;
-      width: fit-content;
-      margin: 10px auto 0;
-      padding: 10px 28px;
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--mk-text);          /* white in dark mode, dark in light mode */
-      text-decoration: none;
-      background: transparent;
-      border: 1px solid currentColor;
-      border-radius: 999px;
-      transition: background-color 0.15s ease, transform 0.15s ease;
-    }
-    .mk-dl:hover { background: var(--mk-hover); transform: translateY(-1px); }
+    /* Splash CTAs: one matched pair. Download is the primary (filled), the tour
+       the secondary (outlined); same height, shape and type so they read as a set.
+       Side by side on desktop, stacked full-width on narrow phones. */
     .mk-caption {
-      margin-top: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
       font-size: 0.8rem;
       text-align: center;
       color: var(--muted);
     }
+    .mk-caption[hidden] { display: none; }
+    .mk-tour-replay, .mk-dl {
+      box-sizing: border-box;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55em;
+      width: 12.75rem;                 /* identical widths: the pair reads as a set */
+      min-height: 44px;
+      padding: 0 22px;
+      font: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      line-height: 1;
+      text-decoration: none;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background-color 0.15s ease, filter 0.15s ease,
+                  transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .mk-dl {
+      order: -1;                       /* primary first, whatever the DOM order */
+      color: #fff;
+      background: var(--mk-btn);
+      border: 1px solid transparent;
+      box-shadow: 0 4px 14px -6px var(--mk-btn);
+    }
+    .mk-dl { position: relative; }
+    .mk-os {                          /* tiny OS mark at the pill's right end */
+      position: absolute;
+      top: 50%;
+      right: 15px;
+      transform: translateY(-50%);
+      color: #fff;
+      opacity: 0.75;
+      pointer-events: none;
+    }
+    .mk-os svg { width: 13px; height: 13px; display: block; }
+    .mk-os-apple {
+      margin-top: -1px;               /* the glyph's leaf sits high in its box */
+      font: 16px/1 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    }
+    .mk-dl:hover { filter: brightness(1.1); transform: translateY(-1px);
+                   box-shadow: 0 6px 18px -6px var(--mk-btn); }
+    .mk-tour-replay {
+      color: var(--mk-text);
+      background: transparent;
+      border: 1px solid color-mix(in srgb, var(--mk-text) 28%, transparent);
+    }
+    .mk-tour-replay:hover { background: var(--mk-hover); transform: translateY(-1px);
+                            border-color: color-mix(in srgb, var(--mk-text) 50%, transparent); }
+    .mk-tour-replay:active, .mk-dl:active { transform: translateY(0); }
+    .mk-tour-replay:focus-visible, .mk-dl:focus-visible {
+      outline: 2px solid var(--mk-cloze); outline-offset: 3px;
+    }
+    /* Trim the label to its cap height so flex centering is true optical
+       centering (serif line boxes otherwise sit the text low), and size the
+       icons to that same cap height. */
+    .mk-cta-label { display: block; text-box: trim-both cap alphabetic; }
+    /* Both glyphs: same stroke, viewBox cropped to the shape, height = the
+       label's cap height, so icon and text share one optical box. */
+    .mk-cta-ico { display: block; height: 0.74em; width: auto; flex: none; overflow: visible; }
+    .mk-ico-dl { height: 0.84em; }                    /* open shape reads smaller */
+    .mk-ico-play { transform: translateX(0.04em); }   /* triangle's mass sits left */
+    @media (max-width: 440px) {
+      .mk-caption { flex-direction: column; align-items: stretch;
+                    max-width: 320px; margin-left: auto; margin-right: auto; }
+      .mk-tour-replay, .mk-dl { width: 100%; }
+    }
+    @keyframes mkTourIn { from { opacity: 0; transform: translateY(-4px); } }
     /* Phone widths: still a landscape window (3:2), with a bigger base so text
        stays legible; practice questions shrink a little and scroll if needed. */
     @container (max-width: 480px) {
@@ -1372,44 +1432,139 @@
     /* Condensed Features list: one line per feature (name + shortcut), click to
        expand its full description. */
     ul.feat-list {
-      padding-left: 0;
+      margin: 18px 0 8px;
+      padding: 0;
       list-style: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
     }
-    .feat-list > li + li { margin-top: 0; }
+    .feat-list > li { margin: 0; }
+    .feat-list > li + li { margin-top: 0; border-top: 1px solid var(--border); }
     .feat-head {
       display: flex;
-      align-items: baseline;
-      gap: 10px;
+      align-items: center;
+      gap: 12px;
       width: 100%;
-      padding: 6px 2px;
+      min-height: 52px;
+      padding: 10px 18px;
       font: inherit;
       color: inherit;
       text-align: left;
       background: none;
       border: 0;
       cursor: pointer;
+      transition: background-color 0.15s ease;
     }
+    .feat-head:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+    .feat-head:focus-visible { outline: 2px solid var(--link); outline-offset: -2px; }
     .feat-name { font-weight: 600; }
-    .feat-key { font-size: 0.85em; color: var(--muted); }
-    .feat-chev {
-      margin-left: -4px;        /* sits right after the title (and shortcut) */
-      font-size: 18px;
-      line-height: 1;
+    .feat-key {
+      display: inline-flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-left: auto;              /* shortcuts line up on the right */
+      font-size: 0.8em;
       color: var(--muted);
-      opacity: 0.6;
     }
-    .feat-head:hover .feat-chev { opacity: 1; }
+    .feat-key code {
+      padding: 2px 7px;
+      font-size: 0.95em;
+      line-height: 1.5;
+      color: var(--text);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-bottom-width: 2px;       /* keycap */
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .feat-chev {
+      flex: none;
+      width: 16px;
+      height: 16px;
+      color: var(--muted);
+      transition: transform 0.25s ease, color 0.15s ease;
+    }
+    .feat-key + .feat-chev { margin-left: 4px; }
+    .feat-name + .feat-chev { margin-left: auto; }
+    .feat-head:hover .feat-chev { color: var(--text); }
+    .feat.open > .feat-head .feat-chev { transform: rotate(180deg); color: var(--link); }
+    .feat.open > .feat-head { background: color-mix(in srgb, var(--text) 4%, transparent); }
     .feat-body {
+      padding: 0 18px;
       overflow: hidden;
+      color: color-mix(in srgb, var(--text) 85%, var(--muted));
       transition: max-height 0.3s ease, opacity 0.3s ease;
     }
-    .feat-body > :first-child { margin-top: 10px; }
-    .feat-body > :last-child { margin-bottom: 14px; }
+    .feat-body > :first-child { margin-top: 4px; }
+    .feat-body > :last-child { margin-bottom: 16px; }
+    .feat-body img, .feat-body video { max-width: 100%; height: auto; border-radius: 10px; }
     .feat:not(.open) > .feat-body {
       max-height: 0 !important;
       opacity: 0;
     }
     .feat-sub { padding-left: 1.2em; }
+    .feat-sub .feat-key { margin-left: 4px; font-size: 0.85em; }
+    @media (max-width: 520px) {
+      .feat-head { padding: 10px 14px; gap: 10px; }
+      .feat-body { padding: 0 14px; }
+      .feat-key code { padding: 1px 5px; }
+    }
+
+    /* "Why the restart?": plain grey fine print that drops in under the toggle
+       (grid-rows 0fr→1fr animates to its natural height). */
+    .why-note {
+      display: grid;
+      grid-template-rows: 0fr;
+      opacity: 0;
+      transform: translateY(-6px);
+      font-size: 0.82em;
+      color: var(--muted);
+      transition: grid-template-rows 0.3s ease, opacity 0.25s ease, transform 0.3s ease;
+    }
+    .why-note > div { overflow: hidden; min-height: 0; }
+    .why-note > div > :last-child { margin-bottom: 16px; }
+    .why-note strong { color: inherit; }
+    .why-note.open { grid-template-rows: 1fr; opacity: 1; transform: none; }
+    @media (prefers-reduced-motion: reduce) { .why-note { transition: none; } }
+    .why-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0 0 14px;
+      padding: 0;
+      font: inherit;
+      font-size: 0.85em;
+      color: var(--muted);
+      background: none;
+      border: 0;
+      cursor: pointer;
+    }
+    .why-toggle svg { width: 1.1em; height: 1.1em; flex: none; display: block; }
+    .why-toggle:hover, .why-toggle[aria-expanded="true"] { color: color-mix(in srgb, var(--muted) 75%, var(--text)); }
+    .alert-fine .markdown-alert-title { font-size: 1.05em; }
+
+    /* About Janki: lead line, three cards, full essay behind a toggle. */
+    .about-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 18px 0;
+    }
+    .about-card {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 16px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+    .about-card span { font-size: 0.92em; color: var(--muted); line-height: 1.45; }
+    @media (max-width: 680px) { .about-cards { grid-template-columns: 1fr; } }
+    .about-quote { margin-top: 22px; text-align: center; color: var(--muted); }
 
     /* Preview phase: only the title, tagline and mock show, with an arrow below
        the mock; clicking it (or scrolling / swiping down) reveals the rest. */
@@ -1428,6 +1583,20 @@
     body.preview-mode .more-arrow:hover { opacity: 1; }
     body.preview-mode .more-arrow ~ * { display: none !important; }
     @keyframes moreBounce { 50% { transform: translateY(5px); } }
+    /* Phones: the preview fills exactly one screen. Title + tagline at the top,
+       the leftover height split evenly above the mock and below the buttons, so
+       the arrow sits near the bottom instead of leaving dead space under it. */
+    @media (max-width: 768px) {
+      body.preview-mode #content > :has(> .anki-mock) {
+        display: flex;
+        flex-direction: column;
+        min-height: calc(100svh - max(10px, env(safe-area-inset-top))
+                                - max(10px, env(safe-area-inset-bottom)));
+      }
+      body.preview-mode #content > :has(> .anki-mock) > * { flex: none; }
+      body.preview-mode #content .anki-mock { margin-top: auto; width: 100%; }
+      body.preview-mode #content .more-arrow { margin: auto auto 6px; }
+    }
     @media (prefers-reduced-motion: reduce) {
       body.preview-mode .more-arrow { animation: none; }
     }
@@ -3037,6 +3206,52 @@ Anki's source.
           });
 
         condenseFeatures(container);
+        condenseAbout(container);
+
+        // The Install section's "why the one-time patch" note: hidden behind a
+        // small "Why the restart?" link; click to show it.
+        container.querySelectorAll("blockquote").forEach(bq => {
+          if (!(/one-time patch/i.test(bq.textContent) && /transparency/i.test(bq.textContent))) return;
+          // Shown as plain grey text (no alert box/title/dismiss) that drops in
+          // under the toggle. A clone sheds the alert's click-to-dismiss listeners.
+          const note = document.createElement("div");
+          note.className = "why-note";
+          const inner = document.createElement("div");
+          const fresh = bq.cloneNode(true);
+          fresh.querySelectorAll(".alert-dismiss, .markdown-alert-title").forEach(el => el.remove());
+          inner.append(...fresh.childNodes);
+          // Its bold "Why the one-time patch + restart?" lead repeats the toggle.
+          const lead = inner.querySelector("strong");
+          if (lead && /^\s*why\b/i.test(lead.textContent)) {
+            const after = lead.nextSibling;
+            lead.remove();
+            if (after && after.nodeType === 3) after.textContent = after.textContent.replace(/^\s+/, "");
+          }
+          note.appendChild(inner);
+          note.setAttribute("aria-hidden", "true");
+          bq.replaceWith(note);
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "why-toggle";
+          btn.setAttribute("aria-expanded", "false");
+          btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" ' +
+            'stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="7"/>' +
+            '<path d="M6.1 5.9a1.95 1.95 0 1 1 2.7 1.8c-.5.22-.8.6-.8 1.15v.15"/>' +
+            '<circle cx="8" cy="11.3" r=".8" fill="currentColor" stroke="none"/></svg><span>Why the restart?</span>';
+          btn.addEventListener("click", () => {
+            const open = !note.classList.contains("open");
+            note.classList.toggle("open", open);
+            note.setAttribute("aria-hidden", String(!open));
+            btn.setAttribute("aria-expanded", String(open));
+          });
+          note.before(btn);
+        });
+
+        // Hide the README's "features are experimental" warning on the site.
+        container.querySelectorAll("blockquote").forEach(bq => {
+          if (/\[!WARNING\]|markdown-alert-warning/i.test(bq.outerHTML) &&
+              /experimental/i.test(bq.textContent)) bq.remove();
+        });
 
         // Make each ## section collapsible via a +/− toggle on the right.
         container
@@ -3158,6 +3373,52 @@ Anki's source.
     // Features: each item collapses to its name (and shortcut, if the README puts
     // one in parentheses after it); clicking expands the full description. The
     // smaller features are grouped under one "Various Quality-of-Life Features".
+    // "About Janki": the README essay is long, so show its opening line, three
+    // at-a-glance cards and the closing quote; the full essay is kept on story/ (unlinked for now).
+    // Text stays in the README untouched.
+    function condenseAbout(root) {
+      const h2 = [...root.querySelectorAll("h2")].find(h => /^\s*about janki\s*$/i.test(h.textContent));
+      if (!h2) return;
+      const nodes = [];
+      for (let n = h2.nextElementSibling; n && n.tagName !== "H2"; n = n.nextElementSibling) nodes.push(n);
+      const paras = nodes.filter(n => n.tagName === "P");
+      if (paras.length < 4) return;
+      const lead = paras[0];
+      const last = nodes[nodes.length - 1];
+      const quote = last.tagName === "P" && /^\s*["“]/.test(last.textContent) ? last : null;
+
+      const CARDS = [
+        ["Understand, don't just memorize",
+         "Rephrased cards and mapped question banks make you reason, not pattern-match."],
+        ["Built around your schedule",
+         "Your class calendar organizes your cards, and your review history shows where you're weakest."],
+        ["Effortless to use",
+         "Focus mode, hotkeys and a faster, modern Anki that just gets out of your way."],
+      ];
+      const grid = document.createElement("div");
+      grid.className = "about-cards";
+      CARDS.forEach(([t, d]) => {
+        const c = document.createElement("div");
+        c.className = "about-card";
+        c.innerHTML = `<strong>${t}</strong><span>${d}</span>`;
+        grid.appendChild(c);
+      });
+
+      // The full essay lives on its own page (story/, currently unlinked); drop it here.
+      nodes.filter(n => n !== lead && n !== quote).forEach(n => n.remove());
+
+      lead.after(grid);
+      if (quote) { quote.classList.add("about-quote"); grid.after(quote); }
+
+      // Show About before Features (the README keeps it near the end).
+      const feat = [...root.querySelectorAll("h2")].find(h => /^\s*features\s*$/i.test(h.textContent));
+      if (feat && feat.parentNode === h2.parentNode) {
+        const block = [];
+        for (let n = h2; n && (n === h2 || n.tagName !== "H2"); n = n.nextElementSibling) block.push(n);
+        block.forEach(n => feat.before(n));
+      }
+    }
+
     function condenseFeatures(root) {
       const QOL = /focus mode|lockdown mode|global hotkeys|pomodoro|tray menu|quick zoom/i;
       const RENAME = {   // site-only display names
@@ -3179,8 +3440,8 @@ Anki's source.
       const titleCase = t => t.split(" ").map((w, i) => w.startsWith(".") ? w :
         w.split("-").map((p, j) => (i || j) && SMALL.has(p.toLowerCase()) ? p :
           p.charAt(0).toUpperCase() + p.slice(1)).join("-")).join(" ");
-      const keyTag = keys => '<span class="feat-key">(' +
-        keys.map(k => `<code>${k}</code>`).join(" / ") + ")</span>";
+      const keyTag = keys => '<span class="feat-key">' +
+        keys.map(k => `<code>${k}</code>`).join("") + "</span>";
       const h2 = [...root.querySelectorAll("h2")].find(h => /^\s*features\s*$/i.test(h.textContent));
       let list = h2 && h2.nextElementSibling;
       while (list && list.tagName !== "UL" && list.tagName !== "H2") list = list.nextElementSibling;
@@ -3196,6 +3457,17 @@ Anki's source.
           const name = li.querySelector("strong");
           const keys = name && KEYS[name.textContent.trim()];
           if (keys) name.insertAdjacentHTML("afterend", " " + keyTag(keys));
+          else if (name) {   // README's own "(<code>…</code>)" after the name → keycaps
+            const n = name.nextSibling, c = n && n.nextSibling;
+            const isKey = el => el && (el.tagName === "CODE" ||
+              (el.tagName === "STRONG" && el.children.length === 1 && el.firstElementChild.tagName === "CODE"));
+            if (n && n.nodeType === 3 && /^\s*\(\s*$/.test(n.textContent) && isKey(c) &&
+                c.nextSibling && /^\s*\)/.test(c.nextSibling.textContent)) {
+              c.nextSibling.textContent = c.nextSibling.textContent.replace(/^\s*\)/, "");
+              n.textContent = " ";
+              c.replaceWith(document.createRange().createContextualFragment(keyTag([c.textContent])));
+            }
+          }
           if (name) name.textContent = titleCase(name.textContent.trim());
           sub.appendChild(li);
         });
@@ -3224,16 +3496,16 @@ Anki's source.
         head.className = "feat-head";
         head.setAttribute("aria-expanded", "false");
         head.innerHTML = `<span class="feat-name">${RENAME[m[1].trim()] || titleCase(m[1].trim())}</span>` +
-          (m[2] ? `<span class="feat-key">${m[2]}</span>`
+          (m[2] ? `<span class="feat-key">${m[2].trim().replace(/^\(|\)$/g, "").replace(/\s*(\/|,)\s*(?=<code)/g, "")}</span>`
             : KEYS[m[1].trim()] ? keyTag(KEYS[m[1].trim()]) : "") +
-          '<span class="feat-chev">+</span>';
+          '<svg class="feat-chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" ' +
+          'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>';
         head.addEventListener("click", () => {
           const open = !li.classList.contains("open");
           body.style.maxHeight = body.scrollHeight + "px";
           void body.offsetHeight;
           li.classList.toggle("open", open);
           head.setAttribute("aria-expanded", String(open));
-          head.lastChild.textContent = open ? "−" : "+";
           if (open) {
             // Let it grow freely once open (videos/images load after the measure).
             body.addEventListener("transitionend", function done(e) {
@@ -3294,8 +3566,11 @@ Anki's source.
       const arrow = document.querySelector(".more-arrow");
       if (window.__previewDone || !arrow) return;
       window.__previewDone = true;
-      const top = arrow.getBoundingClientRect().top + window.scrollY;
+      const mock = arrow.previousElementSibling;
       document.body.classList.remove("preview-mode");
+      // Measure after the preview layout is gone (on phones it spreads the mock
+      // and arrow over the full screen height).
+      const top = (mock ? mock.getBoundingClientRect().bottom : arrow.getBoundingClientRect().top) + window.scrollY;
       document.querySelectorAll(".more-arrow ~ *").forEach(el => el.classList.add("fade-in"));
       arrow.remove();
       window.scrollTo({ top: top - 12, behavior: "smooth" });
@@ -3305,6 +3580,33 @@ Anki's source.
     // a reviewer with Janki's real behaviours — cloze reveal, grading by where you
     // click (Again/Hard/Good/Easy left→right, with the grade-colour flare), the
     // card-timer ring + red edge glow, rephrase ↔ original, and practice questions.
+    // The release ships a separate Windows build; everyone else gets the macOS one.
+    function isWindows() {
+      const p = (navigator.userAgentData && navigator.userAgentData.platform) ||
+        navigator.platform || navigator.userAgent || "";
+      return /\bwin/i.test(p);
+    }
+    function dlFile() {
+      return isWindows() ? "janki-windows.ankiaddon" : "janki.ankiaddon";
+    }
+    // Tiny badge on the Download button's corner showing which build it gives you.
+    function osBadge() {
+      const win = isWindows();
+      const label = win ? "Windows build" : "macOS build";
+      const glyph = win
+        ? '<path d="M3 5.2l7-1v7.3H3zM11 4l10-1.5v9H11zM3 12.5h7v7.3l-7-1zM11 12.5h10v9L11 20z" fill="currentColor"/>'
+        : '<path d="M12 7.4c-1.4-1-4.4-1.3-6 1.1-1.7 2.6-.7 7.1 1.4 9.5 1 1.2 2 1.7 3 1.1.8-.4 2.4-.4 3.2 0 1 .6 2 .1 3-1.1 2.1-2.4 3.1-6.9 1.4-9.5C16.4 6.1 13.4 6.4 12 7.4z' +
+          'M12.1 6.6c0-2.1 1.4-3.6 3.1-3.9 0 2-1.4 3.6-3.1 3.9z" fill="currentColor"/>';
+      // Apple devices: the real logo from Apple's own system font (U+F8FF), drawn
+      // by the device; nothing of Apple's is shipped. Elsewhere that code point is
+      // an empty box, so other platforms keep the drawn glyph.
+      const p = (navigator.userAgentData && navigator.userAgentData.platform) ||
+        navigator.platform || navigator.userAgent || "";
+      if (!win && /mac|iphone|ipad|ipod/i.test(p))
+        return `<span class="mk-os mk-os-apple" title="${label}" aria-label="${label}">\uF8FF</span>`;
+      return `<span class="mk-os" title="${label}" aria-label="${label}"><svg viewBox="0 0 24 24" aria-hidden="true">${glyph}</svg></span>`;
+    }
+
     function buildAnkiMock() {
       const GRADES = ["#ff5c5c", "#ffa63d", "#35d073", "#4d9dff"];
       const GRADE_NAMES = ["Again", "Hard", "Good", "Easy"];
@@ -3477,9 +3779,9 @@ Anki's source.
             "<small>Click to return to your decks.</small></p></div>" +
           '<div class="mk-edge"></div>' +
         "</div>" +
-        '<div class="mk-caption"><button type="button" class="mk-tour-replay">Take the tour</button>' +
-          '<a class="mk-dl" href="https://github.com/cjreplogle/janki/releases/latest/download/janki.ankiaddon">' +
-          'Download Janki</a></div>';
+        '<div class="mk-caption"><button type="button" class="mk-tour-replay"><svg class="mk-cta-ico mk-ico-play" viewBox="5.8 3.8 13.6 16.4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5l11.2 7L7 19z" fill="currentColor"/></svg><span class="mk-cta-label">Take the tour</span></button>' +
+          `<a class="mk-dl" href="https://github.com/cjreplogle/janki/releases/latest/download/${dlFile()}">` +
+          '<svg class="mk-cta-ico mk-ico-dl" viewBox="3.6 2.6 16.8 18.8" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v10.5M7 9.5l5 5 5-5M5 20h14"/></svg><span class="mk-cta-label">Download Janki</span>' + osBadge() + '</a></div>';
 
       const win = mock.querySelector(".mk-win");
       const $ = sel => win.querySelector(sel);
@@ -4216,18 +4518,27 @@ Anki's source.
       });
       mock.addEventListener("click", e => {
         if (e.target.closest(".mk-tour-replay")) showStep(0);
+        // Download without leaving the page: a hidden iframe fetches the release file
+        // (served as an attachment), so the browser saves it and the site stays put.
+        const dl = e.target.closest(".mk-dl");
+        if (dl && !e.metaKey && !e.ctrlKey && !e.shiftKey && e.button === 0) {
+          e.preventDefault();
+          let f = document.getElementById("dl-frame");
+          if (!f) {
+            f = document.createElement("iframe");
+            f.id = "dl-frame";
+            f.hidden = true;
+            document.body.appendChild(f);
+          }
+          f.src = dl.href;
+          const lbl = dl.querySelector(".mk-cta-label");
+          if (lbl && !dl.__busy) {
+            dl.__busy = true;
+            lbl.textContent = "Downloading…";
+            setTimeout(() => { lbl.textContent = "Download Janki"; dl.__busy = false; }, 2500);
+          }
+        }
       });
-
-      let toured = false;
-      try { toured = !!localStorage.getItem("jankiTourDone"); } catch (e) {}
-      if (!toured && "IntersectionObserver" in window) {
-        const io = new IntersectionObserver(entries => {
-          if (!entries.some(en => en.isIntersecting)) return;
-          io.disconnect();
-          setTimeout(() => { if (tourStep < 0) showStep(0); }, 500);
-        }, { threshold: 0.6 });
-        io.observe(win);
-      }
 
       renderDecks();
       return mock;
@@ -4337,10 +4648,11 @@ Anki's source.
         // Wash the whole screen in the grade colour — faint in the centre, glowing
         // toward every border — so it reads as the card flashing the grade.
         f.style.background =
-          "radial-gradient(ellipse at center, " + c + "17 0%, " + c + "4d 50%, " + c + "99 100%)";
+          "radial-gradient(ellipse at center, " + c + "1f 0%, " + c + "66 50%, " + c + "c7 100%)";
         document.body.appendChild(f);
         setTimeout(() => f.remove(), 650);
       }
+
 
       // Tap detection via pointer events (window "click" is unreliable for taps on
       // plain elements in iOS Safari). A short press with little movement = a tap.
@@ -4452,8 +4764,10 @@ Anki's source.
       window.__taglineGen = (window.__taglineGen || 0) + 1;
       const gen = window.__taglineGen;
 
-      para.style.minHeight = para.offsetHeight + "px";
-
+      // Smooth reveal: the whole line is laid out from the start (no reflow as it
+      // grows); every character sits in its own span and fades in on a timeline
+      // driven by requestAnimationFrame, so it advances every display refresh
+      // (60/120Hz) and stays on schedule even if a frame is dropped.
       const walker = document.createTreeWalker(target, NodeFilter.SHOW_TEXT);
       const nodes = [];
 
@@ -4461,48 +4775,30 @@ Anki's source.
         nodes.push({ node: walker.currentNode, text: walker.currentNode.textContent });
       }
 
-      nodes.forEach(n => { n.node.textContent = ""; });
+      const FADE = 140;            // ms each character takes to fade in
+      const chars = [];            // { el, at } — at = ms after start
+      let t = 0;
+      let pendingCloze = null;     // reveal fn for the mock cloze, run after the line
 
-      let ni = 0;
-      let ci = 0;
-      let pendingCloze = null;   // reveal fn for the mock cloze, run after the line
-
-      function step() {
-        if (gen !== window.__taglineGen) return;   // a newer render superseded us
-        while (ni < nodes.length && ci >= nodes[ni].text.length) {
-          ni += 1;
-          ci = 0;
-        }
-
-        if (ni >= nodes.length) {
-          para.style.minHeight = "";
-          const reveal = pendingCloze;
-          pendingCloze = null;
-          if (reveal) {
-            // In the mobile card intro, hold the answer until the card is tapped
-            // (act like a real cloze). Otherwise reveal automatically.
-            if (document.body.classList.contains("card-mode") && !window.__clozeWantReveal) {
-              window.__clozeReveal = reveal;
-            } else {
-              window.__clozeWantReveal = false;
-              setTimeout(reveal, 450);
-            }
-          }
-          return;
-        }
-
-        const n = nodes[ni];
-
-        // The "Anki" link plays a mock cloze: a blue [...] blank while the line types
-        // on, then the answer is revealed in place once the line finishes (Janki's
-        // cloze colour + text-reveal fade).
+      nodes.forEach(n => {
+        const frag = document.createDocumentFragment();
+        const add = (str, gap) => {
+          const el = document.createElement("span");
+          el.textContent = str;
+          el.style.opacity = "0";
+          frag.appendChild(el);
+          chars.push({ el, at: t });
+          t += gap;
+        };
         const link = n.node.parentElement && n.node.parentElement.closest("a");
 
-        if (ci === 0 && link && n.text.trim() === "Anki") {
+        // The "Anki" link plays a mock cloze: a blue [...] blank while the line
+        // types on, then the answer is revealed in place once the line finishes
+        // (Janki's cloze colour + text-reveal fade).
+        if (link && n.text.trim() === "Anki") {
           link.classList.add("cloze-mock");
-          n.node.textContent = "[...]";
-          ci = n.text.length;
-
+          add("[...]", 90);
+          n.cloze = true;
           pendingCloze = () => {
             const span = document.createElement("span");
             span.className = "cloze-reveal";
@@ -4510,20 +4806,54 @@ Anki's source.
             n.node.textContent = "";
             link.appendChild(span);
           };
-          setTimeout(step, 90);
-          return;
+        } else {
+          for (const ch of n.text) {
+            // Short pause on punctuation, near-instant on whitespace (source line breaks).
+            add(ch, /[.,]/.test(ch) ? 70 : (/\s/.test(ch) ? 6 : 13));
+          }
         }
+        n.spans = frag;
+        n.node.textContent = "";
+        n.node.parentNode.insertBefore(frag, n.node);
+      });
 
-        ci += 1;
-        n.node.textContent = n.text.slice(0, ci);
+      const total = t + FADE;
 
-        // Short pause on punctuation, near-instant on whitespace (source line breaks).
-        const ch = n.text[ci - 1];
-        const delay = /[.,]/.test(ch) ? 70 : (/\s/.test(ch) ? 6 : 13);
-        setTimeout(step, delay);
+      function finish() {
+        // Swap the spans back for plain text nodes (the cloze keeps its blank).
+        chars.forEach(c => c.el.remove());
+        nodes.forEach(n => { n.node.textContent = n.cloze ? "[...]" : n.text; });
+        const reveal = pendingCloze;
+        pendingCloze = null;
+        if (reveal) {
+          // In the mobile card intro, hold the answer until the card is tapped
+          // (act like a real cloze). Otherwise reveal automatically.
+          if (document.body.classList.contains("card-mode") && !window.__clozeWantReveal) {
+            window.__clozeReveal = reveal;
+          } else {
+            window.__clozeWantReveal = false;
+            setTimeout(reveal, 450);
+          }
+        }
       }
 
-      setTimeout(step, 350);   // let the page fade-in land first
+      let start = 0, next = 0;   // chars before `next` are fully shown
+      function frame(now) {
+        if (gen !== window.__taglineGen) return;   // a newer render superseded us
+        if (!start) start = now;
+        const el = now - start;
+        for (let i = next; i < chars.length; i++) {
+          const c = chars[i];
+          if (c.at > el) break;
+          const k = Math.min(1, (el - c.at) / FADE);
+          c.el.style.opacity = k >= 1 ? "" : (k * (2 - k)).toFixed(3);   // ease-out
+          if (k >= 1 && i === next) next++;
+        }
+        if (el >= total) { finish(); return; }
+        requestAnimationFrame(frame);
+      }
+
+      setTimeout(() => requestAnimationFrame(frame), 350);   // let the page fade-in land first
     }
   </script>
 
