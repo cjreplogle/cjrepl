@@ -3438,15 +3438,6 @@ Anki's source.
           heading.appendChild(repoLink);
         }
 
-        // The cjre.pl/ogle mark lives fixed at the top-right (see .corner-mark),
-        // so drop the baked footer copy from the bottom of the content.
-        const footerLink =
-          container.querySelector('a[href*="cjre.pl/ogle"]');
-
-        if (footerLink && footerLink.parentElement) {
-          footerLink.parentElement.remove();
-        }
-
         container.classList.add("fade-in");
 
         document
@@ -3504,7 +3495,11 @@ Anki's source.
       if (quote) {
         quote.classList.add("about-quote");
         quote.innerHTML = "<em>\u201CI sincerely hope this tool helps you succeed.\u201D</em>";
-        grid.after(quote);
+        // Closing line sits at the very bottom, just above the README's
+        // cjre.pl/ogle footer link when that's still on the page.
+        const foot = [...root.querySelectorAll("p")].reverse()
+          .find(p => /^\s*cjre\.pl\/ogle\s*$/.test(p.textContent));
+        if (foot) foot.before(quote); else root.appendChild(quote);
       }
 
       // Show About before Features (the README keeps it near the end).
