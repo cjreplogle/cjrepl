@@ -27,8 +27,8 @@
       position: relative; z-index: 1;
       max-width: 560px; margin: 0 auto;
       padding: 0 28px;
-      min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
-      padding-top: 15vh;
+      min-height: 100vh; display: flex; flex-direction: column;
+      padding-top: 14vh; padding-bottom: 96px;
     }
 
     /* Chrome fades out when typing */
@@ -54,8 +54,13 @@
     /* Post view */
     #post-view { flex: 1; display: flex; flex-direction: column; }
 
+    .composer-label {
+      font-size: 0.75rem; opacity: 0.3; letter-spacing: 0.04em; margin: 0 0 12px;
+    }
     #body {
-      flex: 1; min-height: 220px;
+      min-height: 7.5em; max-height: 60vh; overflow-y: auto;
+      padding: 0 0 14px; border-bottom: 1px solid rgba(255,255,255,0.1);
+      transition: border-color 0.2s;
       background: none; border: none;
       color: #fff; font-family: Georgia, serif; font-size: 1.05rem;
       line-height: 1.7; resize: none; outline: none;
@@ -63,16 +68,15 @@
       width: 100%;
     }
     #body::placeholder { color: rgba(255,255,255,0.15); }
+    #body:focus { border-bottom-color: rgba(255,255,255,0.28); }
+    html.bg-white #body { border-bottom-color: rgba(0,0,0,0.12); }
 
     /* Bottom bar */
     .actions {
       display: flex; align-items: center; gap: 20px;
       transition: opacity 0.4s ease;
     }
-    #post-view .actions {
-      position: fixed; bottom: 24px;
-      left: max(28px, calc(50vw - 252px));
-    }
+    #post-view .actions { margin-top: 14px; min-height: 32px; }
     body.typing #post-view .actions { opacity: 0.12; }
     body.typing #post-view .actions:hover { opacity: 1; }
 
@@ -93,16 +97,20 @@
     #wordcount { font-size: 0.75rem; opacity: 0.2; margin-left: auto; transition: opacity 0.2s; }
     #wordcount.active { opacity: 0.45; }
 
-    #status { font-size: 0.8rem; opacity: 0.45; margin: 0; }
+    .status { font-size: 0.8rem; opacity: 0.45; margin: 0; }
+    .status.err { color: #e88 !important; opacity: 0.8; }
 
     /* Past ruminations (private, read-only) */
-    #past { margin: 64px 0 96px; }
+    #past { margin: 72px 0 0; }
     #past .past-head {
       font-size: 0.75rem; opacity: 0.3; letter-spacing: 0.04em;
       margin: 0 0 20px; text-transform: lowercase;
     }
-    #past .entry { margin: 0 0 26px; }
-    #past .entry .date { font-size: 0.72rem; opacity: 0.32; margin: 0 0 5px; }
+    #past .entry {
+      padding: 22px 0; border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    html.bg-white #past .entry { border-top-color: rgba(0,0,0,0.08); }
+    #past .entry .date { font-size: 0.72rem; opacity: 0.32; margin: 0 0 8px; letter-spacing: 0.03em; }
     #past .entry .text {
       font-size: 0.98rem; line-height: 1.6; margin: 0; white-space: pre-wrap;
       opacity: 0.82;
@@ -133,18 +141,18 @@
            onkeydown="if(event.key==='Enter')login()">
     <div class="actions" style="margin-top:28px;position:relative">
       <button class="btn primary" onclick="login()">sign in</button>
-      <p id="status"></p>
+      <p class="status"></p>
     </div>
   </div>
 
   <div id="post-view" style="display:none">
-    <p style="font-size:0.82rem;opacity:0.3;margin:0 0 10px;letter-spacing:0.03em">new rumination</p>
-    <textarea id="body" placeholder="write something…" spellcheck="false"
+    <p class="composer-label">new rumination</p>
+    <textarea id="body" rows="4" placeholder="write something…" spellcheck="false"
               oninput="onType()" onblur="stopTyping()"></textarea>
     <div class="actions">
       <button class="btn primary" onclick="publish()">publish</button>
       <span class="hint"><kbd>tab</kbd> + <kbd>enter</kbd></span>
-      <p id="status"></p>
+      <p class="status"></p>
       <span id="wordcount">0w</span>
     </div>
     <div id="past"></div>
@@ -273,10 +281,19 @@
   const WORKER_URL = 'https://ruminations-worker.cjreplogle.workers.dev';
   const KEY = 'ruminations_authed';
 
-  const statusEl = document.getElementById('status');
+  // One status line per view (login / post); write to both so the visible one shows it.
   function setStatus(msg, type) {
-    statusEl.textContent = msg;
-    statusEl.className = type || '';
+    document.querySelectorAll('.status').forEach(el => {
+      el.textContent = msg;
+      el.className = 'status ' + (type || '');
+    });
+  }
+
+  // Grow the textarea with its content (capped by max-height in CSS).
+  function autoGrow() {
+    const ta = document.getElementById('body');
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
   }
 
   // Tab+Enter to publish
@@ -298,6 +315,7 @@
     document.body.classList.add('typing');
     clearTimeout(_typingTimer);
     _typingTimer = setTimeout(stopTyping, 1500);
+    autoGrow();
     const words = document.getElementById('body').value.trim().split(/\s+/).filter(Boolean).length;
     const wc = document.getElementById('wordcount');
     wc.textContent = words + 'w';
@@ -370,6 +388,7 @@
       if (data.ok) {
         setStatus('published', 'ok');
         document.getElementById('body').value = '';
+        autoGrow();
         document.getElementById('wordcount').textContent = '0w';
         document.getElementById('wordcount').className = '';
         stopTyping();
