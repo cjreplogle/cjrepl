@@ -8,7 +8,7 @@
     *, *::before, *::after { box-sizing: border-box; }
     /* min-height, not height: a fixed 100% body ended its background one screen
        down, so long pages showed a hard dark band below that point. */
-    html, body { margin: 0; padding: 0; min-height: 100%; background: #111; color: #fff; font-family: Georgia, serif; transition: background 0.3s ease, color 0.3s ease; }
+    html, body { margin: 0; padding: 0; min-height: 100%; background: #000; color: #fff; font-family: Georgia, serif; transition: background 0.3s ease, color 0.3s ease; }
     html.bg-white, html.bg-white body, html.bg-white button, html.bg-white a,
     html.bg-white textarea, html.bg-white span, html.bg-white h2 { color: #111 !important; }
 
@@ -34,8 +34,15 @@
     }
 
     /* Chrome fades out when typing */
-    #chrome { transition: opacity 0.4s ease; }
+    /* Typing fades the surrounding UI: slow and eased, with a short delay so a
+       single keystroke doesn't flicker it; coming back is a little quicker. */
+    :root { --ease: cubic-bezier(0.22, 0.61, 0.36, 1); }
+    #chrome, #modes, .actions { transition: opacity 0.6s var(--ease); }
+    body.typing #chrome, body.typing #modes, body.typing #post-view .actions {
+      transition: opacity 1.1s var(--ease) 0.25s;
+    }
     body.typing #chrome { opacity: 0; pointer-events: none; }
+    body.signed-in #chrome { display: none; }
 
     #chrome h2 {
       font-size: 0.85rem; font-weight: normal; opacity: 0.35;
@@ -56,11 +63,8 @@
     /* Post view */
     #post-view { flex: 1; display: flex; flex-direction: column; }
 
-    .composer-label {
-      font-size: 0.75rem; opacity: 0.3; letter-spacing: 0.04em; margin: 0 0 12px;
-    }
     #body {
-      min-height: 7.5em; max-height: 60vh; overflow-y: auto;
+      max-height: 60vh; overflow-y: auto;   /* min height comes from autoGrow, so it can animate */
       padding: 0 0 14px; border-bottom: 1px solid rgba(255,255,255,0.1);
       transition: border-color 0.2s;
       background: none; border: none;
@@ -69,14 +73,49 @@
       caret-color: rgba(255,255,255,0.8);
       width: 100%;
     }
+    #body { transition: height 0.18s var(--ease), border-color 0.2s; }
+    body.mode-shift #body { transition: height 0.45s var(--ease); }
+    #wordcount { transition: opacity 0.4s var(--ease); }
     #body::placeholder { color: rgba(255,255,255,0.15); }
     #body:focus { border-bottom-color: rgba(255,255,255,0.28); }
     html.bg-white #body { border-bottom-color: rgba(0,0,0,0.12); }
 
+    /* Smooth editor: the textarea keeps input, selection and undo, but its own
+       glyphs and caret are invisible. A mirror underneath draws the text (new
+       letters ease in) and a drawn caret glides between positions. */
+    .ed-wrap { position: relative; }
+    #body, html.bg-white #body { color: transparent !important; caret-color: transparent; scrollbar-width: none; }
+    #body::-webkit-scrollbar { display: none; }
+    #body::selection { background: rgba(255,255,255,0.22); color: transparent; }
+    html.bg-white #body::selection { background: rgba(0,0,0,0.14); }
+    #ed-mirror {
+      position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+      white-space: pre-wrap; overflow-wrap: break-word; word-wrap: break-word;
+      color: #fff;
+    }
+    #ed-mirror .fresh { animation: ed-in 0.22s var(--ease) both; display: inline; }
+    @keyframes ed-in {
+      from { opacity: 0; filter: blur(1.5px); }
+      to   { opacity: 1; filter: blur(0); }
+    }
+    #ed-caret {
+      position: absolute; left: 0; top: 0; width: 1.5px; border-radius: 1px;
+      background: rgba(255,255,255,0.85); pointer-events: none; opacity: 0;
+      transition: transform 0.11s var(--ease), height 0.11s var(--ease), opacity 0.15s;
+      will-change: transform;
+    }
+    html.bg-white #ed-caret { background: rgba(0,0,0,0.75); }
+    #ed-caret.on { opacity: 1; }
+    #ed-caret.on.idle { animation: ed-blink 1.1s ease-in-out 0.4s infinite; }
+    @keyframes ed-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      #ed-mirror .fresh { animation: none; }
+      #ed-caret { transition: opacity 0.15s; }
+    }
+
     /* Bottom bar */
     .actions {
       display: flex; align-items: center; gap: 20px;
-      transition: opacity 0.4s ease;
     }
     #post-view .actions { margin-top: 14px; min-height: 32px; }
     body.typing #post-view .actions { opacity: 0.12; }
@@ -102,8 +141,137 @@
     .status { font-size: 0.8rem; opacity: 0.45; margin: 0; }
     .status.err { color: #e88 !important; opacity: 0.8; }
 
+    /* Mode bar: ruminations | writing on the left, write | read on the right. */
+    #modes {
+      display: flex; justify-content: space-between; align-items: center;
+      margin: 0 0 40px;
+    }
+    body.typing #modes { opacity: 0.12; }
+    body.typing #modes:hover { opacity: 1; }
+    .seg { display: flex; gap: 2px; }
+    .seg button {
+      font: inherit; font-size: 0.82rem; letter-spacing: 0.03em; color: inherit;
+      background: none; border: none; cursor: pointer;
+      padding: 4px 10px; border-radius: 3px; opacity: 0.32;
+      transition: opacity 0.2s, background 0.2s;
+    }
+    .seg button:hover { opacity: 0.7; }
+    .seg button.on { opacity: 0.9; }
+    .seg button:first-child { padding-left: 0; }
+    #view-toggle { padding-right: 0; }
+    #view-toggle.plus { font-size: 1.25rem; line-height: 1; padding-top: 0; padding-bottom: 2px; }
+
+    #write-pane, #read-pane { display: none; }
+    body.view-write #write-pane { display: block; }
+    body.view-read  #read-pane  { display: block; }
+
+    /* Writing: a wider column and a calmer, bigger page for long pieces. */
+    /* Switching ruminations ↔ writing glides: column width, the title/collection
+       fields and the text box height all ease together, so publish travels
+       continuously instead of jumping. */
+    #wrap { transition: max-width 0.45s var(--ease); }
+    .writing-fields {
+      display: grid; grid-template-rows: 0fr; opacity: 0;
+      transition: grid-template-rows 0.45s var(--ease), opacity 0.35s var(--ease);
+    }
+    .writing-fields > div { min-height: 0; overflow: hidden; }
+    body.kind-writing .writing-fields { grid-template-rows: 1fr; opacity: 1; }
+    body.kind-writing #wrap { max-width: 800px; }
+    #title {
+      display: none; width: 100%; background: none; border: none; outline: none;
+      color: #fff; font-family: Georgia, serif; font-size: 1.7rem; line-height: 1.3;
+      padding: 0 0 14px; caret-color: rgba(255,255,255,0.8);
+    }
+    #title::placeholder { color: rgba(255,255,255,0.15); }
+    #title { display: block; }
+    body.kind-writing #body {
+      font-size: 1.15rem; line-height: 1.85;
+      max-height: none; overflow-y: hidden;
+    }
+
+    /* Writing index + single piece */
+    .piece-row {
+      display: block; width: 100%; text-align: left; cursor: pointer;
+      font: inherit; color: inherit; background: none; border: none;
+      padding: 18px 0; border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    html.bg-white .piece-row { border-top-color: rgba(0,0,0,0.08); }
+    .piece-row .t { display: block; font-size: 1.15rem; opacity: 0.9; transition: opacity 0.2s; }
+    .piece-row:hover .t { opacity: 1; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+    .piece-row .m { display: block; font-size: 0.72rem; opacity: 0.32; margin-top: 6px; letter-spacing: 0.03em; }
+    .piece-row .x { display: block; font-size: 0.92rem; opacity: 0.5; margin-top: 8px; line-height: 1.5; }
+    #piece .back {
+      font: inherit; font-size: 0.8rem; color: inherit; background: none; border: none;
+      cursor: pointer; padding: 0; opacity: 0.35; margin: 0 0 28px;
+    }
+    #piece .back:hover { opacity: 0.7; }
+    #piece h1 { font-weight: normal; font-size: 1.9rem; line-height: 1.25; margin: 0 0 10px; }
+    #piece .m { font-size: 0.75rem; opacity: 0.35; margin: 0 0 36px; letter-spacing: 0.03em; }
+    #piece .text { font-size: 1.12rem; line-height: 1.85; white-space: pre-wrap; opacity: 0.88; margin: 0; }
+    .empty { font-size: 0.9rem; opacity: 0.35; }
+    #search {
+      width: 100%; background: none; border: none; outline: none;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      color: inherit; font-family: Georgia, serif; font-size: 0.9rem;
+      padding: 0 0 8px; margin: 0 0 22px; transition: border-color 0.3s var(--ease);
+    }
+    #search:focus { border-bottom-color: rgba(255,255,255,0.25); }
+    #search::placeholder { color: rgba(255,255,255,0.25); }
+    html.bg-white #search { border-bottom-color: rgba(0,0,0,0.1); }
+    /* The search field's underline is the divider above the first result. */
+    #past > .entry:first-child, #past > .piece-row:first-child,
+    #past > .group-head:first-child + .piece-row { border-top: none; padding-top: 4px; }
+    mark { background: rgba(255,214,120,0.28); color: inherit; border-radius: 2px; padding: 0 1px; }
+
+    /* Collections: small field under the title; filter row on the writing list. */
+    #collection {
+      display: none; width: 100%; background: none; border: none; outline: none;
+      color: #fff; font-family: Georgia, serif; font-size: 0.82rem; letter-spacing: 0.03em;
+      padding: 0 0 22px; opacity: 0.5;
+    }
+    #collection:focus { opacity: 0.85; }
+    #collection::placeholder { color: rgba(255,255,255,0.35); }
+    #collection { display: block; }
+    .coll-wrap { position: relative; display: block; }
+    .tools .coll-wrap { display: inline-block; }
+    .coll-hint {
+      position: absolute; right: 0; top: 0; font-size: 0.75rem; opacity: 0.4;
+      pointer-events: none; white-space: nowrap;
+    }
+    #filters { display: flex; flex-wrap: wrap; gap: 2px 4px; margin: 0 0 18px; }
+    #filters button {
+      font: inherit; font-size: 0.78rem; color: inherit; background: none; border: none;
+      cursor: pointer; padding: 3px 8px; opacity: 0.32; transition: opacity 0.2s;
+    }
+    #filters button:first-child { padding-left: 0; }
+    #filters button:hover { opacity: 0.7; }
+    #filters button.on { opacity: 0.9; }
+    .group-head {
+      font-size: 0.72rem; opacity: 0.32; letter-spacing: 0.04em;
+      margin: 30px 0 4px;
+    }
+    .group-head:first-child { margin-top: 0; }
+
+    /* Piece tools: edit · move · delete */
+    .tools { display: flex; align-items: center; gap: 14px; margin: -22px 0 36px; font-size: 0.78rem; }
+    .tools button {
+      font: inherit; color: inherit; background: none; border: none; padding: 0;
+      cursor: pointer; opacity: 0.35; transition: opacity 0.2s;
+    }
+    .tools button:hover { opacity: 0.8; }
+    .tools input {
+      font: inherit; color: inherit; background: none; border: none; outline: none;
+      border-bottom: 1px solid rgba(255,255,255,0.25); width: 160px; padding: 0 0 2px;
+    }
+    .tools .danger { color: #e88; opacity: 0.7; }
+    #edit-note { font-size: 0.75rem; opacity: 0.4; margin: 0 0 14px; }
+    #edit-note button {
+      font: inherit; color: inherit; background: none; border: none; padding: 0;
+      cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+    }
+
     /* Past ruminations (private, read-only) */
-    #past { margin: 72px 0 0; }
+    #past { margin: 0; }
     #past .past-head {
       font-size: 0.75rem; opacity: 0.3; letter-spacing: 0.04em;
       margin: 0 0 20px; text-transform: lowercase;
@@ -148,16 +316,45 @@
   </div>
 
   <div id="post-view" style="display:none">
-    <p class="composer-label">new rumination</p>
-    <textarea id="body" rows="4" placeholder="write something…" spellcheck="false"
-              oninput="onType()" onblur="stopTyping()"></textarea>
-    <div class="actions">
-      <button class="btn primary" onclick="publish()">publish</button>
-      <span class="hint"><kbd>tab</kbd> + <kbd>enter</kbd></span>
-      <p class="status"></p>
-      <span id="wordcount">0w</span>
-    </div>
-    <div id="past"></div>
+    <nav id="modes">
+      <div class="seg" id="kind-seg">
+        <button data-kind="rumination" onclick="setKind('rumination')">ruminations</button>
+        <button data-kind="writing" onclick="setKind('writing')">writing</button>
+      </div>
+      <div class="seg">
+        <button id="view-toggle" onclick="setView(state.view === 'write' ? 'read' : 'write')" class="plus">←</button>
+      </div>
+    </nav>
+
+    <section id="write-pane">
+      <p id="edit-note" hidden>editing · <button onclick="cancelEdit()">cancel</button></p>
+      <div class="writing-fields"><div>
+        <input id="title" placeholder="title" spellcheck="false" autocomplete="off" oninput="saveDraft()">
+        <div class="coll-wrap">
+          <input id="collection" placeholder="collection" spellcheck="false" autocomplete="off" oninput="saveDraft()">
+          <span class="coll-hint"></span>
+        </div>
+      </div></div>
+      <div class="ed-wrap">
+        <div id="ed-mirror" aria-hidden="true"></div>
+        <textarea id="body" rows="4" placeholder="write something…" spellcheck="false"
+                  oninput="onType()" onblur="stopTyping()"></textarea>
+        <div id="ed-caret" aria-hidden="true"></div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="publish-btn" onclick="publish()">publish</button>
+        <p class="status"></p>
+        <span id="wordcount"></span>
+      </div>
+    </section>
+
+    <section id="read-pane">
+      <input id="search" type="search" placeholder="search" spellcheck="false" autocomplete="off"
+             oninput="query = this.value; renderRead()">
+      <div id="filters"></div>
+      <div id="past"></div>
+      <article id="piece" hidden></article>
+    </section>
   </div>
 </div>
 
@@ -186,9 +383,9 @@
 
 <script>
   (function() {
-    const bg = localStorage.getItem('siteBg') || 'dark';
+    const bg = localStorage.getItem('siteBg') || 'black';
     const bgMap = { transparent:'transparent', black:'#000', dark:'#111', white:'#fff' };
-    document.documentElement.style.background = bgMap[bg] || '#111';
+    document.documentElement.style.background = bgMap[bg] || '#000';
     document.documentElement.style.colorScheme = bg === 'white' ? 'light' : 'dark';
     document.documentElement.classList.toggle('bg-white', bg === 'white');
   })();
@@ -292,25 +489,257 @@
   }
 
   // Grow the textarea with its content (capped by max-height in CSS).
+  // Measured on an offscreen twin so the real box never collapses to 'auto'
+  // mid-keystroke; that lets its height transition glide line to line.
+  let _twin;
   function autoGrow() {
     const ta = document.getElementById('body');
-    ta.style.height = 'auto';
-    ta.style.height = ta.scrollHeight + 'px';
+    if (!_twin) {
+      _twin = ta.cloneNode(false);
+      _twin.removeAttribute('id');
+      _twin.tabIndex = -1;
+      _twin.setAttribute('aria-hidden', 'true');
+      Object.assign(_twin.style, { position: 'absolute', visibility: 'hidden', pointerEvents: 'none',
+        left: '-9999px', top: '0', height: 'auto', transition: 'none', border: '0', boxSizing: 'border-box' });
+      document.body.appendChild(_twin);
+    }
+    const cs = getComputedStyle(ta);
+    for (const k of ['fontSize', 'lineHeight', 'fontFamily', 'padding', 'letterSpacing'])
+      _twin.style[k] = cs[k];
+    _twin.style.width = ta.clientWidth + 'px';
+    _twin.style.maxHeight = 'none';
+    _twin.value = ta.value + ' ';
+    const max = cs.maxHeight === 'none' ? Infinity : parseFloat(cs.maxHeight);
+    const min = document.body.classList.contains('kind-writing')
+      ? window.innerHeight * 0.55 : parseFloat(cs.fontSize) * 7.5;
+    _twin.style.minHeight = min + 'px';
+    _twin.style.overflow = 'hidden';
+    const border = parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
+    ta.style.height = Math.min(_twin.scrollHeight + border, max) + 'px';
+  }
+  window.addEventListener('resize', () => autoGrow());
+
+  // ---- smooth editor (mirror text + drawn caret) ----
+  const ED = {
+    ta: document.getElementById('body'),
+    mirror: document.getElementById('ed-mirror'),
+    caret: document.getElementById('ed-caret'),
+    prev: '',
+    fresh: [],          // [{ start, end, t }] recently inserted text, still easing in
+    idleTimer: 0,
+  };
+  const FRESH_MS = 220;
+  const MIRROR_PROPS = ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'lineHeight',
+    'letterSpacing', 'wordSpacing', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+    'textIndent', 'tabSize'];
+
+  function edTrack() {
+    // Diff old → new value: one changed span between a common prefix and suffix.
+    const a = ED.prev, b = ED.ta.value;
+    if (a === b) return;
+    let p = 0;
+    const max = Math.min(a.length, b.length);
+    while (p < max && a[p] === b[p]) p++;
+    let q = 0;
+    while (q < max - p && a[a.length - 1 - q] === b[b.length - 1 - q]) q++;
+    const delEnd = a.length - q, insEnd = b.length - q, delta = insEnd - delEnd;
+    const now = performance.now();
+    ED.fresh = ED.fresh.filter(f => now - f.t < FRESH_MS && (f.end <= p || f.start >= delEnd))
+      .map(f => f.start >= delEnd ? { ...f, start: f.start + delta, end: f.end + delta } : f);
+    // Only animate typing-sized insertions; a big paste or a draft load just appears.
+    if (insEnd > p && insEnd - p <= 40) ED.fresh.push({ start: p, end: insEnd, t: now });
+    ED.prev = b;
   }
 
-  // Tab+Enter to publish
-  document.getElementById('body').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && e.target._tabHeld) { e.preventDefault(); publish(); }
-  });
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Tab' && document.getElementById('post-view').style.display !== 'none') {
-      e.preventDefault();
-      document.getElementById('body')._tabHeld = true;
+  function edRender() {
+    const { ta, mirror } = ED;
+    const cs = getComputedStyle(ta);
+    for (const k of MIRROR_PROPS) mirror.style[k] = cs[k];
+    const v = ta.value, now = performance.now();
+    const caretAt = ta.selectionDirection === 'backward' ? ta.selectionStart : ta.selectionEnd;
+    const live = ED.fresh.filter(f => now - f.t < FRESH_MS).sort((x, y) => x.start - y.start);
+    // Cut points: fresh span edges + the caret marker.
+    let html = '', i = 0, marked = false;
+    const emitPlain = (to) => {
+      if (!marked && caretAt >= i && caretAt <= to) {
+        marked = true;
+        html += escapeHtml(v.slice(i, caretAt)) + '<span id="ed-mark">\u200b</span>' + escapeHtml(v.slice(caretAt, to));
+      } else html += escapeHtml(v.slice(i, to));
+      i = to;
+    };
+    for (const f of live) {
+      if (f.start < i) continue;
+      emitPlain(f.start);
+      // negative delay keeps each letter's fade continuous across re-renders
+      html += `<span class="fresh" style="animation-delay:-${Math.round(now - f.t)}ms">${escapeHtml(v.slice(f.start, f.end))}</span>`;
+      i = f.end;
+      if (!marked && caretAt === f.end) { marked = true; html += '<span id="ed-mark">\u200b</span>'; }
     }
+    if (!marked) emitPlain(v.length); else html += escapeHtml(v.slice(i));
+    mirror.innerHTML = html + '\u200b';
+    mirror.scrollTop = ta.scrollTop;
+    edCaret();
+  }
+
+  function edCaret() {
+    const { ta, caret, mirror } = ED;
+    const mark = document.getElementById('ed-mark');
+    const show = document.activeElement === ta && ta.selectionStart === ta.selectionEnd && mark;
+    caret.classList.toggle('on', !!show);
+    if (!show) return;
+    const lh = parseFloat(getComputedStyle(ta).lineHeight) || 24;
+    const fs = parseFloat(getComputedStyle(ta).fontSize) || 16;
+    const h = Math.round(fs * 1.25);
+    const x = mark.offsetLeft;
+    const y = mark.offsetTop - mirror.scrollTop + (mark.offsetHeight - h) / 2;
+    caret.style.height = h + 'px';
+    caret.style.transform = `translate(${x}px, ${y}px)`;
+    // solid while typing/moving, blink after a pause
+    caret.classList.remove('idle');
+    clearTimeout(ED.idleTimer);
+    ED.idleTimer = setTimeout(() => caret.classList.add('idle'), 450);
+  }
+
+  // Coalesce input + selectionchange from one keystroke into a single render,
+  // still within the same frame (no rAF wait, so the caret never lags a key).
+  let _edQueued = false;
+  function edSchedule() {
+    if (_edQueued) return;
+    _edQueued = true;
+    queueMicrotask(() => { _edQueued = false; edTrack(); edRender(); });
+  }
+  ED.ta.addEventListener('input', edSchedule);
+  ED.ta.addEventListener('focus', edSchedule);
+  ED.ta.addEventListener('blur', () => ED.caret.classList.remove('on'));
+  ED.ta.addEventListener('scroll', () => { ED.mirror.scrollTop = ED.ta.scrollTop; edCaret(); });
+  document.addEventListener('selectionchange', () => { if (document.activeElement === ED.ta) edSchedule(); });
+  window.addEventListener('resize', edSchedule);
+  // Value set from code (drafts, edit, publish) doesn't fire 'input': resync without animating.
+  function edReset() { ED.prev = ED.ta.value; ED.fresh = []; edRender(); }
+
+  // Tab chords while signed in: Tab+Enter publish, Tab+1/2 ruminations/writing,
+  // Tab+E flip between write and read.
+  let _tabHeld = false;
+  document.addEventListener('keydown', e => {
+    if (document.getElementById('post-view').style.display === 'none') return;
+    if (e.key === 'Tab') { e.preventDefault(); _tabHeld = true; return; }
+    if (!_tabHeld) return;
+    const k = e.key.toLowerCase();
+    if (k === 'enter' && state.view === 'write') { e.preventDefault(); publish(); }
+    else if (k === '1') { e.preventDefault(); setKind('rumination'); }
+    else if (k === '2') { e.preventDefault(); setKind('writing'); }
+    else if (k === 'e') { e.preventDefault(); setView(state.view === 'write' ? 'read' : 'write'); }
   });
-  document.addEventListener('keyup', e => {
-    if (e.key === 'Tab') document.getElementById('body')._tabHeld = false;
-  });
+  document.addEventListener('keyup', e => { if (e.key === 'Tab') _tabHeld = false; });
+  window.addEventListener('blur', () => { _tabHeld = false; });
+
+  // ---- modes ----
+  const state = {
+    kind: localStorage.getItem('rum_kind') === 'writing' ? 'writing' : 'rumination',
+    view: localStorage.getItem('rum_view') === 'read' ? 'read' : 'write',
+  };
+  let _posts = null;   // cached entries from the worker
+  const kindOf = p => p.kind === 'writing' ? 'writing' : 'rumination';
+
+  function applyModes() {
+    document.body.classList.toggle('kind-writing', state.kind === 'writing');
+    document.body.classList.toggle('view-write', state.view === 'write');
+    document.body.classList.toggle('view-read', state.view === 'read');
+    document.querySelectorAll('#kind-seg button').forEach(b => b.classList.toggle('on', b.dataset.kind === state.kind));
+    const vt = document.getElementById('view-toggle');
+    vt.textContent = state.view === 'write' ? '←' : '+';
+    vt.classList.add('plus');
+    vt.title = state.view === 'write' ? 'past' : 'new';
+    document.getElementById('body').placeholder =
+      state.kind === 'writing' ? 'begin…' : 'write something…';
+    try { localStorage.setItem('rum_kind', state.kind); localStorage.setItem('rum_view', state.view); } catch {}
+    document.body.classList.add('mode-shift');
+    clearTimeout(applyModes._t);
+    applyModes._t = setTimeout(() => {
+      // re-measure at the final column width, then let typing use the quick easing again
+      document.body.classList.remove('mode-shift');
+      autoGrow();
+      if (typeof edSchedule === 'function') edSchedule();
+    }, 480);
+    autoGrow();
+    if (typeof edSchedule === 'function') edSchedule();
+  }
+
+  function setKind(kind) {
+    if (kind === state.kind) { if (state.view === 'read') closePiece(); return; }
+    if (editingId) cancelEdit(true);
+    saveDraft();
+    state.kind = kind;
+    applyModes();
+    loadDraft();
+    renderRead();
+    setStatus('');
+    if (state.view === 'write') focusComposer();
+    window.scrollTo(0, 0);
+  }
+
+  function setView(view) {
+    if (editingId && view === 'read') cancelEdit(true);
+    state.view = view;
+    applyModes();
+    stopTyping();
+    if (view === 'write') focusComposer();
+    else { closePiece(); renderRead(); }
+    window.scrollTo(0, 0);
+  }
+
+  function focusComposer() {
+    setTimeout(() => {
+      const t = document.getElementById('title');
+      const b = document.getElementById('body');
+      (state.kind === 'writing' && !t.value ? t : b).focus();
+    }, 30);
+  }
+
+  // ---- drafts: kept per kind in this browser so switching never loses text ----
+  function saveDraft() {
+    if (editingId) return;   // editing a published piece never overwrites the new-piece draft
+    try {
+      localStorage.setItem('rum_draft_' + state.kind, document.getElementById('body').value);
+      if (state.kind === 'writing') {
+        localStorage.setItem('rum_draft_title', document.getElementById('title').value);
+        localStorage.setItem('rum_draft_collection', document.getElementById('collection').value);
+      }
+    } catch {}
+  }
+  function loadDraft() {
+    let body = '', title = '', coll = '';
+    try {
+      body = localStorage.getItem('rum_draft_' + state.kind) || '';
+      title = localStorage.getItem('rum_draft_title') || '';
+      coll = localStorage.getItem('rum_draft_collection') || '';
+    } catch {}
+    document.getElementById('body').value = body;
+    document.getElementById('title').value = state.kind === 'writing' ? title : '';
+    document.getElementById('collection').value = state.kind === 'writing' ? coll : '';
+    updateCount();
+    autoGrow();
+    edReset();
+  }
+  function clearDraft() {
+    try {
+      localStorage.removeItem('rum_draft_' + state.kind);
+      if (state.kind === 'writing') {
+        localStorage.removeItem('rum_draft_title');
+        localStorage.removeItem('rum_draft_collection');
+      }
+    } catch {}
+  }
+
+  function countWords(s) { return s.trim().split(/\s+/).filter(Boolean).length; }
+  function updateCount() {
+    const words = countWords(document.getElementById('body').value);
+    const wc = document.getElementById('wordcount');
+    wc.textContent = !words ? '' : state.kind === 'writing'
+      ? words.toLocaleString() + ' words · ' + Math.max(1, Math.round(words / 230)) + ' min'
+      : words + (words === 1 ? ' word' : ' words');
+    wc.className = words > 0 ? 'active' : '';
+  }
 
   let _typingTimer;
   function onType() {
@@ -318,10 +747,8 @@
     clearTimeout(_typingTimer);
     _typingTimer = setTimeout(stopTyping, 1500);
     autoGrow();
-    const words = document.getElementById('body').value.trim().split(/\s+/).filter(Boolean).length;
-    const wc = document.getElementById('wordcount');
-    wc.textContent = words + 'w';
-    wc.className = words > 0 ? 'active' : '';
+    updateCount();
+    saveDraft();
   }
   function stopTyping() { document.body.classList.remove('typing'); }
 
@@ -337,6 +764,7 @@
     document.getElementById('login-view').style.display = '';
     document.getElementById('post-view').style.display = 'none';
     document.getElementById('signout-btn').style.display = 'none';
+    document.body.classList.remove('signed-in');
     document.getElementById('token').value = '';
     document.getElementById('past').innerHTML = '';
     setStatus('');
@@ -347,7 +775,10 @@
     document.getElementById('post-view').style.display = 'flex';
     document.getElementById('signout-btn').style.display = '';
     setStatus('');
-    setTimeout(() => document.getElementById('body').focus(), 50);
+    document.body.classList.add('signed-in');
+    applyModes();
+    loadDraft();
+    if (state.view === 'write') focusComposer();
     loadPast();
   }
 
@@ -365,34 +796,362 @@
       const res = await fetch(WORKER_URL, { headers: { Authorization: 'Bearer ' + password } });
       if (res.status === 401) { logout(); return; }
       if (!res.ok) { el.innerHTML = ''; return; }
-      const posts = await res.json();
-      if (!posts.length) { el.innerHTML = ''; return; }
-      el.innerHTML = '<p class="past-head">past ruminations</p>' + posts.map(p => `
-        <div class="entry">
-          <p class="date">${escapeHtml(p.date)}</p>
-          <p class="text">${escapeHtml(p.body)}</p>
-        </div>`).join('');
+      _posts = await res.json();
+      renderRead();
     } catch { el.innerHTML = ''; }
   }
+
+  // Search: every word must appear (any order, case-insensitive) in the
+  // body, title or collection; matches are highlighted.
+  let query = '';
+  function terms() { return query.toLowerCase().split(/\s+/).filter(Boolean); }
+  function matches(p) {
+    const t = terms();
+    if (!t.length) return true;
+    const hay = [p.body, p.title, p.collection, p.date].filter(Boolean).join(' ').toLowerCase();
+    return t.every(w => hay.includes(w));
+  }
+  // Inline formatting is stored as plain-text markers and rendered on read:
+  // **bold**  *italic*  __underline__  ~~strike~~   (input must already be escaped)
+  function fmt(html) {
+    return html
+      .replace(/\*\*(?=\S)([\s\S]*?\S)\*\*/g, '<b>$1</b>')
+      .replace(/__(?=\S)([\s\S]*?\S)__/g, '<u>$1</u>')
+      .replace(/~~(?=\S)([\s\S]*?\S)~~/g, '<s>$1</s>')
+      .replace(/(^|[^*\w])\*(?=\S)([^*\n]*?\S)\*(?![*\w])/g, '$1<i>$2</i>');
+  }
+
+  // Ctrl/Cmd + B, I, U, S wrap the selection in those markers (again to unwrap).
+  // execCommand keeps it on the textarea's undo stack.
+  const MARKS = { b: '**', i: '*', u: '__', s: '~~' };
+  function toggleMark(ta, m) {
+    let a = ta.selectionStart, z = ta.selectionEnd;
+    const v = ta.value, n = m.length;
+    const wrapped = v.slice(a - n, a) === m && v.slice(z, z + n) === m
+      && !(m === '*' && (v[a - n - 1] === '*' || v[z + n] === '*'));
+    ta.focus();
+    if (wrapped) {
+      ta.setSelectionRange(a - n, z + n);
+      document.execCommand('insertText', false, v.slice(a, z));
+      ta.setSelectionRange(a - n, z - n);
+    } else {
+      document.execCommand('insertText', false, m + v.slice(a, z) + m);
+      ta.setSelectionRange(a + n, z + n);
+    }
+    onType();
+  }
+  document.getElementById('body').addEventListener('keydown', e => {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
+    const m = MARKS[e.key.toLowerCase()];
+    if (!m) return;
+    e.preventDefault();
+    toggleMark(e.target, m);
+  });
+
+  function hl(text) {
+    const html = escapeHtml(text);
+    const t = terms().map(w => escapeHtml(w).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    return t.length ? html.replace(new RegExp('(' + t.join('|') + ')', 'gi'), '<mark>$1</mark>') : html;
+  }
+  // "/" jumps to search while reading.
+  document.addEventListener('keydown', e => {
+    if (e.key !== '/' || state.view !== 'read' || /input|textarea/i.test(e.target.tagName)) return;
+    e.preventDefault();
+    closePiece();
+    document.getElementById('search').focus();
+  });
+
+  function renderRead() {
+    const el = document.getElementById('past');
+    document.getElementById('filters').hidden = state.kind !== 'writing';
+    if (state.kind !== 'writing') document.getElementById('filters').innerHTML = '';
+    if (!_posts) { el.innerHTML = ''; return; }
+    const all = _posts.filter(p => kindOf(p) === state.kind);
+    const list = all.filter(matches);
+    const none = `<p class="empty">nothing matches “${escapeHtml(query.trim())}”.</p>`;
+    if (state.kind === 'rumination') {
+      el.innerHTML = list.length
+        ? list.map(p => `
+          <div class="entry">
+            <p class="date">${hl(p.date)}</p>
+            <p class="text">${fmt(hl(p.body))}</p>
+          </div>`).join('')
+        : terms().length ? none : '<p class="empty">no ruminations yet.</p>';
+      return;
+    }
+    renderFilters(all);
+    const shown = writingFilter === null ? list
+      : list.filter(p => (p.collection || '') === writingFilter);
+    // "all" groups pieces under their collection (unsorted last); a filter shows one flat list.
+    let groups = [[null, shown]];
+    if (writingFilter === null && collectionsOf(list).length) {
+      const names = collectionsOf(list);
+      groups = names.map(n => [n, shown.filter(p => p.collection === n)]);
+      const loose = shown.filter(p => !p.collection);
+      if (loose.length) groups.push(['unsorted', loose]);
+    }
+    el.innerHTML = shown.length
+      ? groups.map(([name, items]) =>
+          (name ? `<p class="group-head">${escapeHtml(name)}</p>` : '') + items.map(p => {
+          const i = _posts.indexOf(p);
+          const words = countWords(p.body);
+          const lines = p.body.split(/\n+/);
+          const t = terms();
+          const hit = t.length && lines.find(l => t.some(w => l.toLowerCase().includes(w)));
+          const first = hit || lines[0];
+          const title = p.title || (first.length > 70 ? first.slice(0, 70) + '…' : first);
+          const excerpt = p.title || hit ? (first.length > 160 ? first.slice(0, 160) + '…' : first) : '';
+          return `<button class="piece-row" onclick="openPiece(${i})">
+            <span class="t">${hl(title)}</span>
+            <span class="m">${escapeHtml(p.date)} · ${words.toLocaleString()} words</span>
+            ${excerpt ? `<span class="x">${fmt(hl(excerpt))}</span>` : ''}
+          </button>`;
+        }).join('')).join('')
+      : terms().length ? none : '<p class="empty">no writing yet. <a href="#" onclick="setView(\'write\');return false" style="color:inherit">start a piece</a></p>';
+  }
+
+  function openPiece(i) {
+    const p = _posts[i];
+    if (!p) return;
+    const words = countWords(p.body);
+    const art = document.getElementById('piece');
+    art.dataset.i = i;
+    art.innerHTML = `
+      <button class="back" onclick="closePiece()">← all writing</button>
+      ${p.title ? `<h1>${escapeHtml(p.title)}</h1>` : ''}
+      <p class="m">${p.collection ? escapeHtml(p.collection) + ' · ' : ''}${escapeHtml(p.date)} · ${words.toLocaleString()} words · ${Math.max(1, Math.round(words / 230))} min</p>
+      <div class="tools" id="tools"></div>
+      <p class="text">${fmt(escapeHtml(p.body))}</p>`;
+    toolsIdle();
+    document.getElementById('past').hidden = true;
+    document.getElementById('filters').hidden = true;
+    document.getElementById('search').hidden = true;
+    art.hidden = false;
+    window.scrollTo(0, 0);
+  }
+  function closePiece() {
+    document.getElementById('piece').hidden = true;
+    document.getElementById('past').hidden = false;
+    document.getElementById('search').hidden = false;
+    document.getElementById('filters').hidden = state.kind !== 'writing';
+  }
+
+  // ---- organizing writing ----
+  let writingFilter = null;   // null = all, '' = unsorted, else a collection name
+  let editingId = null;
+
+  function collectionsOf(list) {
+    return [...new Set(list.map(p => p.collection).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b));
+  }
+
+  function renderFilters(list) {
+    const el = document.getElementById('filters');
+    const names = collectionsOf(list);
+    knownCollections = names;
+    if (writingFilter !== null && writingFilter !== '' && !names.includes(writingFilter)) writingFilter = null;
+    if (!names.length) { el.innerHTML = ''; return; }
+    const opts = [[null, 'all'], ...names.map(n => [n, n])];
+    if (list.some(p => !p.collection)) opts.push(['', 'unsorted']);
+    el.innerHTML = opts.map(([v, label], k) =>
+      `<button class="${v === writingFilter ? 'on' : ''}" data-k="${k}">${escapeHtml(label)}</button>`).join('');
+    el.querySelectorAll('button').forEach(b => b.onclick = () => {
+      writingFilter = opts[+b.dataset.k][0];
+      renderRead();
+    });
+  }
+
+  // Collection autocomplete. A prefix match completes inline (the added part
+  // stays selected, so typing on just replaces it). Anything merely close —
+  // a typo, a word from the middle, letters in order — shows "↵ name" beside
+  // the field; Enter or → takes it.
+  let knownCollections = [];
+  function lev(a, b) {
+    const d = Array.from({ length: b.length + 1 }, (_, j) => j);
+    for (let i = 1; i <= a.length; i++) {
+      let prev = d[0]; d[0] = i;
+      for (let j = 1; j <= b.length; j++) {
+        const t = d[j];
+        d[j] = Math.min(d[j] + 1, d[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
+        prev = t;
+      }
+    }
+    return d[b.length];
+  }
+  function bestCollection(q) {
+    q = q.trim().toLowerCase();
+    if (!q) return null;
+    let best = null, bestScore = 0;
+    for (const n of knownCollections) {
+      const l = n.toLowerCase();
+      if (l === q) return { name: n, prefix: true, exact: true };
+      let score = 0;
+      if (l.startsWith(q)) score = 5;
+      else if (l.split(/[\s\-_/]+/).some(w => w.startsWith(q))) score = 4;
+      else if (l.includes(q)) score = 3;
+      else if (lev(q, l.slice(0, q.length + 1)) <= Math.max(1, Math.floor(q.length / 4)) ||
+               lev(q, l) <= Math.max(1, Math.floor(l.length / 4))) score = 2;
+      else if (q.length >= 2 && [...q].every((c, i, a) => (a.pos = l.indexOf(c, (a.pos ?? -1) + 1)) >= 0)) score = 1;
+      if (score > bestScore) { best = n; bestScore = score; }
+    }
+    return best && { name: best, prefix: bestScore === 5 };
+  }
+  function attachComplete(inp) {
+    const hint = inp.parentElement.querySelector('.coll-hint');
+    let pending = null;
+    const show = s => { pending = s; hint.textContent = s ? '↵ ' + s : ''; };
+    inp.addEventListener('input', e => {
+      const typed = inp.value;
+      const m = bestCollection(typed);
+      show(null);
+      if (!m || m.exact) return;
+      const deleting = e.inputType && e.inputType.startsWith('delete');
+      if (m.prefix && !deleting && inp.selectionEnd === typed.length) {
+        inp.value = typed + m.name.slice(typed.length);
+        inp.setSelectionRange(typed.length, inp.value.length);
+      } else if (!m.prefix) show(m.name);
+      saveDraft();
+    });
+    inp.addEventListener('keydown', e => {
+      const accept = e.key === 'Enter' || (e.key === 'ArrowRight' && inp.selectionEnd === inp.value.length);
+      if (!accept) return;
+      if (pending) { e.preventDefault(); inp.value = pending; show(null); saveDraft(); return; }
+      inp.setSelectionRange(inp.value.length, inp.value.length);   // keep the inline completion
+      canon();
+    });
+    // "essays" → "Essays": reuse an existing collection's exact spelling.
+    const canon = () => {
+      const hit = knownCollections.find(n => n.toLowerCase() === inp.value.trim().toLowerCase());
+      if (hit && hit !== inp.value) { inp.value = hit; saveDraft(); }
+    };
+    inp.addEventListener('blur', () => { show(null); canon(); });
+  }
+  attachComplete(document.getElementById('collection'));
+
+  function currentPiece() { return _posts[+document.getElementById('piece').dataset.i]; }
+
+  function toolsIdle() {
+    const t = document.getElementById('tools');
+    t.innerHTML = `<button onclick="startEdit()">edit</button>
+      <button onclick="toolsMove()">move</button>
+      <button onclick="toolsDelete()">delete</button>`;
+  }
+  function toolsMove() {
+    const p = currentPiece();
+    const t = document.getElementById('tools');
+    t.innerHTML = `<span style="opacity:0.4">move to</span>
+      <span class="coll-wrap"><input id="move-to" placeholder="collection (blank = unsorted)" value="${escapeHtml(p.collection || '')}"><span class="coll-hint"></span></span>
+      <button onclick="doMove()">save</button><button onclick="toolsIdle()">cancel</button>`;
+    const inp = document.getElementById('move-to');
+    attachComplete(inp);
+    inp.focus(); inp.select();
+    inp.onkeydown = e => {
+      if (e.key === 'Enter' && !e.defaultPrevented) doMove();
+      if (e.key === 'Escape') { e.stopPropagation(); toolsIdle(); }
+    };
+  }
+  function toolsDelete() {
+    document.getElementById('tools').innerHTML = `<span style="opacity:0.5">delete this piece?</span>
+      <button class="danger" onclick="doDelete()">delete</button><button onclick="toolsIdle()">keep</button>`;
+  }
+
+  async function send(payload) {
+    const password = localStorage.getItem(KEY);
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password, ...payload }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401) { logout(); throw new Error('wrong password'); }
+    if (!data.ok) throw new Error(data.error || res.status);
+  }
+
+  async function doMove() {
+    const p = currentPiece();
+    const collection = document.getElementById('move-to').value.trim();
+    try {
+      await send({ action: 'update', id: p.id, collection });
+      if (collection) p.collection = collection; else delete p.collection;
+      openPiece(_posts.indexOf(p));
+    } catch (e) { document.getElementById('tools').insertAdjacentHTML('beforeend', `<span class="status err">${escapeHtml(e.message)}</span>`); }
+  }
+
+  async function doDelete() {
+    const p = currentPiece();
+    try {
+      await send({ action: 'delete', id: p.id });
+      _posts.splice(_posts.indexOf(p), 1);
+      closePiece();
+      renderRead();
+    } catch (e) { document.getElementById('tools').insertAdjacentHTML('beforeend', `<span class="status err">${escapeHtml(e.message)}</span>`); }
+  }
+
+  // Edit reuses the writing composer; publish becomes save.
+  function startEdit() {
+    const p = currentPiece();
+    saveDraft();
+    editingId = p.id;
+    document.getElementById('title').value = p.title || '';
+    document.getElementById('collection').value = p.collection || '';
+    document.getElementById('body').value = p.body;
+    document.getElementById('edit-note').hidden = false;
+    document.getElementById('publish-btn').textContent = 'save';
+    setView('write');
+    updateCount();
+    setTimeout(() => { autoGrow(); edReset(); }, 0);
+  }
+  function cancelEdit(quiet) {
+    editingId = null;
+    document.getElementById('edit-note').hidden = true;
+    document.getElementById('publish-btn').textContent = 'publish';
+    loadDraft();
+    if (!quiet) setView('read');
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !document.getElementById('piece').hidden) closePiece();
+  });
 
   async function publish() {
     const password = localStorage.getItem(KEY);
     const body = document.getElementById('body').value.trim();
+    const title = document.getElementById('title').value.trim();
+    const collection = document.getElementById('collection').value.trim();
     if (!body) { setStatus('write something first', 'err'); return; }
+    if (editingId) {
+      setStatus('saving…');
+      try {
+        await send({ action: 'update', id: editingId, body, title, collection });
+        const p = _posts.find(x => x.id === editingId);
+        const i = _posts.indexOf(p);
+        Object.assign(p, { body });
+        for (const [f, v] of [['title', title], ['collection', collection]]) { if (v) p[f] = v; else delete p[f]; }
+        setStatus('saved', 'ok');
+        cancelEdit(true);
+        setView('read');
+        openPiece(i);
+      } catch (e) { setStatus('error: ' + e.message, 'err'); }
+      return;
+    }
     setStatus('publishing…');
     try {
       const res = await fetch(WORKER_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password, body }),
+        body: JSON.stringify({ password, body, kind: state.kind,
+          title: state.kind === 'writing' ? title : '',
+          collection: state.kind === 'writing' ? collection : '' }),
       });
       const data = await res.json();
       if (data.ok) {
         setStatus('published', 'ok');
         document.getElementById('body').value = '';
+        document.getElementById('title').value = '';
+        document.getElementById('collection').value = '';
+        clearDraft();
         autoGrow();
-        document.getElementById('wordcount').textContent = '0w';
-        document.getElementById('wordcount').className = '';
+        updateCount();
+        edReset();
         stopTyping();
         loadPast();
       } else if (res.status === 401) {
