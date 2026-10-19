@@ -286,12 +286,17 @@
       opacity: 0.82;
     }
 
-    #signout-btn {
-      position: fixed; bottom: 24px; right: 28px;
-      font-size: 0.78rem; opacity: 0.25; color: #fff; text-decoration: none;
-      font-family: Georgia, serif; transition: opacity 0.2s; z-index: 10;
+    #corner {
+      position: fixed; bottom: 24px; right: 28px; z-index: 10;
+      display: flex; gap: 18px; transition: opacity 0.6s var(--ease);
     }
-    #signout-btn:hover { opacity: 0.6; }
+    body.typing #corner { opacity: 0.12; transition: opacity 1.1s var(--ease) 0.25s; }
+    body.typing #corner:hover { opacity: 1; }
+    #corner a {
+      font-size: 0.78rem; opacity: 0.25; color: #fff; text-decoration: none;
+      font-family: Georgia, serif; transition: opacity 0.2s;
+    }
+    #corner a:hover { opacity: 0.6; }
   </style>
 </head>
 <body>
@@ -358,7 +363,10 @@
   </div>
 </div>
 
-<a id="signout-btn" href="#" onclick="logout();return false" style="display:none">sign out</a>
+<nav id="corner">
+  <a id="home-link" href="./">cjre.pl/ogle</a>
+  <a id="signout-btn" href="#" onclick="logout();return false" style="display:none">sign out</a>
+</nav>
 
 <div id="backdrop-panel" style="opacity:0;pointer-events:none;transition:opacity 0.2s ease,transform 0.2s ease;transform:translateY(4px);position:fixed;bottom:48px;left:10px;font-size:0.75rem;color:inherit;background:rgba(128,128,128,0.18);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(128,128,128,0.25);border-radius:6px;padding:8px 10px;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,0.18);min-width:180px">
   <div style="margin-bottom:6px">
