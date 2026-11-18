@@ -24,6 +24,10 @@ const PAGES = [
     raw: "https://raw.githubusercontent.com/cjreplogle/janki/master/docs/mobile-cards.md",
   },
   {
+    file: new URL("./janki/3d/index.html", import.meta.url),
+    raw: "https://raw.githubusercontent.com/cjreplogle/janki/master/docs/3d-anatomy.md",
+  },
+  {
     file: new URL("./janki/practice/index.html", import.meta.url),
     raw: "https://raw.githubusercontent.com/cjreplogle/janki/master/docs/practice-questions.md",
   },

@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Janki — 3D anatomy cards</title>
+  <script src="../../marked.min.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #ffffff;
+      --text: #1f2328;
+      --muted: #59636e;
+      --border: #d0d7de;
+      --surface: #f6f8fa;
+      --link: #0969da;
+      --note-text: #0969da;
+      --note-border: #0969da;
+      --note-bg: #ddf4ff;
+      --tip-text: #1a7f37;
+      --tip-border: #1a7f37;
+      --tip-bg: #dafbe1;
+      --important-text: #8250df;
+      --important-border: #8250df;
+      --important-bg: #fbefff;
+      --warning-text: #9a6700;
+      --warning-border: #9a6700;
+      --warning-bg: #fff8c5;
+      --caution-text: #cf222e;
+      --caution-border: #cf222e;
+      --caution-bg: #ffebe9;
+      --error-text: #cf222e;
+      --error-border: #ff8182;
+      --error-bg: #ffebe9;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #000000;
+        --text: #ffffff;
+        --muted: #b0b8c1;
+        --border: #333333;
+        --surface: #111111;
+        --link: #58a6ff;
+        --note-text: #58a6ff;
+        --note-border: #58a6ff;
+        --note-bg: #06151f;
+        --tip-text: #56d364;
+        --tip-border: #56d364;
+        --tip-bg: #071a0d;
+        --important-text: #bc8cff;
+        --important-border: #bc8cff;
+        --important-bg: #160d24;
+        --warning-text: #e3b341;
+        --warning-border: #e3b341;
+        --warning-bg: #211a05;
+        --caution-text: #ff7b72;
+        --caution-border: #ff7b72;
+        --caution-bg: #210b0b;
+        --error-text: #ff7b72;
+        --error-border: #ff8182;
+        --error-bg: #210b0b;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 48px 10px 10px;
+      background: var(--bg);
+      color: var(--text);
+      font-family:
+        "Lora",
+        Georgia,
+        "Times New Roman",
+        serif;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .markdown-body {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.45s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fade-in {
+        animation: none;
+      }
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 24px;
+      margin-bottom: 16px;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+
+    h1 {
+      padding-bottom: 0.3em;
+      font-size: 2em;
+    }
+
+    #content h1 {
+      margin-top: 4px;
+    }
+
+    h2 {
+      padding-bottom: 0.3em;
+      border-bottom: 1px solid var(--border);
+      font-size: 1.5em;
+    }
+
+    h3 {
+      font-size: 1.25em;
+    }
+
+    h4 {
+      font-size: 1em;
+    }
+
+    p {
+      margin-top: 0;
+      margin-bottom: 16px;
+    }
+
+    a {
+      color: var(--link);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    img,
+    video {
+      max-width: 100%;
+      height: auto;
+    }
+
+    ul,
+    ol {
+      margin-top: 0;
+      margin-bottom: 16px;
+      padding-left: 2em;
+    }
+
+    li + li {
+      margin-top: 0.25em;
+    }
+
+    code,
+    tt {
+      padding: 0.2em 0.4em;
+      margin: 0;
+      font-size: 85%;
+      background: var(--surface);
+      border-radius: 6px;
+      font-family:
+        ui-monospace,
+        SFMono-Regular,
+        "SF Mono",
+        Menlo,
+        Consolas,
+        "Liberation Mono",
+        monospace;
+    }
+
+    pre {
+      padding: 16px;
+      overflow: auto;
+      margin-top: 0;
+      margin-bottom: 16px;
+      background: var(--surface);
+      border-radius: 6px;
+      line-height: 1.45;
+    }
+
+    pre code {
+      padding: 0;
+      margin: 0;
+      background: transparent;
+      border: 0;
+      font-size: 100%;
+      white-space: pre;
+    }
+
+    blockquote {
+      margin: 0 0 16px;
+      padding: 0 1em;
+      color: var(--muted);
+      border-left: 0.25em solid var(--border);
+    }
+
+    blockquote > :first-child {
+      margin-top: 0;
+    }
+
+    blockquote > :last-child {
+      margin-bottom: 0;
+    }
+
+    hr {
+      height: 0.25em;
+      padding: 0;
+      margin: 24px 0;
+      background: var(--border);
+      border: 0;
+    }
+
+    table {
+      width: 100%;
+      margin-bottom: 16px;
+      border-spacing: 0;
+      border-collapse: collapse;
+      display: block;
+      overflow-x: auto;
+    }
+
+    th,
+    td {
+      padding: 6px 13px;
+      border: 1px solid var(--border);
+    }
+
+    th {
+      font-weight: 600;
+      background: var(--surface);
+    }
+
+    tr {
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+    }
+
+    tr:nth-child(2n) {
+      background: var(--surface);
+    }
+
+    strong {
+      font-weight: 600;
+    }
+
+    .markdown-alert {
+      position: relative;
+      overflow: hidden;
+      padding: 8px 16px;
+      margin-bottom: 16px;
+      border-left: 4px solid;
+      border-radius: 4px;
+      transition:
+        max-height 0.28s ease,
+        opacity 0.28s ease,
+        transform 0.28s ease,
+        margin 0.28s ease,
+        padding 0.28s ease;
+    }
+
+    .markdown-alert.dismissing {
+      opacity: 0;
+      transform: translateX(16px);
+      margin-bottom: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
+    .alert-dismiss {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      padding: 2px;
+      font-size: 13px;
+      line-height: 1;
+      color: inherit;
+      background: transparent;
+      border: 0;
+      outline: none;
+      cursor: pointer;
+      opacity: 0.45;
+      transition: opacity 0.15s ease;
+    }
+
+    .alert-dismiss:hover {
+      opacity: 0.85;
+    }
+
+    .markdown-alert > *:last-child {
+      margin-bottom: 0;
+    }
+
+    .markdown-alert-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .markdown-alert-note {
+      color: var(--note-text);
+      border-color: var(--note-border);
+      background: var(--note-bg);
+    }
+
+    .markdown-alert-tip {
+      color: var(--tip-text);
+      border-color: var(--tip-border);
+      background: var(--tip-bg);
+    }
+
+    .markdown-alert-important {
+      color: var(--important-text);
+      border-color: var(--important-border);
+      background: var(--important-bg);
+    }
+
+    .markdown-alert-warning {
+      color: var(--warning-text);
+      border-color: var(--warning-border);
+      background: var(--warning-bg);
+    }
+
+    .markdown-alert-caution {
+      color: var(--caution-text);
+      border-color: var(--caution-border);
+      background: var(--caution-bg);
+    }
+
+    .task-list-item {
+      list-style-type: none;
+    }
+
+    .task-list-item input[type="checkbox"] {
+      margin: 0 0.35em 0.25em -1.6em;
+      vertical-align: middle;
+    }
+
+    h2.section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .section-toggle {
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      font-size: 20px;
+      line-height: 1;
+      color: var(--muted);
+      background: transparent;
+      border: 0;
+      outline: none;
+      border-radius: 6px;
+      cursor: pointer;
+      opacity: 0.4;
+      transition: opacity 0.15s ease;
+    }
+
+    .section-toggle:hover {
+      opacity: 0.75;
+    }
+
+    .section-body {
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.3s ease;
+    }
+
+    .section-body.collapsed {
+      max-height: 0 !important;
+      opacity: 0;
+    }
+
+    .corner-mark {
+      position: fixed;
+      top: 8px;
+      right: 12px;
+      z-index: 10;
+      font-size: 0.72em;
+      color: var(--muted);
+      text-decoration: none;
+      opacity: 0.65;
+      transition: opacity 0.15s ease;
+    }
+
+    .corner-mark:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+
+    .corner-mark.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .back-link {
+      position: fixed;
+      top: 4px;
+      left: 12px;
+      z-index: 10;
+      font-size: 1.3em;
+      line-height: 1;
+      padding: 4px 6px;
+      color: var(--muted);
+      text-decoration: none;
+      opacity: 0.65;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+
+    .back-link:hover {
+      opacity: 1;
+      text-decoration: none;
+      transform: translateX(-2px);
+    }
+
+    .back-link.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .loading {
+      color: var(--muted);
+      text-align: center;
+      padding: 40px 0;
+    }
+
+    .error {
+      color: var(--error-text);
+      padding: 20px;
+      border: 1px solid var(--error-border);
+      border-radius: 6px;
+      background: var(--error-bg);
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 48px 16px 20px;
+        font-size: 15px;
+      }
+
+      h1 {
+        font-size: 1.75em;
+      }
+
+      h2 {
+        font-size: 1.35em;
+      }
+
+      pre {
+        font-size: 13px;
+      }
+
+      .alert-dismiss {
+        font-size: 17px;
+      }
+    }
+  </style>
+
+</head>
+
+<body>
+  <a class="back-link" href="../" aria-label="Back to Janki" title="Back to Janki">&larr;</a>
+  <a class="corner-mark" href="https://cjre.pl/ogle" target="_blank" rel="noopener noreferrer">cjre.pl/ogle</a>
+
+  <main id="content" class="markdown-body">
+    <div class="loading">Loading…</div>
+  </main>
+
+  <!-- README markdown baked in at deploy time (see ogle/prerender-docs.mjs) so
+       the page renders instantly with no runtime fetch to GitHub. -->
+  <script type="text/markdown" id="readme-source"><!--README:START-->
+# 3D anatomy cards
+
+*Lower limb, upper limb, back and brachial plexus — on a 3D model you can turn, zoom and
+dissect. Cards for identifying structures, clicking them on the model, origins and
+insertions, innervations and key facts, plus an X-ray view and a simulated CT.*
+
+**[⬇ Download the deck (janki-3d-anatomy.apkg, 19 MB)](https://github.com/cjreplogle/janki/releases/download/anatomy3d-deck/janki-3d-anatomy.apkg)**
+
+---
+
+## What's in it
+
+- **483 structures**, each with up to six card types: **ID** (what is highlighted?),
+  **Click** (find it on the model), **X-ray ID** (bones, on a radiograph view),
+  **Attachments**, **Innervations** and **Key facts**.
+- Bony landmarks are highlighted as patches on the bone itself; vessels are shown with the
+  vessels they connect to; deep structures open with the muscles over them moved aside.
+- Decks are grouped by **region → dissection → type** (muscles, nerves, vessels, bone
+  landmarks, joints and spaces), with a separate *Osteology & Prosections* group.
+- On the answer: rotate, zoom, pan, switch layers (bone / muscle / nerve / artery / vein),
+  move structures aside (double-click), and switch to **X-ray** or **CT**.
+
+## Using it
+
+**With Janki** (recommended): you don't need this file — install or update Janki and
+choose **Tools → Janki: Set up 3D anatomy cards**. Janki adds the same cards, and on any 3D
+deck's overview you can switch card types on and off and choose whether the model shows on
+the front of recall cards.
+
+**Without Janki** (plain Anki, AnkiMobile, AnkiDroid): import the `.apkg`
+(*File → Import*). Only the **ID** cards are active at first; to add another type, open
+the Browser, search e.g. `card:Locate deck:"Janki 3D Anatomy"` (Click cards), select all
+and *Toggle Suspend*. Card types: `Identify`, `Locate` (Click), `Identify (X-ray)`,
+`Attachments`, `Innervation`, `Action` (key facts).
+
+Sync to take the deck — and its 3D models (about 30 MB of media) — to your phone.
+
+## Credits
+
+The 3D models are adapted from **BodyParts3D** (The Database Center for Life Science,
+CC BY-SA 2.1 Japan) and **Z-Anatomy** (CC BY-SA 4.0), via the GLB export of
+[nqwrc/3d-anatomy](https://github.com/nqwrc/3d-anatomy), and are shared under
+**CC BY-SA 4.0**. Changes are listed in the deck's `LICENSE.txt` in the Janki repository.
+Rendering uses three.js (MIT).
+
+<!--README:END--></script>
+
+  <script>
+    const README_URL =
+      "https://raw.githubusercontent.com/cjreplogle/janki/master/docs/3d-anatomy.md";
+
+    const REPO_URL =
+      "https://github.com/cjreplogle/janki";
+
+    const REPO_BLOB_URL =
+      `${REPO_URL}/blob/master/docs/`;
+
+    const RAW_REPO_URL =
+      "https://raw.githubusercontent.com/cjreplogle/janki/master/docs/";
+
+    // Route the Janki docs to their cjre.pl subpages instead of the GitHub .md.
+    const DOC_PAGES = {
+      "docs/practice-questions.md": "https://cjre.pl/ogle/janki/practice/",
+      "docs/mobile-cards.md":       "https://cjre.pl/ogle/janki/mobile/",
+      "docs/3d-anatomy.md":         "https://cjre.pl/ogle/janki/3d/",
+      "docs/load-todays-lectures.md": "https://cjre.pl/ogle/janki/load/",
+      "docs/rephrase.md":           "https://cjre.pl/ogle/janki/rephrase/",
+      "docs/jank.md":               "https://cjre.pl/ogle/janki/jank/",
+      "practice-questions.md":      "https://cjre.pl/ogle/janki/practice/",
+      "mobile-cards.md":            "https://cjre.pl/ogle/janki/mobile/",
+      "load-todays-lectures.md":    "https://cjre.pl/ogle/janki/load/",
+      "rephrase.md":                "https://cjre.pl/ogle/janki/rephrase/",
+      "jank.md":                    "https://cjre.pl/ogle/janki/jank/",
+    };
+
+    marked.setOptions({
+      gfm: true,
+      breaks: false
+    });
+
+    // Fade the corner mark out once scrolled away from the very top.
+    const cornerMark = document.querySelector(".corner-mark");
+    if (cornerMark) {
+      // Only fade on scroll when the content column actually reaches under the
+      // mark (narrow/mobile widths). On desktop it sits in the margin and never
+      // overlaps the text, so leave it visible.
+      const overlaps = () => {
+        const content = document.getElementById("content");
+        if (!content) return false;
+        return content.getBoundingClientRect().right >
+          cornerMark.getBoundingClientRect().left;
+      };
+      const backLink = document.querySelector(".back-link");
+      const updateCornerMark = () => {
+        const hide = overlaps() && window.scrollY > 8;
+        cornerMark.classList.toggle("hidden", hide);
+        if (backLink) backLink.classList.toggle("hidden", hide);
+      };
+      window.addEventListener("scroll", updateCornerMark, { passive: true });
+      window.addEventListener("resize", updateCornerMark);
+      updateCornerMark();
+    }
+
+    // Static-first, then refresh: render the baked-in README immediately (instant
+    // paint, works offline), then fetch the live README in the background and
+    // re-render only if it changed — so the page is fast AND never stays desynced.
+    const baked =
+      document.getElementById("readme-source")
+        .textContent
+        .replace(/^\s*<!--README:START-->\s*/, "")
+        .replace(/\s*<!--README:END-->\s*$/, "");
+
+    render(baked);
+
+    fetch(README_URL)
+      .then(response =>
+        response.ok ? response.text() : Promise.reject()
+      )
+      .then(live => {
+        if (live.trim() !== baked.trim()) {
+          render(live);
+        }
+      })
+      .catch(() => {
+        // Offline or GitHub unreachable — keep the baked copy.
+      });
+
+    function render(markdown) {
+        const html = marked.parse(markdown);
+        const container = document.createElement("div");
+
+        container.innerHTML = html;
+
+        container
+          .querySelectorAll("blockquote")
+          .forEach(blockquote => {
+            const firstParagraph =
+              blockquote.querySelector("p");
+
+            if (!firstParagraph) {
+              return;
+            }
+
+            const html = firstParagraph.innerHTML;
+
+            const match = html.match(
+              /^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*(?:<br\s*\/?>)?/i
+            );
+
+            if (!match) {
+              return;
+            }
+
+            const type =
+              match[1].toLowerCase();
+
+            firstParagraph.innerHTML =
+              html.substring(match[0].length);
+
+            blockquote.classList.add(
+              "markdown-alert",
+              `markdown-alert-${type}`
+            );
+
+            const title =
+              document.createElement("div");
+
+            title.className =
+              "markdown-alert-title";
+
+            const titles = {
+              note: "Note",
+              tip: "Tip",
+              important: "Important",
+              warning: "Warning",
+              caution: "Caution"
+            };
+
+            const icons = {
+              note: "ⓘ",
+              tip: "💡",
+              important: "❗",
+              warning: "⚠️",
+              caution: "🛑"
+            };
+
+            title.textContent =
+              `${icons[type]} ${titles[type]}`;
+
+            blockquote.prepend(title);
+
+            const dismiss =
+              document.createElement("button");
+
+            dismiss.type = "button";
+            dismiss.className = "alert-dismiss";
+            dismiss.setAttribute(
+              "aria-label",
+              "Dismiss"
+            );
+            dismiss.textContent = "✕";
+
+            const dismissAlert = () => {
+              if (blockquote.classList.contains("dismissing")) {
+                return;
+              }
+              // Fade + slide out, collapsing the space, then remove.
+              blockquote.style.maxHeight =
+                blockquote.scrollHeight + "px";
+              void blockquote.offsetHeight;
+              blockquote.classList.add("dismissing");
+              blockquote.style.maxHeight = "0px";
+
+              blockquote.addEventListener(
+                "transitionend",
+                () => blockquote.remove(),
+                { once: true }
+              );
+            };
+
+            dismiss.addEventListener("click", e => {
+              e.stopPropagation();
+              dismissAlert();
+            });
+
+            // Clicking anywhere on the alert dismisses it too (but not its links).
+            blockquote.style.cursor = "pointer";
+            blockquote.addEventListener("click", e => {
+              if (e.target.closest("a")) {
+                return;
+              }
+              dismissAlert();
+            });
+
+            blockquote.appendChild(dismiss);
+          });
+
+        container
+          .querySelectorAll("a")
+          .forEach(link => {
+            const href =
+              link.getAttribute("href");
+
+            if (!href) {
+              return;
+            }
+
+            if (
+              href.startsWith("#") ||
+              href.startsWith("http://") ||
+              href.startsWith("https://") ||
+              href.startsWith("mailto:")
+            ) {
+              return;
+            }
+
+            const mappedDoc =
+              DOC_PAGES[href] || DOC_PAGES[href.replace(/^\.\//, "")];
+            if (mappedDoc) {
+              link.href = mappedDoc;
+              return;
+            }
+
+            if (
+              href === "../../releases" ||
+              href === "../releases" ||
+              href === "releases"
+            ) {
+              link.href =
+                `${REPO_URL}/releases`;
+
+              return;
+            }
+
+            if (
+              href === "../../issues" ||
+              href === "../issues" ||
+              href === "issues"
+            ) {
+              link.href =
+                `${REPO_URL}/issues`;
+
+              return;
+            }
+
+            if (
+              href === "../../discussions" ||
+              href === "../discussions" ||
+              href === "discussions"
+            ) {
+              link.href =
+                `${REPO_URL}/discussions`;
+
+              return;
+            }
+
+            link.href =
+              new URL(
+                href,
+                REPO_BLOB_URL
+              ).href;
+
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+          });
+
+        container
+          .querySelectorAll("img")
+          .forEach(img => {
+            const src =
+              img.getAttribute("src");
+
+            if (!src) {
+              return;
+            }
+
+            if (
+              src.startsWith("http://") ||
+              src.startsWith("https://") ||
+              src.startsWith("data:")
+            ) {
+              return;
+            }
+
+            img.src =
+              new URL(
+                src,
+                RAW_REPO_URL
+              ).href;
+          });
+
+        container
+          .querySelectorAll("a")
+          .forEach(link => {
+            if (
+              link.href.startsWith("http")
+            ) {
+              link.target = "_blank";
+              link.rel = "noopener noreferrer";
+            }
+          });
+
+        // Make each ## section collapsible via a +/− toggle on the right.
+        container
+          .querySelectorAll("h2")
+          .forEach(h2 => {
+            const body =
+              document.createElement("div");
+
+            body.className = "section-body";
+
+            let el = h2.nextElementSibling;
+
+            while (el && el.tagName !== "H2") {
+              const next = el.nextElementSibling;
+              body.appendChild(el);
+              el = next;
+            }
+
+            const toggle =
+              document.createElement("button");
+
+            toggle.type = "button";
+            toggle.className = "section-toggle";
+            toggle.setAttribute(
+              "aria-expanded",
+              "true"
+            );
+            toggle.textContent = "−";
+
+            h2.classList.add("section-header");
+            h2.appendChild(toggle);
+            h2.after(body);
+
+            const setOpen = open => {
+              toggle.textContent = open ? "−" : "+";
+              toggle.setAttribute(
+                "aria-expanded",
+                open ? "true" : "false"
+              );
+
+              if (open) {
+                body.classList.remove("collapsed");
+                body.style.maxHeight =
+                  body.scrollHeight + "px";
+
+                body.addEventListener(
+                  "transitionend",
+                  function te(e) {
+                    if (e.propertyName === "max-height") {
+                      body.style.maxHeight = "";
+                      body.removeEventListener(
+                        "transitionend",
+                        te
+                      );
+                    }
+                  }
+                );
+              } else {
+                body.style.maxHeight =
+                  body.scrollHeight + "px";
+                void body.offsetHeight;
+                body.classList.add("collapsed");
+              }
+            };
+
+            h2.addEventListener("click", e => {
+              if (e.target.closest("a")) {
+                return;
+              }
+
+              setOpen(
+                toggle.getAttribute(
+                  "aria-expanded"
+                ) !== "true"
+              );
+            });
+          });
+
+        // Link the page title (h1) to the GitHub repo.
+        const heading = container.querySelector("h1");
+
+        if (heading) {
+          const repoLink = document.createElement("a");
+          repoLink.href = REPO_URL;
+          repoLink.target = "_blank";
+          repoLink.rel = "noopener noreferrer";
+          repoLink.style.color = "inherit";
+          repoLink.style.textDecoration = "none";
+
+          while (heading.firstChild) {
+            repoLink.appendChild(heading.firstChild);
+          }
+
+          heading.appendChild(repoLink);
+        }
+
+        // The cjre.pl/ogle mark lives fixed at the top-right (see .corner-mark),
+        // so drop the baked footer copy from the bottom of the content.
+        // Only the footer's own "cjre.pl/ogle" link, not other links into the site.
+        const footerLink =
+          [...container.querySelectorAll('a[href*="cjre.pl/ogle"]')]
+            .find(a => /^\s*cjre\.pl\/ogle\s*$/i.test(a.textContent));
+
+        if (footerLink && footerLink.parentElement) {
+          footerLink.parentElement.remove();
+        }
+
+        container.classList.add("fade-in");
+
+        document
+          .getElementById("content")
+          .replaceChildren(container);
+    }
+  </script>
+
+</body>
+</html>
