@@ -486,7 +486,22 @@
         font-size: 17px;
       }
     }
-  </style>
+      /* the deck download: an outlined button with a hover lift (transform only: no layout shift) */
+    a[href*="janki-3d-anatomy.apkg"] {
+      display: inline-block;
+      padding: 9px 18px;
+      border: 1.5px solid var(--link);
+      border-radius: 10px;
+      text-decoration: none !important;
+      transition: background-color .18s ease, transform .18s ease, box-shadow .18s ease;
+    }
+    a[href*="janki-3d-anatomy.apkg"]:hover {
+      background: color-mix(in srgb, var(--link) 14%, transparent);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px color-mix(in srgb, var(--link) 25%, transparent);
+    }
+    a[href*="janki-3d-anatomy.apkg"]:active { transform: translateY(0); }
+    </style>
 
 </head>
 
