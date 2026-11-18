@@ -515,10 +515,10 @@
   </main>
   <!-- A live sample card (the real Janki engine + model), isolated in an iframe: the engine
        resets page scroll and listens for keys, which must not reach this page. -->
-  <section id="jk3d-sample" class="markdown-body">
+  <section id="jk3d-sample" class="markdown-body" style="container-type:inline-size">
     <h2>Try a card</h2>
-    <div id="jk3d-box" style="position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;border-radius:16px;border:1px solid #2a2a2a;background:#000;box-sizing:border-box;isolation:isolate">
-      <iframe src="sample.html?v=2" loading="lazy" title="Sample 3D anatomy card" id="jk3d-frame"
+    <div id="jk3d-box" style="position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;border-radius:calc(100cqw / 90 * 0.8);border:1px solid #3a3b3e;background:#111214;box-sizing:border-box;isolation:isolate">
+      <iframe src="sample.html?v=3" loading="lazy" title="Sample 3D anatomy card" id="jk3d-frame"
         style="position:absolute;left:0;top:0;width:900px;height:675px;border:0;background:transparent;transform-origin:0 0"></iframe>
     </div>
     <script>
