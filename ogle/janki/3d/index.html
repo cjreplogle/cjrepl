@@ -487,7 +487,7 @@
       }
     }
       /* the deck download: an outlined button with a hover lift (transform only: no layout shift) */
-    a[href*="janki-3d-anatomy.apkg"] {
+    a[href*="janki-3d-anatomy"] {
       display: inline-block;
       padding: 9px 18px;
       border: 1.5px solid var(--link);
@@ -495,13 +495,15 @@
       text-decoration: none !important;
       transition: background-color .18s ease, transform .18s ease, box-shadow .18s ease;
     }
-    a[href*="janki-3d-anatomy.apkg"]:hover {
+    a[href*="janki-3d-anatomy"]:hover {
       background: color-mix(in srgb, var(--link) 14%, transparent);
       transform: translateY(-1px);
       box-shadow: 0 4px 14px color-mix(in srgb, var(--link) 25%, transparent);
     }
-    a[href*="janki-3d-anatomy.apkg"]:active { transform: translateY(0); }
+    a[href*="janki-3d-anatomy"]:active { transform: translateY(0); }
     @media (max-width: 600px) { .dl-x { display: none; } }
+    a[href*="janki-3d-anatomy-lite"] { margin-left: 8px; border-style: dashed; }
+    @media (max-width: 600px) { a[href*="janki-3d-anatomy-lite"] { margin: 8px 0 0; } }
     </style>
 
 </head>
@@ -543,6 +545,7 @@ dissect. Cards for identifying structures, clicking them on the model, origins a
 insertions, innervations and key facts, plus an X-ray view and a simulated CT.*
 
 **[<span class="dl-x">⬇ </span>Download the deck (<span class="dl-x">janki-3d-anatomy.apkg, </span>19 MB)](https://github.com/cjreplogle/janki/releases/download/anatomy3d-deck/janki-3d-anatomy.apkg)**
+[<span class="dl-x">⬇ </span>Lite version for slower devices (<span class="dl-x">janki-3d-anatomy-lite.apkg, </span>9 MB)](https://github.com/cjreplogle/janki/releases/download/anatomy3d-deck/janki-3d-anatomy-lite.apkg)
 
 ---
 
@@ -560,6 +563,10 @@ and *Toggle Suspend*. Card types: `Identify`, `Locate` (Click), `Identify (X-ray
 `Attachments`, `Innervation`, `Action` (key facts).
 
 Sync to take the deck — and its 3D models (about 30 MB of media) — to your phone.
+
+**Lite version:** the same cards on simplified models (roughly 40–50% of the triangles) that draw fewer
+pixels, for older phones, tablets and laptops. It is a separate deck with its own note type, so its
+reviews are kept apart from the full deck's — use one or the other on a given collection.
 
 ## Credits
 
