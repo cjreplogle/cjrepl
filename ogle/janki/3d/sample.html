@@ -51,7 +51,7 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:"Lora",Geo
       }
       document.getElementById("s-flip").addEventListener("click", function () {
         side = side === "front" ? "back" : "front";
-        document.querySelector("#jk3d-sample .s-answer").hidden = side === "front";
+        document.querySelector(".s-answer").hidden = side === "front";
         this.textContent = side === "front" ? "Show answer" : "Hide answer";
         if (window.JKANAT) mount();
       });
