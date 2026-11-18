@@ -46,6 +46,9 @@ hr#answer{display:none}
 .mk-answer>.mk-g:hover,.mk-answer>.mk-g.hit{filter:brightness(1.18)}
 .mk-answer>*:focus{outline:none}
 .jka-mplay,.jka-gpl,html body .jka-views .jka-gpl{display:none !important}
+/* the engine's phone rules paint html/body/#qa/.jka-wrap black: keep the window colour behind the model */
+html:root,html:root body,html body #qa.qa,html body .stage,html body .stage #jka,html body .stage .jka-wrap,html body .card{background:transparent !important}
+html:root{background:var(--mk-win) !important}
 </style>
 </head><body>
 <div class="mk-win" id="win">
