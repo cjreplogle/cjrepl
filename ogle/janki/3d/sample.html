@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Janki 3D sample card</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400..700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light dark;--bg:#fff;--text:#1f2328;--muted:#59636e;--border:#d0d7de;--surface:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--bg:#000;--text:#fff;--muted:#b0b8c1;--border:#333;--surface:#111;--link:#58a6ff}}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:"Lora",Georgia,serif;overflow:hidden}
+.s-card{margin:0 !important}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/cjreplogle/janki@31432f7c07af74085d7b548a4735348dc6030a51/tools/anatomy3d/style.css">
+  <style>
+    { max-width: 900px; margin: 8px auto 60px; }
+    .s-card { border: 1px solid var(--border); border-radius: 16px; padding: 18px 18px 14px; background: var(--surface); }
+    .s-prompt { font-weight: 700; font-size: 20px; text-align: center; margin: 2px 0 10px; }
+    .s-stage { position: relative; height: 500px; border-radius: 12px; overflow: hidden; background: #1d1e22; }
+    .s-stage #jka, .s-stage .jka-wrap { height: 100% !important; }
+    .s-answer { text-align: center; margin-top: 12px; }
+    .s-name { font-size: 22px; font-weight: 700; color: var(--link); }
+    .s-facts { color: var(--muted); margin-top: 4px; }
+    .s-row { text-align: center; margin-top: 12px; }
+    .s-btn { font: inherit; font-weight: 600; color: var(--link); background: transparent; border: 1.5px solid var(--link);
+      border-radius: 10px; padding: 7px 18px; cursor: pointer; transition: background-color .18s ease, transform .18s ease; }
+    .s-btn:hover { background: color-mix(in srgb, var(--link) 14%, transparent); transform: translateY(-1px); }
+    .s-hint { text-align: center; color: var(--muted); font-size: 13px; margin-top: 8px; }
+  </style>
+  </head><body>
+<div class="s-card">
+      <div class="s-prompt">What is highlighted?</div>
+      <div class="s-stage"><div id="jka" data-side="front" data-mode="name"></div></div>
+      <div class="s-answer" hidden>
+        <div class="s-name">Greater trochanter</div>
+        <div class="s-facts">Insertion of gluteus medius and minimus, piriformis, obturator internus and the gemelli.</div>
+      </div>
+      <div class="s-row"><button class="s-btn" id="s-flip">Show answer</button></div>
+      <div class="s-hint">Drag to rotate · scroll to zoom · right-drag to pan</div>
+    </div>
+  <script>
+    (function () {
+      var CDN = "https://cdn.jsdelivr.net/gh/cjreplogle/janki@31432f7c07af74085d7b548a4735348dc6030a51";
+      var root = document.getElementById("jka"), side = "front", loaded = false;
+      var cfg = function () {
+        return {model: CDN + "/assets/anatomy3d/_jk3d_lowerlimb2.glb", side: side, mode: "name", name: "Greater trochanter",
+                meshes: "Femur", landmark: "greater trochanter", region: "hip", cam: "lateral", limb: "", reflect: "", origin: "", insertion: "", nerve: "", xray: false, front: "show", peel: []};
+      };
+      function mount() { root.setAttribute("data-side", side); window.JKANAT.mount(root, cfg()); }
+      function load() {
+        if (loaded) return; loaded = true;
+        var sc = document.createElement("script"); sc.src = CDN + "/assets/anatomy3d/_jk3d-anat-67.js";
+        sc.onload = mount; document.head.appendChild(sc);
+      }
+      document.getElementById("s-flip").addEventListener("click", function () {
+        side = side === "front" ? "back" : "front";
+        document.querySelector("#jk3d-sample .s-answer").hidden = side === "front";
+        this.textContent = side === "front" ? "Show answer" : "Hide answer";
+        if (window.JKANAT) mount();
+      });
+      load();
+    })();
+  </script>
+</body></html>
