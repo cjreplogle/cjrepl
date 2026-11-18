@@ -7,12 +7,16 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff;font-f
 .win{position:absolute;inset:0;display:flex;flex-direction:column;border:1px solid #2a2a2a;border-radius:16px;overflow:hidden;background:#000}
 .qa{flex:1;overflow:hidden;padding:18px 18px 8px;text-align:center;font-size:20px}
 .prompt{font-weight:600;margin-bottom:10px}
-.stage{position:relative;height:calc(100% - 44px);border-radius:12px;overflow:hidden}
+.body{display:flex;align-items:center;gap:28px;height:calc(100% - 44px)}
+.stage{position:relative;flex:0 0 100%;height:100%;border-radius:12px;overflow:hidden;transition:flex-basis .5s cubic-bezier(.2,.8,.2,1)}
+.qa.back .stage{flex-basis:58%}
+#ans{flex:1;min-width:0;text-align:left;animation:sIn .45s .15s ease-out both}
+@keyframes sIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+@media (max-width:600px){.body{flex-direction:column;gap:8px}.qa.back .stage{flex-basis:auto;height:55%}.stage{flex-basis:auto}#ans{text-align:center}}
 .stage #jka,.stage .jka-wrap{height:100% !important}
-.qa.back .stage{height:calc(100% - 156px)}
-hr#answer{border:0;margin:10px 0 4px}
-.name{font-size:22px;font-weight:700}
-.facts{color:#b0b8c1;font-size:15px;margin-top:2px}
+hr#answer{display:none}
+.name{font-size:26px;font-weight:700;margin-bottom:8px}
+.facts{color:#b0b8c1;font-size:16px;line-height:1.55}
 .bar{flex:none;display:flex;justify-content:center;gap:8px;padding:6px 12px 12px;background:#000;font-family:-apple-system,system-ui,sans-serif}
 .bar .col{flex:0 1 150px;display:flex;flex-direction:column;align-items:stretch;gap:2px;text-align:center}
 .bar .ivl{font-size:11px;color:rgba(255,255,255,.45)}
@@ -32,8 +36,8 @@ hr#answer{border:0;margin:10px 0 4px}
 <div class="win">
   <div class="qa" id="qa">
     <div class="prompt" id="prompt"></div>
-    <div class="stage"><div id="jka" data-side="front" data-mode="name"></div></div>
-    <div id="ans" hidden><hr id="answer"><div class="name" id="a-name"></div><div class="facts" id="a-facts"></div></div>
+    <div class="body"><div class="stage"><div id="jka" data-side="front" data-mode="name"></div></div>
+    <div id="ans" hidden><hr id="answer"><div class="name" id="a-name"></div><div class="facts" id="a-facts"></div></div></div>
   </div>
   <div class="count" id="count"></div>
   <div class="hint">drag to rotate · scroll to zoom · Space / Z X C V to answer</div>
