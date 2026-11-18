@@ -9,7 +9,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff;font-f
 .prompt{font-weight:600;margin-bottom:10px}
 .stage{position:relative;height:calc(100% - 44px);border-radius:12px;overflow:hidden}
 .stage #jka,.stage .jka-wrap{height:100% !important}
-.qa.back .stage{height:calc(100% - 136px)}
+.qa.back .stage{height:calc(100% - 156px)}
 hr#answer{border:0;border-top:1px solid #333;margin:12px 0 8px}
 .name{font-size:22px;font-weight:700}
 .facts{color:#b0b8c1;font-size:15px;margin-top:2px}
@@ -25,18 +25,20 @@ hr#answer{border:0;border-top:1px solid #333;margin:12px 0 8px}
 .bar .good{color:#6ddd80;font-weight:500;background:rgba(60,200,90,.16)}
 .bar .easy{color:#78c4ff;font-weight:500;background:rgba(60,140,240,.18)}
 .bar .again:hover,.bar .hard:hover,.bar .good:hover,.bar .easy:hover{filter:brightness(1.15)}
-.bar .col.solo{flex-basis:220px}
+.bar .col.solo{flex:1 1 100%}
+.count{position:absolute;left:14px;top:12px;font:11px -apple-system,system-ui,sans-serif;color:#6e7681}
+.facts b{color:#fff}
 .hint{position:absolute;right:14px;bottom:62px;font:11px -apple-system,system-ui,sans-serif;color:#6e7681;pointer-events:none}
 </style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/cjreplogle/janki@31432f7c07af74085d7b548a4735348dc6030a51/tools/anatomy3d/style.css">
 </head><body>
 <div class="win">
   <div class="qa" id="qa">
-    <div class="prompt">What is highlighted?</div>
+    <div class="prompt" id="prompt"></div>
     <div class="stage"><div id="jka" data-side="front" data-mode="name"></div></div>
-    <div id="ans" hidden><hr id="answer"><div class="name">Greater trochanter</div>
-      <div class="facts">Insertion of gluteus medius and minimus, piriformis, obturator internus and the gemelli</div></div>
+    <div id="ans" hidden><hr id="answer"><div class="name" id="a-name"></div><div class="facts" id="a-facts"></div></div>
   </div>
+  <div class="count" id="count"></div>
   <div class="hint">drag to rotate · scroll to zoom · Space / Z X C V to answer</div>
   <div class="bar" id="bar"></div>
 </div>
@@ -44,11 +46,36 @@ hr#answer{border:0;border-top:1px solid #333;margin:12px 0 8px}
 (function () {
   var CDN = "https://cdn.jsdelivr.net/gh/cjreplogle/janki@31432f7c07af74085d7b548a4735348dc6030a51";
   var root = document.getElementById("jka"), qa = document.getElementById("qa"), bar = document.getElementById("bar"), side = "front";
-  function cfg() { return {model: CDN + "/assets/anatomy3d/_jk3d_lowerlimb2.glb", side: side, mode: "name", name: "Greater trochanter",
-    meshes: "Femur", landmark: "greater trochanter", region: "hip", cam: "lateral", limb: "", reflect: "", origin: "", insertion: "",
-    nerve: "", xray: false, front: "show", peel: []}; }
-  function mount() { if (!window.JKANAT) return; root.setAttribute("data-side", side); window.JKANAT.mount(root, cfg()); }
+  var L = "_jk3d_lowerlimb2.glb", U = "_jk3d_upperlimb2.glb", T = "_jk3d_trunk7.glb";
+  var CARDS = [
+    {name: "Greater trochanter", mode: "name", model: L, meshes: "Femur", landmark: "greater trochanter", region: "hip", cam: "lateral",
+     facts: "Insertion of gluteus medius and minimus, piriformis, obturator internus and the gemelli"},
+    {name: "Sartorius", mode: "attach", model: L, meshes: "Sartorius muscle", region: "thigh", cam: "anterior", nerve: "Femoral nerve",
+     origin: "Anterior superior iliac spine (ASIS)", insertion: "Medial surface of the proximal tibia (pes anserinus)",
+     q: "Sartorius — origin and insertion?",
+     facts: "<b>Origin:</b> anterior superior iliac spine (ASIS)<br><b>Insertion:</b> medial proximal tibia (pes anserinus)"},
+    {name: "Femoral nerve", mode: "name", model: L, meshes: "Femoral nerve", region: "thigh", cam: "anterior",
+     facts: "L2–L4. Motor to the anterior thigh; sensory via the saphenous nerve to the medial leg and foot"},
+    {name: "Femoral artery", mode: "name", model: L, meshes: "Femoral artery", region: "thigh", cam: "anteromedial",
+     facts: "Femoral triangle, lateral → medial: Nerve, Artery, Vein (NAV)"},
+    {name: "Biceps brachii", mode: "name", model: U, meshes: "Long head of biceps brachii, Short head of biceps brachii", region: "arm", cam: "anterior",
+     facts: "Flexes and supinates the forearm · musculocutaneous nerve (C5–C6)"},
+    {name: "Trapezius", mode: "name", model: T, limb: "right", cam: "posterior",
+     meshes: "Descending part of trapezius muscle.l, Descending part of trapezius muscle.r, Transverse part of trapezius muscle.l, Transverse part of trapezius muscle.r, Ascending part of trapezius muscle.l, Ascending part of trapezius muscle.r",
+     facts: "Accessory nerve (CN XI) · elevates, retracts and depresses the scapula"}
+  ];
+  var idx = 0;
+  function cfg() { var c = CARDS[idx];
+    return {model: CDN + "/assets/anatomy3d/" + c.model, side: side, mode: c.mode, name: c.name, meshes: c.meshes,
+      landmark: c.landmark || "", region: c.region || "", cam: c.cam || "", limb: c.limb || "", reflect: "",
+      origin: c.origin || "", insertion: c.insertion || "", nerve: c.nerve || "", xray: false, front: "show", peel: []}; }
+  function mount() { if (!window.JKANAT) return; root.setAttribute("data-side", side); root.setAttribute("data-mode", CARDS[idx].mode); window.JKANAT.mount(root, cfg()); }
   function render() {
+    var c = CARDS[idx];
+    document.getElementById("prompt").textContent = c.q || "What is highlighted?";
+    document.getElementById("a-name").textContent = c.name;
+    document.getElementById("a-facts").innerHTML = c.facts;
+    document.getElementById("count").textContent = "Card " + (idx + 1) + " of " + CARDS.length;
     qa.classList.toggle("back", side === "back");
     document.getElementById("ans").hidden = side === "front";
     bar.innerHTML = side === "front"
@@ -56,7 +83,7 @@ hr#answer{border:0;border-top:1px solid #333;margin:12px 0 8px}
       : [["again","Again","<1m"],["hard","Hard","6m"],["good","Good","10m"],["easy","Easy","4d"]].map(function (b) {
           return '<div class="col"><span class="ivl">' + b[2] + '</span><button class="' + b[0] + '" data-k="rate">' + b[1] + '</button></div>'; }).join("");
   }
-  function go(to) { side = to; render(); mount(); }
+  function go(to) { if (side === "back" && to === "front") idx = (idx + 1) % CARDS.length; side = to; render(); mount(); }
   bar.addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return;
     go(b.dataset.k === "flip" ? "back" : "front"); });
   document.addEventListener("keydown", function (e) {
