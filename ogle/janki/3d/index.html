@@ -517,7 +517,7 @@
        resets page scroll and listens for keys, which must not reach this page. -->
   <section id="jk3d-sample" class="markdown-body">
     <h2>Try a card</h2>
-    <div id="jk3d-box" style="position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;border-radius:16px">
+    <div id="jk3d-box" style="position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;border-radius:16px;border:1px solid #2a2a2a;background:#000;box-sizing:border-box;isolation:isolate">
       <iframe src="sample.html" loading="lazy" title="Sample 3D anatomy card" id="jk3d-frame"
         style="position:absolute;left:0;top:0;width:900px;height:675px;border:0;background:transparent;transform-origin:0 0"></iframe>
     </div>
@@ -525,7 +525,7 @@
       // the card is laid out at desktop size (900×675) and scaled to fit, so phones see the same card
       (function () {
         var box = document.getElementById("jk3d-box"), fr = document.getElementById("jk3d-frame");
-        function fit() { fr.style.transform = "scale(" + box.clientWidth / 900 + ")"; }
+        function fit() { var k = box.clientWidth / 900; fr.style.transform = "scale(" + k + ")"; fr.style.height = (box.clientHeight / k) + "px"; }
         fit(); if ("ResizeObserver" in window) new ResizeObserver(fit).observe(box); else addEventListener("resize", fit);
       })();
     </script>
